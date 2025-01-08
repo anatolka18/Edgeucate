@@ -61,6 +61,11 @@ export enum Role {
   ADMIN = 'Admin',
 }
 
+export interface ISignUpResponse {
+  username: string;
+  token: string;
+}
+
 export interface IFeedback {
   advertisementId: string
   username: string
@@ -107,9 +112,4 @@ export interface IResponseUser {
   isBlocked: boolean;
   blockReason?: string;
   __v: number
-}
-
-export interface IResponseUserData {
-  token: string
-  user: IResponseUser
 }
