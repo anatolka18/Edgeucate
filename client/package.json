@@ -18,7 +18,8 @@
     "@reduxjs/toolkit": "^2.5.0",
     "react-redux": "^9.2.0",
     "axios": "^1.7.9",
-    "jose": "^5.9.6"
+    "jose": "^5.9.6",
+    "framer-motion": "^12.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
