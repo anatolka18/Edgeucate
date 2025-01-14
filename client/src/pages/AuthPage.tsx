@@ -5,6 +5,7 @@ import { setTokenToLocalStorage } from '../helpers/localstorage.helper'
 import { useAppDispatch } from '../store/hooks'
 import { login } from '../store/user/userSlice'
 import { useNavigate } from 'react-router-dom';
+import Logo from "../assets/Logo.png";
 
 const AuthPage: FC = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -85,7 +86,7 @@ const AuthPage: FC = () => {
 
             <div className="bg-gray-200 p-6 rounded-lg shadow-lg w-[400px]">
                 <div className="flex justify-center mb-4">
-                    <span className="text-xl font-bold">Edgeucate</span>
+                    <img src={Logo} alt="Logo" className="h-12" />
                 </div>
 
                 <h2 className="text-center text-xl font-semibold mb-6">{isLogin ? 'Вход' : 'Регистрация'}</h2>
