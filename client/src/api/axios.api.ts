@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getTokenFromLocalStorage } from "../helpers/localstorage.helper";
+import { getTokenFromLocalStorage, removeTokenFromLocalStorage } from "../helpers/localstorage.helper";
 
 export const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -14,3 +14,14 @@ instance.interceptors.request.use((config) => {
     }
     return config;
 });
+
+instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            removeTokenFromLocalStorage('token');
+            window.location.href = '/auth';
+        }
+        return Promise.reject(error);
+    }
+);
