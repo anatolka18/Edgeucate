@@ -4,7 +4,9 @@ import HomePage from "../pages/HomePage";
 import AuthPage from "../pages/AuthPage";
 import MyProfilePage from "../pages/myProfilePage";
 import SearchPage, { advertisementLoader } from "../pages/SearchPage";
-import { ProtectedRoute } from "../pages/ProtectedRoute";
+import MyAdvertisementPage, { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
+import { ProtectedRoute } from "../components/ProtectedRoute";
+import { Role } from "../types/user";
 
 export const router = createBrowserRouter([
   {
@@ -31,6 +33,15 @@ export const router = createBrowserRouter([
         path: 'search',
         loader: advertisementLoader,
         element: <SearchPage />,
+      },
+      {
+        path: 'myadvertisement',
+        loader: myAdvertisementLoader,
+        element: (
+          <ProtectedRoute allowedRoles={[Role.TEACHER]}>
+            <MyAdvertisementPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

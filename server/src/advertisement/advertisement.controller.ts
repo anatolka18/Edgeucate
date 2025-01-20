@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
 import { AdvertisementService } from './advertisement.service';
 import { Advertisement } from './schemas/advertisement.schema';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -13,8 +13,8 @@ export class AdvertisementController {
 
   @Post('/my')
   @UseGuards(JwtAuthGuard)
-  getMyAdvertisement(@Body() dto: { email: string }) {
-    return this.advertisementService.findMyAdvertisements(dto.email);
+  getMyAdvertisement(@Request() req) {
+    return this.advertisementService.findMyAdvertisements(req.user.email);
   }
 
   @Get('search/:query')
@@ -39,6 +39,7 @@ export class AdvertisementController {
   }
 
   @Post('/create')
+  @UseGuards(JwtAuthGuard)
   async createAdvertisement(@Body() createAdvertisementDto: CreateAdvertisementDto) {
     return this.advertisementService.createAdvertisement(createAdvertisementDto);
   }
@@ -51,6 +52,7 @@ export class AdvertisementController {
   }
 
   @Delete(':advertisementId')
+  @UseGuards(JwtAuthGuard)
   async deleteAdvertisement(@Param('advertisementId') advertisementId: string) {
     return this.advertisementService.deleteAdvertisement(advertisementId);
   }
