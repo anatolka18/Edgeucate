@@ -5,6 +5,7 @@ import AuthPage from "../pages/AuthPage";
 import MyProfilePage from "../pages/myProfilePage";
 import SearchPage, { advertisementLoader } from "../pages/SearchPage";
 import MyAdvertisementPage, { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
+import AdvertisementPage, { advertisementDetailLoader } from "../pages/AdvertisementPage";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Role } from "../types/user";
 
@@ -42,6 +43,11 @@ export const router = createBrowserRouter([
             <MyAdvertisementPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "advertisement/:id",
+        loader: advertisementDetailLoader,
+        element: <AdvertisementPage />,
       },
     ],
   },
