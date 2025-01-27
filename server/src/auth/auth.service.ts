@@ -3,7 +3,7 @@ import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './../user/schemas/user.schema';
+import { User } from '../user/schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 
@@ -42,11 +42,12 @@ export class AuthService {
       chat: [],
       feedback: [],
       notifications: [],
+      students: [],
       online: false,
       dateLastOnline: new Date(),
     });
 
-    const token = this.jwtService.sign({ id: user._id, email: user.email });
+    const token = this.jwtService.sign({ id: user._id, email: user.email, role: user.role });
 
     return { username, token };
   }
@@ -75,7 +76,7 @@ export class AuthService {
       throw new UnauthorizedException('Неверный пароль');
     }
 
-    const token = this.jwtService.sign({ id: user._id, email: user.email });
+    const token = this.jwtService.sign({ id: user._id, email: user.email, role: user.role });
 
     return {
       username: user.username,

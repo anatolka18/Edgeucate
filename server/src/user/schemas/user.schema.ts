@@ -70,6 +70,9 @@ export class User {
   @Prop({ required: true })
   notifications: Notification[];
 
+  @Prop({ default: [] })
+  students: string[];
+
   @Prop({ required: true })
   online: boolean;
 

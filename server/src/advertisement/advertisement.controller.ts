@@ -1,11 +1,12 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { AdvertisementService } from './advertisement.service';
 import { Advertisement } from './schemas/advertisement.schema';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { RolesGuard } from '../guards/roles.guard';
+import { Roles } from '../guards/roles.decorator';
+import { Role } from '../user/schemas/user.schema';
 import { CreateAdvertisementDto } from './dto/createAdvertisement.dto';
 import { UpdateAdvertisementDto } from './dto/updateAdvertisement.dto';
-import { IUploadedFile } from './dto/mfile-class';
 
 @Controller('advertisement')
 export class AdvertisementController {
@@ -28,7 +29,8 @@ export class AdvertisementController {
   }
 
   @Put('/update')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER)
   updateAdvertisement(@Body() updateAdvertisementDto: UpdateAdvertisementDto): Promise<Advertisement> {
     return this.advertisementService.updateAdvertisement(updateAdvertisementDto);
   }
@@ -39,16 +41,10 @@ export class AdvertisementController {
   }
 
   @Post('/create')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER)
   async createAdvertisement(@Body() createAdvertisementDto: CreateAdvertisementDto) {
     return this.advertisementService.createAdvertisement(createAdvertisementDto);
-  }
-
-  @Put('avatar/:name')
-  @UseInterceptors(FileInterceptor('file'))
-  @UseGuards(JwtAuthGuard)
-  updateAvatar(@UploadedFile() file: IUploadedFile, @Param('name') name: string): Promise<Advertisement> {
-    return this.advertisementService.updateAvatar(name, file);
   }
 
   @Delete(':advertisementId')
