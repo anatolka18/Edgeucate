@@ -4,11 +4,23 @@ import { UserController } from './user.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from './schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
+import { UserSocketService } from './user.gateway';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
-  imports: [AuthModule, MongooseModule.forFeature([{ name: 'User', schema: UserSchema }])],
+  imports: [
+    AuthModule,
+    MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET'),
+      }),
+    }),
+  ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, UserSocketService],
   exports: [UserService],
 })
 export class UserModule {}
