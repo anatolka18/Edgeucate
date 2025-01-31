@@ -3,18 +3,17 @@ import { NavLink, useLoaderData } from "react-router-dom";
 import { IAdvertisement } from "../types/advertisement";
 import { instance } from "../api/axios.api";
 import { toast } from "react-toastify";
-//import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { subjectCategories, isCategory } from "../config/subjects";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const advertisementLoader = async () => {
-    const { data } = await instance.get<IAdvertisement[]>(`/advertisement`)
-    return data
-}
+    const { data } = await instance.get<IAdvertisement[]>(`/advertisement`);
+    return data;
+};
 
 const SearchPage: React.FC = () => {
     const isAuth = useAuth();
-    //const navigate = useNavigate();
     const initialAdvertisements = useLoaderData() as IAdvertisement[];
     const [advertisements, setAdvertisements] = useState<IAdvertisement[]>(initialAdvertisements);
     const [searchTerm, setSearchTerm] = useState("");
@@ -25,8 +24,7 @@ const SearchPage: React.FC = () => {
 
     const totalPages = Math.max(1, Math.ceil(advertisements.length / advertisementsPerPage));
     const startIndex = (currentPage - 1) * advertisementsPerPage;
-    const endIndex = startIndex + advertisementsPerPage;
-    const currentAdvertisements = advertisements.slice(startIndex, endIndex);
+    const currentAdvertisements = advertisements.slice(startIndex, startIndex + advertisementsPerPage);
 
     const handleSearch = async () => {
         try {
@@ -34,22 +32,19 @@ const SearchPage: React.FC = () => {
             if (searchTerm) {
                 endpoint = `/advertisement/search/${encodeURIComponent(searchTerm)}`;
             }
-            
             const { data } = await instance.get<IAdvertisement[]>(endpoint);
-            
             let filteredData = data;
             if (selectedSubject && !isCategory(selectedSubject)) {
-                filteredData = data.filter(ad => ad.subject === selectedSubject);
+                filteredData = data.filter((ad) => ad.subject === selectedSubject);
             }
-            
             if (filteredData && filteredData.length > 0) {
                 setAdvertisements(filteredData);
                 setCurrentPage(1);
             } else {
-                toast.error('Ничего не найдено.');
+                toast.error("Ничего не найдено.");
             }
         } catch (error) {
-            toast.error('Ошибка при выполнении поиска.');
+            toast.error("Ошибка при выполнении поиска.");
         }
     };
 
@@ -59,11 +54,9 @@ const SearchPage: React.FC = () => {
             if (data && data.length > 0) {
                 setAdvertisements(data);
                 setCurrentPage(1);
-            } else {
-                toast.error('Не удалось загрузить объявления.');
             }
         } catch (error) {
-            toast.error('Ошибка при загрузке объявлений.');
+            toast.error("Ошибка при загрузке объявлений.");
         }
     };
 
@@ -79,19 +72,6 @@ const SearchPage: React.FC = () => {
         }
     };
 
-    const handleCategoryClick = (category: string) => {
-        if (openCategory === category) {
-            setOpenCategory(null);
-        } else {
-            setOpenCategory(category);
-            setSelectedSubject("");
-        }
-    };
-
-    const handleSubjectClick = (subject: string) => {
-        setSelectedSubject(subject);
-    };
-
     const handleClearFilter = () => {
         setSelectedSubject("");
         setOpenCategory(null);
@@ -99,159 +79,165 @@ const SearchPage: React.FC = () => {
     };
 
     return (
-        <div className="p-8 font-montserrat">
+        <div className="p-8">
             <div className="max-w-[800px] mx-auto mb-6">
-                <div className="flex flex-col space-y-4">
-                    <div className="flex items-center space-x-4">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Введите предмет"
+                            placeholder="Поиск по предметам..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3D5B82]"
                         />
-                        <button
-                            onClick={handleSearch}
-                            className="px-4 py-2 bg-[#96C3D6] hover:bg-[#3D5B82] text-black rounded-md"
-                        >
-                            Найти
-                        </button>
                     </div>
-                    
-                    <div className="w-full bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h3 className="font-medium mb-3">Фильтр по предметам:</h3>
-                        
-                        <div className="flex flex-wrap gap-2">
-                            {subjectCategories.map((category) => (
-                                <div key={category.name} className="mb-3">
-                                    <button 
-                                        className={`px-3 py-1.5 rounded-md text-sm font-medium 
-                                            ${openCategory === category.name 
-                                                ? 'bg-[#96C3D6] text-white' 
-                                                : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}
-                                        onClick={() => handleCategoryClick(category.name)}
-                                    >
-                                        {category.name}
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                        
-                        {openCategory && (
-                            <div className="mt-3 p-3 bg-white rounded-md border border-gray-200">
-                                <h4 className="font-medium mb-2 text-sm text-gray-700">{openCategory}:</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {subjectCategories
-                                        .find(cat => cat.name === openCategory)
-                                        ?.subjects.map((subject: string) => (
-                                            <button
-                                                key={subject}
-                                                className={`px-2 py-1 text-xs rounded-md 
-                                                    ${selectedSubject === subject 
-                                                        ? 'bg-[#3D5B82] text-white' 
-                                                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}
-                                                onClick={() => handleSubjectClick(subject)}
-                                            >
-                                                {subject}
-                                            </button>
-                                        ))}
-                                </div>
-                            </div>
-                        )}
-                        
-                        {selectedSubject && !isCategory(selectedSubject) && (
-                            <div className="mt-3 flex items-center">
-                                <span className="mr-2 text-sm">
-                                    Выбранный предмет: <span className="font-medium">{selectedSubject}</span>
-                                </span>
-                                <button 
-                                    onClick={handleClearFilter}
-                                    className="text-xs px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-md"
-                                >
-                                    Сбросить
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    <button
+                        onClick={handleSearch}
+                        className="px-6 py-2 bg-[#3D5B82] hover:bg-[#2D4B6E] text-white rounded-lg transition-colors"
+                    >
+                        Найти
+                    </button>
                 </div>
-            </div>
 
-            <p className="mb-4 text-2xl font-semibold text-center">
-                По вашему запросу было найдено {advertisements.length} репетиторов:
-            </p>
-            <div className="flex flex-col items-center space-y-4">
-                {currentAdvertisements.length > 0 ? (
-                    currentAdvertisements.map((advertisement, index) => (
-                        <div
-                            key={index}
-                            className="w-full max-w-3xl flex items-start border border-gray-200 rounded-lg p-4 shadow-md"
+                <div className="flex flex-wrap gap-2">
+                    {subjectCategories.map((category) => (
+                        <button
+                            key={category.name}
+                            onClick={() =>
+                                setOpenCategory(openCategory === category.name ? null : category.name)
+                            }
+                            className={`px-4 py-1.5 rounded-full text-sm transition-colors ${
+                                openCategory === category.name
+                                    ? "bg-[#3D5B82] text-white"
+                                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            }`}
                         >
-                            <div className="flex-1">
-                                <h3 className="text-lg font-bold">{advertisement.creator}</h3>
-                                <p className="text-sm text-gray-600">{advertisement.title}</p>
-                                <p className="text-sm text-gray-600">
-                                    {advertisement.subject || "Предмет не указан"}
-                                </p>
-                                <p className="text-lg font-semibold mt-2">
-                                    {advertisement.price} ₽/час
-                                </p>
-                                <div className="flex space-x-2 mt-2">
-                                    <NavLink
-                                        to={isAuth 
-                                            ? `/advertisement/${advertisement.advertisementId}` 
-                                            : "/auth"
-                                        }
-                                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+                            {category.name}
+                        </button>
+                    ))}
+                </div>
+
+                {openCategory && (
+                    <div className="mt-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex flex-wrap gap-2">
+                            {subjectCategories
+                                .find((cat) => cat.name === openCategory)
+                                ?.subjects.map((subject) => (
+                                    <button
+                                        key={subject}
+                                        onClick={() => {
+                                            setSelectedSubject(subject);
+                                            setOpenCategory(null);
+                                        }}
+                                        className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                                            selectedSubject === subject
+                                                ? "bg-[#3D5B82] text-white"
+                                                : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                                        }`}
                                     >
-                                        Перейти к объявлению
-                                    </NavLink>
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-end ml-4">
-                                <p className="text-lg font-semibold">
-                                    {advertisement.stars}★
-                                </p>
-                            </div>
+                                        {subject}
+                                    </button>
+                                ))}
                         </div>
-                    ))
-                ) : (
-                    <div className="text-center py-8">
-                        <p className="text-gray-500">Ничего не найдено</p>
+                    </div>
+                )}
+
+                {selectedSubject && (
+                    <div className="mt-3 flex items-center gap-2">
+                        <span className="text-sm bg-[#F16E4B]/10 text-[#F16E4B] px-3 py-1 rounded-full">
+                            {selectedSubject}
+                        </span>
+                        <button
+                            onClick={handleClearFilter}
+                            className="text-sm text-gray-500 hover:text-red-500"
+                        >
+                            Сбросить
+                        </button>
                     </div>
                 )}
             </div>
 
-            {totalPages > 1 && (
-                <div className="flex flex-col items-center mt-6 space-y-4">
-                    <div className="flex space-x-2">
-                        <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
-                        >
-                            Назад
-                        </button>
-                        <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
-                        >
-                            Вперед
-                        </button>
+            {advertisements.length === 0 ? (
+                <div className="text-center py-16">
+                    <p className="text-gray-400 text-lg">Ничего не найдено</p>
+                    <p className="text-gray-400 text-sm mt-2">Попробуйте изменить параметры поиска</p>
+                </div>
+            ) : (
+                <>
+                    <p className="mb-6 text-center text-gray-600">
+                        Найдено {advertisements.length} репетиторов
+                    </p>
+                    <div className="flex flex-col items-center gap-4">
+                        {currentAdvertisements.map((advertisement) => (
+                            <div
+                                key={advertisement.advertisementId}
+                                className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                            >
+                                <div className="flex items-start gap-4">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0">
+                                        <span className="text-white font-bold text-xl">
+                                            {advertisement.creator?.[0]?.toUpperCase() || "?"}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-bold">{advertisement.creator}</h3>
+                                        <p className="text-gray-600">{advertisement.title}</p>
+                                        <p className="text-sm text-gray-400">{advertisement.subject}</p>
+                                        <div className="flex items-center gap-1 mt-2">
+                                            <span className="text-yellow-500">★</span>
+                                            <span className="font-medium">{advertisement.stars.toFixed(1)}</span>
+                                            <span className="text-gray-400 ml-2">{advertisement.price} ₽/час</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 mt-4">
+                                    <NavLink
+                                        to={
+                                            isAuth
+                                                ? `/advertisement/${advertisement.advertisementId}`
+                                                : "/auth"
+                                        }
+                                        className="flex-1 text-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    >
+                                        Подробнее
+                                    </NavLink>
+                                    {isAuth && (
+                                        <NavLink
+                                            to={`/chat/${advertisement.email}`}
+                                            className="flex-1 text-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                        >
+                                            Написать
+                                        </NavLink>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="number"
-                            value={currentPage}
-                            onChange={(e) => handlePageChange(Number(e.target.value))}
-                            className="w-16 p-2 border border-gray-300 rounded-md text-center"
-                            min={1}
-                            max={totalPages}
-                        />
-                        <span className="text-lg">из {totalPages}</span>
-                    </div>
-                </div>
+                    {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-4 mt-8">
+                            <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <span className="text-sm text-gray-600">
+                                {currentPage} из {totalPages}
+                            </span>
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );

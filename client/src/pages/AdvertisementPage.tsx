@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { useLoaderData, useNavigate, useParams } from "react-router-dom";
+import { useLoaderData, useNavigate, useParams, NavLink } from "react-router-dom";
 import { instance } from "../api/axios.api";
 import { toast } from "react-toastify";
 import { IAdvertisement } from "../types/advertisement";
 import { IFeedback } from "../types/user";
 import { useMyProfile } from "../hooks/useMyProfile";
 import FeedbackForm from "../components/FeedbackForm";
+import { Star, User } from "lucide-react";
 
 interface IAdvertisementResponse {
   advertisement: IAdvertisement;
@@ -23,7 +24,7 @@ const AdvertisementPage: React.FC = () => {
   const [data, setData] = useState<IAdvertisementResponse>(initialData);
   const myProfile = useMyProfile();
   const { id } = useParams();
-  const isAdmin = myProfile?.role === 'Admin';
+  const isAdmin = myProfile?.role === "Admin";
   const navigate = useNavigate();
 
   const loadFreshData = useCallback(async () => {
@@ -33,166 +34,166 @@ const AdvertisementPage: React.FC = () => {
       );
       setData(updatedData);
     } catch (error) {
-      console.error("Ошибка при обновлении данных:", error);
       toast.error("Не удалось обновить данные");
     }
   }, [id]);
 
   const handleDeleteAdvertisement = useCallback(async () => {
     try {
-      if (!data.advertisement) return;
-      const advertisementId = data.advertisement.advertisementId;
-      await instance.delete(`/advertisement/${advertisementId}`);
+      await instance.delete(`/advertisement/${data.advertisement.advertisementId}`);
       toast.success("Объявление успешно удалено");
-      navigate('/search');
+      navigate("/search");
     } catch (error) {
-      console.error("Ошибка при удалении объявления:", error);
       toast.error("Не удалось удалить объявление");
     }
   }, [data.advertisement, navigate]);
 
-  const handleDeleteFeedback = useCallback(async (username: string) => {
-    try {
-      if (!data.advertisement) return;
-      const teacherEmail = data.advertisement.email;
-      const advertisementId = data.advertisement.advertisementId;
-      await instance.delete(`/feedback/delete/${teacherEmail}/${advertisementId}/${username}`);
-      toast.success("Отзыв успешно удален");
-      await loadFreshData();
-    } catch (error) {
-      console.error("Ошибка при удалении отзыва:", error);
-      toast.error("Не удалось удалить отзыв");
-    }
-  }, [data.advertisement, loadFreshData]);
-
-  const handleFeedbackAdded = useCallback(async () => {
-    await loadFreshData();
-  }, [loadFreshData]);
+  const handleDeleteFeedback = useCallback(
+    async (username: string) => {
+      try {
+        const teacherEmail = data.advertisement.email;
+        const advertisementId = data.advertisement.advertisementId;
+        await instance.delete(`/feedback/delete/${teacherEmail}/${advertisementId}/${username}`);
+        toast.success("Отзыв успешно удален");
+        await loadFreshData();
+      } catch (error) {
+        toast.error("Не удалось удалить отзыв");
+      }
+    },
+    [data.advertisement, loadFreshData]
+  );
 
   useEffect(() => {
     loadFreshData();
-  }, [loadFreshData]);
+  }, []);
 
   if (!data?.advertisement) {
-    return <div className="p-8 font-montserrat text-center">Объявление не найдено</div>;
+    return <div className="p-8 text-center">Объявление не найдено</div>;
   }
 
   const { advertisement, feedbacks } = data;
 
   return (
-    <div className="p-8 font-montserrat">
-      <div className="max-w-3xl mx-auto border border-gray-200 rounded-lg shadow-md p-6 mb-6">
-        <div className="flex flex-col md:flex-row">
-          <div className="w-40 h-40 bg-gray-200 rounded-md flex items-center justify-center mr-6 mb-4 md:mb-0">
-            <span className="text-4xl font-bold text-gray-400">
-              {advertisement.creator?.[0]?.toUpperCase() || '?'}
-            </span>
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-2">{advertisement.creator}</h1>
-            <p className="text-gray-700 mb-4">{advertisement.title}</p>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-lg font-semibold">
-                  Рейтинг: <span className="text-yellow-500">{advertisement.stars.toFixed(1)}★</span>
-                </p>
-                <p className="text-lg font-semibold">
-                  Цена: <span className="font-normal">{advertisement.price} ₽/час</span>
-                </p>
+    <div className="p-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="w-24 h-24 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-3xl">
+                {advertisement.creator?.[0]?.toUpperCase() || "?"}
+              </span>
+            </div>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold mb-1">{advertisement.creator}</h1>
+              <p className="text-gray-600 mb-2">{advertisement.title}</p>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-1">
+                  <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                  <span className="font-semibold">{advertisement.stars.toFixed(1)}</span>
+                </div>
+                <span className="text-gray-400">|</span>
+                <span className="font-semibold text-lg">{advertisement.price} ₽/час</span>
               </div>
-              {isAdmin && (
-                <button
-                  onClick={handleDeleteAdvertisement}
-                  className="px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-500 hover:text-white"
-                  title="Удалить объявление"
-                >
-                  Удалить объявление
-                </button>
-              )}
+              <div className="flex gap-2">
+                {myProfile && myProfile.email !== advertisement.email && (
+                  <NavLink
+                    to={`/chat/${advertisement.email}`}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    Написать сообщение
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <button
+                    onClick={handleDeleteAdvertisement}
+                    className="px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors"
+                  >
+                    Удалить объявление
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-3xl mx-auto border border-gray-200 rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4">О преподавателе</h2>
-        <p className="text-gray-700">{advertisement.aboutTeacher}</p>
-      </div>
-
-      <div className="max-w-3xl mx-auto border border-gray-200 rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4">О занятии</h2>
-        <p className="text-gray-700">{advertisement.aboutAdvertisement}</p>
-      </div>
-
-      <div className="max-w-3xl mx-auto border border-gray-200 rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">Отзывы учеников</h2>
-        <div className="mb-4">
-          <p className="text-2xl font-bold text-yellow-500">{advertisement.stars.toFixed(1)}★</p>
-          <p className="text-gray-700">{feedbacks?.length || 0} отзывов</p>
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-bold mb-3">О преподавателе</h2>
+          <p className="text-gray-700">{advertisement.aboutTeacher || "Информация не указана"}</p>
         </div>
 
-        {myProfile && myProfile.email !== advertisement.email && (
-          <FeedbackForm
-            advertisementId={advertisement.advertisementId}
-            teacherEmail={advertisement.email}
-            advertisementTitle={advertisement.title}
-            onFeedbackAdded={handleFeedbackAdded}
-          />
-        )}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-bold mb-3">О занятии</h2>
+          <p className="text-gray-700">{advertisement.aboutAdvertisement}</p>
+        </div>
 
-        {feedbacks && feedbacks.length > 0 ? (
-          <div className="mt-6 space-y-6">
-            {feedbacks.map((feedback, index) => (
-              <div className="flex flex-col sm:flex-row border-b border-gray-200 pb-4 last:border-b-0" key={index}>
-                <div className="flex items-start mb-3 sm:mb-0 sm:mr-4">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-lg font-bold text-gray-400">
-                      {feedback.username?.[0]?.toUpperCase() || '?'}
-                    </span>
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-bold mb-4">
+            Отзывы учеников
+            <span className="text-gray-400 font-normal ml-2">({feedbacks?.length || 0})</span>
+          </h2>
+
+          {myProfile && myProfile.email !== advertisement.email && (
+            <FeedbackForm
+              advertisementId={advertisement.advertisementId}
+              teacherEmail={advertisement.email}
+              advertisementTitle={advertisement.title}
+              onFeedbackAdded={loadFreshData}
+            />
+          )}
+
+          {feedbacks && feedbacks.length > 0 ? (
+            <div className="mt-6 space-y-4">
+              {feedbacks.map((feedback, index) => (
+                <div key={index} className="border-b border-gray-100 pb-4 last:border-b-0">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold">{feedback.username}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < feedback.stars
+                                    ? "text-yellow-500 fill-current"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDeleteFeedback(feedback.username)}
+                              className="text-xs text-red-500 hover:text-red-700"
+                            >
+                              Удалить
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-gray-700">{feedback.text}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(feedback.date).toLocaleDateString("ru-RU", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <p className="font-bold">{feedback.username}</p>
-                    <p className="text-gray-600 text-sm">
-                      {new Date(feedback.date).toLocaleDateString('ru-RU', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </p>
-                    {isAdmin && (
-                      <button
-                        onClick={() => handleDeleteFeedback(feedback.username)}
-                        className="px-2 py-1 border border-red-500 text-red-500 rounded-md hover:bg-red-500 hover:text-white text-sm"
-                        title="Удалить отзыв"
-                      >
-                        Удалить
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center mt-1 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-5 h-5 ${i < feedback.stars ? "text-yellow-500" : "text-gray-300"}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <p className="text-gray-700">{feedback.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-6 text-center py-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">Пока нет отзывов</p>
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-gray-50 rounded-lg mt-4">
+              <p className="text-gray-400">Пока нет отзывов</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

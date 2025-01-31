@@ -8,41 +8,27 @@ const Footer: FC = () => {
     <footer className="bg-white border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Бренд */}
-          <div className="col-span-1 md:col-span-1">
-            <Link to="/" className="flex items-center gap-3 mb-4">
-              <Link to="/" className="flex items-center gap-3">
-                <img src={FullLogo} alt="Edgeucate" className="h-10" />
-              </Link>
-            </Link>
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              {/* Логотип */}
+                <Link to="/" className="flex items-center gap-3">
+                    <img src={FullLogo} alt="Edgeucate" className="h-10" />
+                </Link>
+            </div>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Платформа для поиска репетиторов и онлайн-обучения. Соединяем учеников с лучшими преподавателями.
+              Платформа для поиска репетиторов и онлайн-обучения.
             </p>
           </div>
 
-          {/* Навигация */}
           <div>
             <h3 className="text-gray-900 font-semibold mb-4">Навигация</h3>
             <ul className="space-y-2">
-              <li>
-                <Link to="/" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">
-                  Главная
-                </Link>
-              </li>
-              <li>
-                <Link to="/search" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">
-                  Поиск репетитора
-                </Link>
-              </li>
-              <li>
-                <Link to="/auth" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">
-                  Регистрация
-                </Link>
-              </li>
+              <li><Link to="/" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">Главная</Link></li>
+              <li><Link to="/search" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">Поиск репетитора</Link></li>
+              <li><Link to="/auth" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">Регистрация</Link></li>
             </ul>
           </div>
 
-          {/* Контакты */}
           <div>
             <h3 className="text-gray-900 font-semibold mb-4">Контакты</h3>
             <ul className="space-y-3">
@@ -61,7 +47,6 @@ const Footer: FC = () => {
             </ul>
           </div>
 
-          {/* Социальные сети */}
           <div>
             <h3 className="text-gray-900 font-semibold mb-4">Мы в сети</h3>
             <div className="flex gap-3">
@@ -77,7 +62,6 @@ const Footer: FC = () => {
           </div>
         </div>
 
-        {/* Копирайт */}
         <div className="border-t border-gray-200 mt-8 pt-8 text-center">
           <p className="text-gray-400 text-sm">
             © {new Date().getFullYear()} Edgeucate. Все права защищены.

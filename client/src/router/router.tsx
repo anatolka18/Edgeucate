@@ -6,6 +6,8 @@ import MyProfilePage from "../pages/myProfilePage";
 import SearchPage, { advertisementLoader } from "../pages/SearchPage";
 import MyAdvertisementPage, { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
 import AdvertisementPage, { advertisementDetailLoader } from "../pages/AdvertisementPage";
+import ChatListPage, { chatListLoader } from "../pages/ChatListPage";
+import ChatPage, { chatLoader } from "../pages/ChatPage";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Role } from "../types/user";
 
@@ -14,21 +16,11 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
-      {
-        path: 'auth',
-        element: <AuthPage />,
-      },
+      { index: true, element: <HomePage /> },
+      { path: 'auth', element: <AuthPage /> },
       {
         path: 'myprofile',
-        element: (
-          <ProtectedRoute>
-            <MyProfilePage />
-          </ProtectedRoute>
-        ),
+        element: <ProtectedRoute><MyProfilePage /></ProtectedRoute>,
       },
       {
         path: 'search',
@@ -38,16 +30,22 @@ export const router = createBrowserRouter([
       {
         path: 'myadvertisement',
         loader: myAdvertisementLoader,
-        element: (
-          <ProtectedRoute allowedRoles={[Role.TEACHER]}>
-            <MyAdvertisementPage />
-          </ProtectedRoute>
-        ),
+        element: <ProtectedRoute allowedRoles={[Role.TEACHER]}><MyAdvertisementPage /></ProtectedRoute>,
       },
       {
         path: "advertisement/:id",
         loader: advertisementDetailLoader,
         element: <AdvertisementPage />,
+      },
+      {
+        path: "chats",
+        loader: chatListLoader,
+        element: <ProtectedRoute><ChatListPage /></ProtectedRoute>,
+      },
+      {
+        path: "chat/:email",
+        loader: chatLoader,
+        element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
       },
     ],
   },

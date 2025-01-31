@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Body, Param, UseGuards, Post, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './schemas/user.schema';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -28,5 +28,24 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   getUser(@Param('username') username: string) {
     return this.userService.findByUsername(username);
+  }
+
+  @Post('messages')
+  @UseGuards(JwtAuthGuard)
+  async getMessages(
+    @Body('sender') senderEmail: string,
+    @Body('recipient') recipientEmail: string,
+  ) {
+    if (!senderEmail || !recipientEmail) {
+      throw new BadRequestException('Оба email обязательны.');
+    }
+    return this.userService.getMessages(senderEmail, recipientEmail);
+  }
+
+  @Post('chats')
+  @UseGuards(JwtAuthGuard)
+  async getChats(@Body('email') email: string) {
+    if (!email) throw new BadRequestException('Email is required');
+    return await this.userService.getChats(email);
   }
 }

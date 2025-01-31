@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Shield,
+  LifeBuoy,
 } from "lucide-react";
 
 const Header: FC = () => {
@@ -66,6 +67,14 @@ const Header: FC = () => {
                 <MessageCircle className="w-4 h-4" />
                 <span>Чаты</span>
               </NavLink>
+            )}
+            {isAuth && (
+            <>
+                <NavLink to="/chat/admin@edgeucate.ru" className={navLinkClass}>
+                <LifeBuoy className="w-4 h-4" />
+                <span>Поддержка</span>
+                </NavLink>
+            </>
             )}
             {isAuth && !isAdmin && (
               <NavLink to="/rooms" className={navLinkClass}>

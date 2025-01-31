@@ -47,15 +47,6 @@ export class UserService {
       return { messages: [], interlocutorName: recipient.username };
     }
 
-    chat.messages.forEach((message) => {
-      if (!message.checked) message.checked = true;
-    });
-
-    await this.userModel.updateOne(
-      { email: senderEmail, 'chat.interlocutor': recipientEmail },
-      { $set: { 'chat.$.messages': chat.messages } },
-    );
-
     return { messages: chat.messages, interlocutorName: recipient.username };
   }
 
@@ -85,45 +76,66 @@ export class UserService {
   }
 
   async sendMessage(sendMessageDto: SendMessageDto): Promise<Message> {
-    const sender = await this.userModel.findOne({ email: sendMessageDto.sender });
-    const recipient = await this.userModel.findOne({ email: sendMessageDto.recipient });
-
-    if (!sender || !recipient) throw new NotFoundException('Пользователь не найден.');
+    const { sender: senderEmail, recipient: recipientEmail, message: text } = sendMessageDto;
 
     const message: Message = {
-      message: sendMessageDto.message,
+      message: text,
       checked: false,
       date: new Date(),
-      sender: sendMessageDto.sender,
+      sender: senderEmail,
     };
 
-    const senderChat = sender.chat.find((c) => c.interlocutor === sendMessageDto.recipient);
-    const recipientChat = recipient.chat.find((c) => c.interlocutor === sendMessageDto.sender);
+    const senderUpdate = await this.userModel.findOneAndUpdate(
+      { email: senderEmail, 'chat.interlocutor': recipientEmail },
+      { $push: { 'chat.$.messages': message } },
+      { new: true },
+    );
 
-    if (senderChat) {
-      senderChat.messages.push(message);
-    } else {
-      sender.chat.push({
-        interlocutor: sendMessageDto.recipient,
-        messages: [message],
-        avatar: recipient.avatar,
-      });
+    if (!senderUpdate) {
+      await this.userModel.findOneAndUpdate(
+        { email: senderEmail },
+        {
+          $push: {
+            chat: {
+              interlocutor: recipientEmail,
+              messages: [message],
+              avatar: '',
+            },
+          },
+        },
+      );
     }
 
-    if (recipientChat) {
-      recipientChat.messages.push(message);
-    } else {
-      recipient.chat.push({
-        interlocutor: sendMessageDto.sender,
-        messages: [message],
-        avatar: sender.avatar,
-      });
-    }
+    const recipientUpdate = await this.userModel.findOneAndUpdate(
+      { email: recipientEmail, 'chat.interlocutor': senderEmail },
+      { $push: { 'chat.$.messages': message } },
+      { new: true },
+    );
 
-    await sender.save();
-    await recipient.save();
+    if (!recipientUpdate) {
+      await this.userModel.findOneAndUpdate(
+        { email: recipientEmail },
+        {
+          $push: {
+            chat: {
+              interlocutor: senderEmail,
+              messages: [message],
+              avatar: '',
+            },
+          },
+        },
+      );
+    }
 
     return message;
+  }
+
+  async markMessagesAsRead(readerEmail: string, fromEmail: string) {
+    await this.userModel.updateOne(
+      { email: readerEmail, 'chat.interlocutor': fromEmail },
+      { $set: { 'chat.$.messages.$[msg].checked': true } },
+      { arrayFilters: [{ 'msg.sender': fromEmail, 'msg.checked': false }] },
+    );
   }
 
   async online(email: string) {
@@ -133,12 +145,4 @@ export class UserService {
   async offline(email: string) {
     await this.userModel.findOneAndUpdate({ email }, { online: false, dateLastOnline: new Date() });
   }
-
-  async markMessagesAsRead(readerEmail: string, fromEmail: string) {
-  await this.userModel.updateOne(
-    { email: readerEmail, 'chat.interlocutor': fromEmail },
-    { $set: { 'chat.$.messages.$[msg].checked': true } },
-    { arrayFilters: [{ 'msg.sender': fromEmail, 'msg.checked': false }] },
-  );
-}
 }
