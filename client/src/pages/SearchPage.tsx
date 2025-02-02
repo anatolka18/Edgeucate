@@ -206,7 +206,7 @@ const SearchPage: React.FC = () => {
                                     {isAuth && (
                                         <NavLink
                                             to={`/chat/${advertisement.email}`}
-                                            className="flex-1 text-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                            className="flex-1 text-center px-4 py-2 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] transition-colors"
                                         >
                                             Написать
                                         </NavLink>

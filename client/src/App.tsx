@@ -12,6 +12,16 @@ import { apiUrl } from "./api/axios.api"
 
 export let MySocket: { socket: Socket | null } = { socket: null }
 
+export function ensureSocket(token: string) {
+  if (!MySocket.socket || !MySocket.socket.connected) {
+    MySocket.socket = io(`${apiUrl}/users`, {
+      auth: { token },
+    })
+    MySocket.socket.on("connect", () => {})
+    MySocket.socket.on("connect_error", () => {})
+  }
+}
+
 function App() {
   const dispatch = useAppDispatch()
 
@@ -22,18 +32,14 @@ function App() {
         const data = await AuthService.getProfile()
         if (data) {
           dispatch(login(data))
-          MySocket.socket = io(`${apiUrl}/users`, {
-            auth: { token }
-          })
-          MySocket.socket.on("connect", () => {})
-          MySocket.socket.on("connect_error", () => {})
+          ensureSocket(token)
         } else {
           dispatch(logout())
           MySocket.socket = null
         }
       }
     } catch (error) {
-      console.error('Auth check failed:', error)
+      // ignore
     }
   }
 

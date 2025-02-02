@@ -25,7 +25,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
   @WebSocketServer() server: Namespace;
 
-  handleConnection(client: AuthenticatedSocket) {
+  async handleConnection(client: AuthenticatedSocket) {
     try {
       const token = client.handshake.auth.token;
       if (!token) {
@@ -35,23 +35,24 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       const payload = this.jwtService.verify(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
       });
+      const email = payload.email;
 
       client.data.user = payload;
-      this.userService.online(payload.email);
-      client.join(payload.email);
-      this.notifyOnlineStatus(payload.email, true);
-      this.sendUnreadNotifications(payload.email);
+      // await this.userService.online(email);
+      client.join(email);
+
+      // Отправляем начальные уведомления о непрочитанных
+      await this.sendUnreadNotifications(email);
     } catch (error) {
-      this.disconnectWithError(client, 'Недействительный токен');
+      this.disconnectWithError(client, 'Ошибка подключения');
     }
   }
 
-  handleDisconnect(client: AuthenticatedSocket) {
+  async handleDisconnect(client: AuthenticatedSocket) {
     const email = client.data.user?.email;
     if (email) {
-      this.userService.offline(email);
-      this.notifyOnlineStatus(email, false);
-      this.clearTypingStatus(email);
+      // await this.userService.offline(email);
+      // this.clearTypingStatus(email);
     }
   }
 
@@ -62,22 +63,11 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   ) {
     try {
       const sender = client.data.user?.email;
-      if (!sender) {
-        return client.emit('error', { message: 'Ошибка аутентификации' });
-      }
-
-      if (!data.message?.trim()) {
-        return client.emit('error', { message: 'Сообщение пустое' });
-      }
-      if (data.message.length > 2000) {
-        return client.emit('error', { message: 'Слишком длинное' });
-      }
-      if (!data.recipient) {
-        return client.emit('error', { message: 'Получатель не указан' });
-      }
-      if (sender === data.recipient) {
-        return client.emit('error', { message: 'Нельзя отправить себе' });
-      }
+      if (!sender) return client.emit('error', { message: 'Ошибка аутентификации' });
+      if (!data.message?.trim()) return client.emit('error', { message: 'Сообщение пустое' });
+      if (data.message.length > 2000) return client.emit('error', { message: 'Слишком длинное' });
+      if (!data.recipient) return client.emit('error', { message: 'Получатель не указан' });
+      if (sender === data.recipient) return client.emit('error', { message: 'Нельзя отправить себе' });
 
       const result = await this.userService.sendMessage({
         sender,
@@ -87,6 +77,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
       this.server.to(data.recipient).emit('on_send_message', { ...result, unread: true });
       this.server.to(sender).emit('on_send_message', result);
+
       this.sendUnreadCount(data.recipient, sender);
     } catch (error) {
       client.emit('error', { message: 'Ошибка отправки сообщения' });
@@ -103,37 +94,24 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     }
   }
 
-  @SubscribeMessage('typing_start')
-  async typingStart(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
-    const sender = client.data.user.email;
-    if (!this.typingUsers.has(data.recipient)) this.typingUsers.set(data.recipient, new Set());
-    this.typingUsers.get(data.recipient).add(sender);
-    this.server.to(data.recipient).emit('typing', { user: sender, typing: true });
-  }
+  // @SubscribeMessage('typing_start')
+  // async typingStart(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
+  //   const sender = client.data.user.email;
+  //   if (!this.typingUsers.has(data.recipient)) this.typingUsers.set(data.recipient, new Set());
+  //   this.typingUsers.get(data.recipient).add(sender);
+  //   this.server.to(data.recipient).emit('typing', { user: sender, typing: true });
+  // }
 
-  @SubscribeMessage('typing_end')
-  async typingEnd(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
-    const sender = client.data.user.email;
-    const typists = this.typingUsers.get(data.recipient);
-    if (typists) {
-      typists.delete(sender);
-      if (typists.size === 0) this.typingUsers.delete(data.recipient);
-    }
-    this.server.to(data.recipient).emit('typing', { user: sender, typing: false });
-  }
-
-  private async notifyOnlineStatus(email: string, online: boolean) {
-    const chats = await this.userService.getChats(email);
-    chats.forEach(chat => this.server.to(chat.interlocutor).emit('user_status', { email, online }));
-  }
-
-  private async sendUnreadNotifications(email: string) {
-    const chats = await this.userService.getChats(email);
-    for (const chat of chats) {
-      const unread = chat.messages.filter(m => m.sender !== email && !m.checked).length;
-      if (unread > 0) this.server.to(email).emit('unread_count', { from: chat.interlocutor, count: unread });
-    }
-  }
+  // @SubscribeMessage('typing_end')
+  // async typingEnd(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
+  //   const sender = client.data.user.email;
+  //   const typists = this.typingUsers.get(data.recipient);
+  //   if (typists) {
+  //     typists.delete(sender);
+  //     if (typists.size === 0) this.typingUsers.delete(data.recipient);
+  //   }
+  //   this.server.to(data.recipient).emit('typing', { user: sender, typing: false });
+  // }
 
   private async sendUnreadCount(recipientEmail: string, senderEmail: string) {
     const chats = await this.userService.getChats(recipientEmail);
@@ -144,14 +122,24 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     }
   }
 
-  private clearTypingStatus(email: string) {
-    this.typingUsers.forEach((typists, recipient) => {
-      if (typists.has(email)) {
-        typists.delete(email);
-        this.server.to(recipient).emit('typing', { user: email, typing: false });
+  private async sendUnreadNotifications(email: string) {
+    const chats = await this.userService.getChats(email);
+    for (const chat of chats) {
+      const unread = chat.messages.filter(m => m.sender !== email && !m.checked).length;
+      if (unread > 0) {
+        this.server.to(email).emit('unread_count', { from: chat.interlocutor, count: unread });
       }
-    });
+    }
   }
+
+  // private clearTypingStatus(email: string) {
+  //   this.typingUsers.forEach((typists, recipient) => {
+  //     if (typists.has(email)) {
+  //       typists.delete(email);
+  //       this.server.to(recipient).emit('typing', { user: email, typing: false });
+  //     }
+  //   });
+  // }
 
   private disconnectWithError(client: Socket, message: string) {
     client.emit('error', { message });

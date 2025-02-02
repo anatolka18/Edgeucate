@@ -3,6 +3,7 @@ import { removeTokenFromLocalStorage } from '../helpers/localstorage.helper';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../store/hooks';
 import { toast } from 'react-toastify';
+import { MySocket } from "../App";
 import { logout } from '../store/user/userSlice';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { instance } from '../api/axios.api';
@@ -20,6 +21,10 @@ const MyProfilePage: FC = () => {
         dispatch(logout());
         removeTokenFromLocalStorage('token');
         toast.success('Вы вышли из аккаунта');
+        if (MySocket.socket) {
+            MySocket.socket.disconnect();
+            MySocket.socket = null;
+        }
         navigate('/');
     };
 

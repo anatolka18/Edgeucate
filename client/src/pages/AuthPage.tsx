@@ -6,6 +6,7 @@ import { useAppDispatch } from '../store/hooks'
 import { login } from '../store/user/userSlice'
 import { useNavigate } from 'react-router-dom';
 import Logo from "../assets/Logo.png";
+import { ensureSocket } from '../App';
 
 const AuthPage: FC = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -29,6 +30,7 @@ const AuthPage: FC = () => {
             if (dataLogin && dataLogin.token) {
                 setTokenToLocalStorage('token', dataLogin.token);
                 dispatch(login(dataLogin));
+                ensureSocket(dataLogin.token);
                 toast.success('Вы успешно вошли в систему.');
                 navigate('/');
             }

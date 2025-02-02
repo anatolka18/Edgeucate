@@ -51,9 +51,14 @@ const ChatPage: React.FC = () => {
 
     useEffect(() => {
         if (MySocket.socket) {
+            MySocket.socket.emit("read_messages", { from: email });
+
             const handleIncomingMessage = (data: IMessage) => {
                 if (data.sender === email || data.sender === myEmail) {
                     setMessages((prev) => [...prev, data]);
+                    if (data.sender === email) {
+                        MySocket.socket?.emit("read_messages", { from: email });
+                    }
                 }
             };
 
@@ -89,7 +94,7 @@ const ChatPage: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center p-4">
             <div className="w-full max-w-3xl mx-auto">
                 <div className="mb-4 flex items-center">
-                    <NavLink to="/chats" className="flex items-center text-blue-500 hover:text-blue-700 mr-4">
+                    <NavLink to="/chats" className="flex items-center text-[#3D5B82] hover:text-[#96C3D6] mr-4">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
@@ -111,12 +116,12 @@ const ChatPage: React.FC = () => {
                                 <div
                                     className={`p-3 rounded-lg max-w-[70%] ${
                                         message.sender === myEmail
-                                            ? "bg-blue-500 text-white rounded-br-none"
+                                            ? "bg-[#96C3D6] text-black rounded-br-none"
                                             : "bg-gray-100 text-gray-900 rounded-bl-none"
                                     }`}
                                 >
                                     <p className="break-words">{message.message}</p>
-                                    <p className={`text-xs mt-1 ${message.sender === myEmail ? "text-blue-100" : "text-gray-500"}`}>
+                                    <p className={`text-xs mt-1 ${message.sender === myEmail ? "text-gray-700" : "text-gray-500"}`}>
                                         {new Date(message.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                     </p>
                                 </div>
@@ -132,12 +137,12 @@ const ChatPage: React.FC = () => {
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             onKeyDown={handleKeyPress}
-                            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
                         />
                         <button
                             onClick={handleSendMessage}
                             disabled={!newMessage.trim()}
-                            className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                            className="p-3 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] disabled:opacity-50 transition-colors"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

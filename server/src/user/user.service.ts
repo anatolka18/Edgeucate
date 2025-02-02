@@ -67,10 +67,13 @@ export class UserService {
 
     return user.chat.map((chat) => {
       const interlocutor = interlocutorMap.get(chat.interlocutor);
+      // Считаем непрочитанные сообщения от собеседника
+      const unreadCount = chat.messages.filter(m => m.sender === chat.interlocutor && !m.checked).length;
       return {
         ...chat,
         online: interlocutor?.online || false,
         username: interlocutor?.username || 'Unknown User',
+        unreadCount,
       };
     });
   }
@@ -144,5 +147,13 @@ export class UserService {
 
   async offline(email: string) {
     await this.userModel.findOneAndUpdate({ email }, { online: false, dateLastOnline: new Date() });
+  }
+
+  async getUsersByEmails(emails: string[]): Promise<{ email: string; online: boolean }[]> {
+    const users = await this.userModel.find(
+        { email: { $in: emails } },
+        { email: 1, online: 1 }
+    ).lean();
+    return users;
   }
 }

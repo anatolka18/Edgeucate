@@ -17,7 +17,8 @@ export interface IChat {
   avatar: string;
   messages: IMessage[];
   online: boolean;
-  username: string
+  username: string;
+  unreadCount?: number;
 }
 
 export interface IUser {
