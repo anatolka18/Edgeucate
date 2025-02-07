@@ -10,6 +10,8 @@ import ChatListPage, { chatListLoader } from "../pages/ChatListPage";
 import ChatPage, { chatLoader } from "../pages/ChatPage";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Role } from "../types/user";
+import RoomPage from "../pages/RoomPage";
+import AllRoomPage from "../pages/AllRoomPage";
 
 export const router = createBrowserRouter([
   {
@@ -47,6 +49,14 @@ export const router = createBrowserRouter([
         loader: chatLoader,
         element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
       },
+      {
+        path: 'rooms',
+        element: <AllRoomPage />,
+      },
+      {
+        path: 'room/:id',
+        element: <RoomPage />,
+      }, 
     ],
   },
 ]);
