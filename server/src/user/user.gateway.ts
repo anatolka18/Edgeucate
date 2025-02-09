@@ -6,6 +6,7 @@ import { Socket, Namespace } from 'socket.io';
 import { UserService } from './user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { ACTIONS } from './actions';
 
 interface AuthenticatedSocket extends Socket {
   data: {
@@ -41,7 +42,6 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       // await this.userService.online(email);
       client.join(email);
 
-      // Отправляем начальные уведомления о непрочитанных
       await this.sendUnreadNotifications(email);
     } catch (error) {
       this.disconnectWithError(client, 'Ошибка подключения');
@@ -77,7 +77,6 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
       this.server.to(data.recipient).emit('on_send_message', { ...result, unread: true });
       this.server.to(sender).emit('on_send_message', result);
-
       this.sendUnreadCount(data.recipient, sender);
     } catch (error) {
       client.emit('error', { message: 'Ошибка отправки сообщения' });
@@ -112,6 +111,92 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   //   }
   //   this.server.to(data.recipient).emit('typing', { user: sender, typing: false });
   // }
+
+  @SubscribeMessage(ACTIONS.JOIN)
+  joinRoom(@ConnectedSocket() client: Socket, @MessageBody() config: { room: string }) {
+    const { room } = config;
+    const { rooms: joinedRooms } = client;
+
+    if (Array.from(joinedRooms).includes(room)) {
+      return;
+    }
+
+    const clients = Array.from(this.server.adapter.rooms.get(room) || []);
+
+    clients.forEach(clientID => {
+      this.server.to(clientID).emit(ACTIONS.ADD_PEER, {
+        peerID: client.id,
+        createOffer: false,
+      });
+
+      client.emit(ACTIONS.ADD_PEER, {
+        peerID: clientID,
+        createOffer: true,
+      });
+    });
+
+    client.join(room);
+    this.shareRoomsInfo();
+  }
+
+  @SubscribeMessage(ACTIONS.LEAVE)
+  leaveRoom(@ConnectedSocket() client: Socket) {
+    const { rooms } = client;
+
+    Array.from(rooms)
+      .filter(roomID => roomID !== client.id)
+      .forEach(roomID => {
+        const clients = Array.from(this.server.adapter.rooms.get(roomID) || []);
+
+        clients.forEach(clientID => {
+          this.server.to(clientID).emit(ACTIONS.REMOVE_PEER, {
+            peerID: client.id,
+          });
+
+          client.emit(ACTIONS.REMOVE_PEER, {
+            peerID: clientID,
+          });
+        });
+
+        client.leave(roomID);
+      });
+
+    this.shareRoomsInfo();
+  }
+
+  @SubscribeMessage(ACTIONS.RELAY_SDP)
+  relaySDP(@ConnectedSocket() client: Socket, @MessageBody() { peerID, sessionDescription }: { peerID: string, sessionDescription: RTCSessionDescriptionInit }) {
+    this.server.to(peerID).emit(ACTIONS.SESSION_DESCRIPTION, {
+      peerID: client.id,
+      sessionDescription,
+    });
+  }
+
+  @SubscribeMessage(ACTIONS.RELAY_ICE)
+  relayICE(@ConnectedSocket() client: Socket, @MessageBody() { peerID, iceCandidate }: { peerID: string, iceCandidate: RTCIceCandidateInit }) {
+    this.server.to(peerID).emit(ACTIONS.ICE_CANDIDATE, {
+      peerID: client.id,
+      iceCandidate,
+    });
+  }
+
+  @SubscribeMessage(ACTIONS.CREATE_ROOM)
+  createRoom(@ConnectedSocket() client: Socket, @MessageBody() { roomID }: { roomID: string }) {
+    client.join(roomID);
+    this.shareRoomsInfo();
+  }
+
+  private shareRoomsInfo() {
+    const rooms = this.getClientRooms();
+    this.server.emit(ACTIONS.SHARE_ROOMS, { rooms });
+  }
+
+  private getClientRooms() {
+    const allRooms = Array.from(this.server.adapter.rooms.keys());
+    return allRooms.filter(roomID => {
+      return roomID && typeof roomID === 'string' && roomID.startsWith('Room_');
+    });
+  }
 
   private async sendUnreadCount(recipientEmail: string, senderEmail: string) {
     const chats = await this.userService.getChats(recipientEmail);
