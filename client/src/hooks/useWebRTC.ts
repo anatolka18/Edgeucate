@@ -48,6 +48,8 @@ export default function useWebRTC(roomID: string) {
       peerConnections.current[peerID] = new RTCPeerConnection({
         iceServers: freeice(),
       });
+      // const iceServers = typeof (window as any).freeice === 'function' ? (window as any).freeice() : [];
+      // peerConnections.current[peerID] = new RTCPeerConnection({ iceServers });
 
       peerConnections.current[peerID].onicecandidate = (event) => {
         if (event.candidate && MySocket.socket) {
@@ -180,9 +182,10 @@ export default function useWebRTC(roomID: string) {
         }
       });
 
-      if (MySocket.socket) {
-        MySocket.socket.emit(ACTIONS.JOIN, { room: roomID });
-      }
+      MySocket.socket?.emit(ACTIONS.JOIN, { room: roomID });
+      // if (MySocket.socket) {
+      //   MySocket.socket.emit(ACTIONS.JOIN, { room: roomID });
+      // }
     }
 
     startCapture()
@@ -190,9 +193,10 @@ export default function useWebRTC(roomID: string) {
 
     return () => {
       localMediaStream.current?.getTracks().forEach((track) => track.stop());
-      if (MySocket.socket) {
-        MySocket.socket.emit(ACTIONS.LEAVE);
-      }
+      MySocket.socket?.emit(ACTIONS.LEAVE);
+      // if (MySocket.socket) {
+      //   MySocket.socket.emit(ACTIONS.LEAVE);
+      // }
     };
   }, [roomID]);
 

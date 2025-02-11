@@ -7,6 +7,7 @@ import { AdvertisementModule } from './advertisement/advertisement.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CalendarModule } from './calendar/calendar.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     UserModule,
     AdvertisementModule,
     FeedbackModule,
+    CalendarModule,
   ],
   controllers: [AppController],
   providers: [AppService],
