@@ -9,12 +9,18 @@ export enum Role {
   ADMIN = 'Admin',
 }
 
-export class Notification {
-  type: string;
-  text: string;
-  checked: boolean;
-  date: Date;
+export enum NotificationType {
+  AcceptFriend = "AcceptFriend",
+  Message = "Message"
 }
+
+export class Notification {
+  type: NotificationType
+  text: string
+  checked: boolean
+  date: Date
+}
+
 
 export class Message {
   message: string;

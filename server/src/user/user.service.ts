@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import * as mongoose from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { Message, User } from './schemas/user.schema';
+import { Message, User, Notification, NotificationType } from './schemas/user.schema';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { SendMessageDto } from './dto/sendMessage.dto';
 
@@ -67,7 +67,6 @@ export class UserService {
 
     return user.chat.map((chat) => {
       const interlocutor = interlocutorMap.get(chat.interlocutor);
-      // Считаем непрочитанные сообщения от собеседника
       const unreadCount = chat.messages.filter(m => m.sender === chat.interlocutor && !m.checked).length;
       return {
         ...chat,
@@ -155,5 +154,61 @@ export class UserService {
         { email: 1, online: 1 }
     ).lean();
     return users;
+  }
+
+  async addStudent(teacherEmail: string, studentEmail: string): Promise<User> {
+    const teacher = await this.userModel.findOne({ email: teacherEmail });
+    if (!teacher) {
+      throw new NotFoundException('Преподаватель не найден');
+    }
+
+    const student = await this.userModel.findOne({ email: studentEmail });
+    if (!student) {
+      throw new NotFoundException('Студент не найден');
+    }
+
+    if (teacher.students && teacher.students.includes(studentEmail)) {
+      throw new BadRequestException('Этот пользователь уже добавлен в список учеников');
+    }
+
+    const notification: Notification = {
+      type: NotificationType.AcceptFriend,
+      text: `${teacher.username} добавил вас в список учеников`,
+      checked: false,
+      date: new Date()
+    };
+
+    await this.userModel.updateOne(
+      { email: studentEmail },
+      { $push: { notifications: notification } }
+    );
+
+    return this.userModel.findOneAndUpdate(
+      { email: teacherEmail },
+      { $push: { students: studentEmail } },
+      { new: true }
+    );
+  }
+
+  async removeStudent(teacherEmail: string, studentEmail: string): Promise<User> {
+    const teacher = await this.userModel.findOne({ email: teacherEmail });
+    if (!teacher) {
+      throw new NotFoundException('Преподаватель не найден');
+    }
+
+    return this.userModel.findOneAndUpdate(
+      { email: teacherEmail },
+      { $pull: { students: studentEmail } },
+      { new: true }
+    );
+  }
+
+  async checkIfStudent(teacherEmail: string, studentEmail: string): Promise<boolean> {
+    const teacher = await this.userModel.findOne({ email: teacherEmail });
+    if (!teacher || !teacher.students) {
+      return false;
+    }
+
+    return teacher.students.includes(studentEmail);
   }
 }

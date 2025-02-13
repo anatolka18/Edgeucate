@@ -2,11 +2,17 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLoaderData, useParams, NavLink } from "react-router-dom";
 import { instance } from "../api/axios.api";
 import { toast } from "react-toastify";
-import { IMessage } from "../types/user";
+import { ICalendarEvent, IMessage, Role } from "../types/user";
 import { getTokenFromLocalStorage } from "../helpers/localstorage.helper";
 import * as jose from "jose";
 import { MySocket } from "../App";
 import { useMyProfile } from "../hooks/useMyProfile";
+import CalendarView from "../components/CalendarView";
+import moment from "moment";
+
+interface IStudentStatus {
+    isStudent: boolean;
+}
 
 export const chatLoader = async ({ params }: { params: { email?: string } }): Promise<{ messages: IMessage[]; interlocutorName: string }> => {
     const token = getTokenFromLocalStorage();
@@ -32,6 +38,8 @@ const ChatPage: React.FC = () => {
     const { email } = useParams<{ email: string }>();
     const myProfile = useMyProfile();
     const myEmail = myProfile?.email;
+    const myUsername = myProfile?.username;
+    const myRole = myProfile?.role;
     const { messages: initialMessages, interlocutorName } = useLoaderData() as {
         messages: IMessage[];
         interlocutorName: string;
@@ -40,9 +48,156 @@ const ChatPage: React.FC = () => {
     const [messages, setMessages] = useState<IMessage[]>(initialMessages);
     const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+
+    const [isStudent, setIsStudent] = useState<boolean>(false);
+    const [checkingStatus, setCheckingStatus] = useState<boolean>(true);
+    const [processingAction, setProcessingAction] = useState<boolean>(false);
+
+    const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
+    const [calendarEvents, setCalendarEvents] = useState<ICalendarEvent[]>([]);
+
+    const fetchCalendarEvents = async () => {
+        try {
+            if (!email || !myEmail) return;
+            const teacherEmail = myRole === Role.TEACHER ? myEmail : email;
+            const studentEmail = myRole === Role.TEACHER ? email : myEmail;
+
+            const response = await instance.get<ICalendarEvent[]>('/calendar/teacherstudent', {
+                params: { teacherEmail, studentEmail }
+            });
+
+            const formattedEvents = response.data.map(event => ({
+                ...event,
+                start: new Date(event.date),
+                end: moment(event.date).add(1, 'hour').toDate()
+            }));
+
+            setCalendarEvents(formattedEvents);
+        } catch (error) {
+            toast.error('Не удалось загрузить события календаря');
+        }
+    };
+
+    useEffect(() => {
+        if (isCalendarModalVisible) {
+            fetchCalendarEvents();
+        }
+    }, [isCalendarModalVisible, myEmail, email]);
+
+    useEffect(() => {
+        const checkStudentStatus = async () => {
+            if (myEmail && email && myRole === Role.TEACHER) {
+                try {
+                    setCheckingStatus(true);
+                    const { data } = await instance.post<IStudentStatus>('/profile/student/check', {
+                        teacherEmail: myEmail,
+                        studentEmail: email
+                    });
+                    setIsStudent(data.isStudent);
+                } catch (error) {
+                    toast.error('Не удалось проверить статус ученика');
+                } finally {
+                    setCheckingStatus(false);
+                }
+            } else {
+                setCheckingStatus(false);
+            }
+        };
+
+        if (myEmail && email) {
+            checkStudentStatus();
+        }
+    }, [myEmail, email, myRole]);
+
+    const handleAddStudent = async () => {
+        if (!myEmail || !email || processingAction) return;
+
+        setProcessingAction(true);
+        try {
+            await instance.post('/profile/student/add', {
+                teacherEmail: myEmail,
+                studentEmail: email
+            });
+            setIsStudent(true);
+            toast.success(`${interlocutorName} добавлен(а) в список учеников`);
+        } catch (error) {
+            toast.error('Не удалось добавить пользователя в список учеников');
+        } finally {
+            setProcessingAction(false);
+        }
+    };
+
+    const handleRemoveStudent = async () => {
+        if (!myEmail || !email || processingAction) return;
+
+        setProcessingAction(true);
+        try {
+            await instance.post('/profile/student/remove', {
+                teacherEmail: myEmail,
+                studentEmail: email
+            });
+            setIsStudent(false);
+            toast.success(`${interlocutorName} удален(а) из списка учеников`);
+        } catch (error) {
+            toast.error('Не удалось удалить пользователя из списка учеников');
+        } finally {
+            setProcessingAction(false);
+        }
+    };
+
+    const renderStudentManagement = () => {
+        if (myRole !== Role.TEACHER) return null;
+
+        return (
+            <div className="flex items-center ml-4">
+                {checkingStatus ? (
+                    <div className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg flex items-center">
+                        <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Проверка...
+                    </div>
+                ) : isStudent ? (
+                    <button
+                        onClick={handleRemoveStudent}
+                        disabled={processingAction}
+                        className="px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 disabled:opacity-50 flex items-center"
+                    >
+                        {processingAction ? (
+                            <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            'Удалить из учеников'
+                        )}
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleAddStudent}
+                        disabled={processingAction}
+                        className="px-4 py-2 bg-emerald-400 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 flex items-center"
+                    >
+                        {processingAction ? (
+                            <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            'Добавить в ученики'
+                        )}
+                    </button>
+                )}
+            </div>
+        );
+    };
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
     };
 
     useEffect(() => {
@@ -91,20 +246,34 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="w-full max-w-3xl mx-auto">
-                <div className="mb-4 flex items-center">
-                    <NavLink to="/chats" className="flex items-center text-[#3D5B82] hover:text-[#96C3D6] mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Назад
-                    </NavLink>
-                    <h2 className="text-lg font-semibold">{interlocutorName}</h2>
+        <div className="h-full flex items-center justify-center p-4">
+            <div className="w-full max-w-4xl mx-auto flex flex-col rounded-xl shadow-sm border border-gray-200 bg-white overflow-hidden" style={{ height: 'calc(100vh - 6rem)' }}>
+                <div className="border-b border-gray-200 bg-white px-4 py-3 flex items-center justify-between flex-shrink-0">
+                    <div className="flex items-center">
+                        <NavLink to="/chats" className="flex items-center text-[#3D5B82] hover:text-[#96C3D6] mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Назад
+                        </NavLink>
+                        <h2 className="text-lg font-semibold">{interlocutorName}</h2>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <button
+                            onClick={() => setIsCalendarModalVisible(true)}
+                            className="px-4 py-2 bg-[#96C3D6] hover:bg-[#3D5B82] text-black rounded-lg transition-colors flex items-center"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Календарь
+                        </button>
+                        {myRole === Role.TEACHER && renderStudentManagement()}
+                    </div>
                 </div>
 
-                <div className="border border-gray-200 rounded-lg shadow-md flex flex-col h-[calc(100vh-12rem)] bg-white">
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    <div ref={chatContainerRef} className="h-full overflow-y-auto px-4 py-4 space-y-4">
                         {messages.length === 0 && (
                             <div className="text-center text-gray-400 py-8">Начните общение</div>
                         )}
@@ -129,28 +298,61 @@ const ChatPage: React.FC = () => {
                         ))}
                         <div ref={messagesEndRef} />
                     </div>
+                </div>
 
-                    <div className="p-4 border-t border-gray-200 bg-white flex items-center gap-2">
-                        <input
-                            type="text"
-                            placeholder="Введите сообщение"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyDown={handleKeyPress}
-                            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
-                        />
-                        <button
-                            onClick={handleSendMessage}
-                            disabled={!newMessage.trim()}
-                            className="p-3 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] disabled:opacity-50 transition-colors"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                        </button>
-                    </div>
+                <div className="border-t border-gray-200 bg-white px-4 py-3 flex items-center gap-2 flex-shrink-0">
+                    <input
+                        type="text"
+                        placeholder="Введите сообщение"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                    />
+                    <button
+                        onClick={handleSendMessage}
+                        disabled={!newMessage.trim()}
+                        className="p-3 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] disabled:opacity-50 transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                    </button>
                 </div>
             </div>
+
+            {isCalendarModalVisible && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-8">
+                    <div className="w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
+                        <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+                            <h2 className="text-xl font-bold text-gray-800">
+                                Календарь событий с {interlocutorName}
+                            </h2>
+                            <button
+                                onClick={() => setIsCalendarModalVisible(false)}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="p-4 flex-grow overflow-auto">
+                            <CalendarView
+                                events={calendarEvents}
+                                teacherEmail={myRole === Role.TEACHER ? myEmail : email}
+                                studentEmail={myRole === Role.TEACHER ? email : myEmail}
+                                teacherUsername={myRole === Role.TEACHER ? myUsername : interlocutorName}
+                                studentUsername={myRole === Role.TEACHER ? interlocutorName : myUsername}
+                                readOnly={myRole !== Role.TEACHER}
+                                onEventCreated={fetchCalendarEvents}
+                                onEventDeleted={fetchCalendarEvents}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

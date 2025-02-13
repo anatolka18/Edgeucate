@@ -12,6 +12,7 @@ import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Role } from "../types/user";
 import RoomPage from "../pages/RoomPage";
 import AllRoomPage from "../pages/AllRoomPage";
+import CalendarPage from "../pages/CalendarPage";
 
 export const router = createBrowserRouter([
   {
@@ -57,6 +58,10 @@ export const router = createBrowserRouter([
         path: 'room/:id',
         element: <RoomPage />,
       }, 
+      {
+        path: 'calendar',
+        element: <CalendarPage />,
+      },
     ],
   },
 ]);

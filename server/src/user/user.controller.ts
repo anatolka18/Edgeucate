@@ -48,4 +48,44 @@ export class UserController {
     if (!email) throw new BadRequestException('Email is required');
     return await this.userService.getChats(email);
   }
+
+  @Post('student/add')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER)
+  async addStudent(
+    @Body('teacherEmail') teacherEmail: string,
+    @Body('studentEmail') studentEmail: string
+  ) {
+    if (!teacherEmail || !studentEmail) {
+      throw new BadRequestException('Teacher email and student email are required');
+    }
+    return this.userService.addStudent(teacherEmail, studentEmail);
+  }
+
+  @Post('student/remove')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER)
+  async removeStudent(
+    @Body('teacherEmail') teacherEmail: string,
+    @Body('studentEmail') studentEmail: string
+  ) {
+    if (!teacherEmail || !studentEmail) {
+      throw new BadRequestException('Teacher email and student email are required');
+    }
+    return this.userService.removeStudent(teacherEmail, studentEmail);
+  }
+
+  @Post('student/check')
+  @UseGuards(JwtAuthGuard)
+  async checkIfStudent(
+    @Body('teacherEmail') teacherEmail: string,
+    @Body('studentEmail') studentEmail: string
+  ) {
+    if (!teacherEmail || !studentEmail) {
+      throw new BadRequestException('Teacher email and student email are required');
+    }
+    return {
+      isStudent: await this.userService.checkIfStudent(teacherEmail, studentEmail)
+    };
+  }
 }

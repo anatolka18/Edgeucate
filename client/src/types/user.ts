@@ -91,6 +91,8 @@ export interface ICalendarEvent {
   date: Date;
   time: string;
   cost: number;
+  start?: Date;
+  end?: Date;
 }
 
 export interface IResponseUser {
