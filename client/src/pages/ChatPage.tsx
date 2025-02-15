@@ -57,6 +57,8 @@ const ChatPage: React.FC = () => {
     const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
     const [calendarEvents, setCalendarEvents] = useState<ICalendarEvent[]>([]);
 
+    const isInterlocutorAdmin = email === 'admin@yandex.ru';
+
     const fetchCalendarEvents = async () => {
         try {
             if (!email || !myEmail) return;
@@ -87,7 +89,7 @@ const ChatPage: React.FC = () => {
 
     useEffect(() => {
         const checkStudentStatus = async () => {
-            if (myEmail && email && myRole === Role.TEACHER) {
+            if (myEmail && email && myRole === Role.TEACHER && !isInterlocutorAdmin) {
                 try {
                     setCheckingStatus(true);
                     const { data } = await instance.post<IStudentStatus>('/profile/student/check', {
@@ -147,7 +149,7 @@ const ChatPage: React.FC = () => {
     };
 
     const renderStudentManagement = () => {
-        if (myRole !== Role.TEACHER) return null;
+        if (myRole !== Role.TEACHER || isInterlocutorAdmin) return null;
 
         return (
             <div className="flex items-center ml-4">
@@ -259,16 +261,18 @@ const ChatPage: React.FC = () => {
                         <h2 className="text-lg font-semibold">{interlocutorName}</h2>
                     </div>
                     <div className="flex items-center space-x-4">
-                        <button
-                            onClick={() => setIsCalendarModalVisible(true)}
-                            className="px-4 py-2 bg-[#96C3D6] hover:bg-[#3D5B82] text-black rounded-lg transition-colors flex items-center"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Календарь
-                        </button>
-                        {myRole === Role.TEACHER && renderStudentManagement()}
+                        {myRole !== Role.ADMIN && !isInterlocutorAdmin && (
+                            <button
+                                onClick={() => setIsCalendarModalVisible(true)}
+                                className="px-4 py-2 bg-[#96C3D6] hover:bg-[#3D5B82] text-black rounded-lg transition-colors flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Календарь
+                            </button>
+                        )}
+                        {myRole === Role.TEACHER && !isInterlocutorAdmin && renderStudentManagement()}
                     </div>
                 </div>
 

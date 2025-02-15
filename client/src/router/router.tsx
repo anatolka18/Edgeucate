@@ -13,6 +13,7 @@ import { Role } from "../types/user";
 import RoomPage from "../pages/RoomPage";
 import AllRoomPage from "../pages/AllRoomPage";
 import CalendarPage from "../pages/CalendarPage";
+import AllUsersPage from "../pages/AllUsersPage";
 
 export const router = createBrowserRouter([
   {
@@ -61,6 +62,14 @@ export const router = createBrowserRouter([
       {
         path: 'calendar',
         element: <CalendarPage />,
+      },
+      {
+        path: 'admin/users',
+        element: (
+          <ProtectedRoute allowedRoles={[Role.ADMIN]}>
+            <AllUsersPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

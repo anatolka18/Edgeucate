@@ -33,17 +33,31 @@ const ChatListPage: React.FC = () => {
         if (!MySocket.socket) return;
 
         const handleUnreadCount = ({ from, count }: { from: string; count: number }) => {
-            setChats(prevChats =>
-                prevChats.map(chat =>
+            setChats(prevChats => {
+                const chatExists = prevChats.some(chat => chat.interlocutor === from);
+                if (!chatExists && count > 0) {
+                    const newChat: IChat = {
+                        interlocutor: from,
+                        avatar: "",
+                        messages: [],
+                        online: false,
+                        username: from.split('@')[0],
+                        unreadCount: count
+                    };
+                    return [newChat, ...prevChats];
+                }
+                return prevChats.map(chat =>
                     chat.interlocutor === from ? { ...chat, unreadCount: count } : chat
-                )
-            );
+                );
+            });
         };
 
         const handleNewMessage = (message: IMessage) => {
-            setChats(prevChats =>
-                prevChats.map(chat => {
+            setChats(prevChats => {
+                let found = false;
+                const updated = prevChats.map(chat => {
                     if (chat.interlocutor === message.sender || chat.interlocutor === message.sender) {
+                        found = true;
                         return {
                             ...chat,
                             messages: [...chat.messages, message],
@@ -51,8 +65,20 @@ const ChatListPage: React.FC = () => {
                         };
                     }
                     return chat;
-                })
-            );
+                });
+                if (!found) {
+                    const newChat: IChat = {
+                        interlocutor: message.sender,
+                        avatar: "",
+                        messages: [message],
+                        online: false,
+                        username: message.sender.split('@')[0],
+                        unreadCount: 1
+                    };
+                    return [newChat, ...updated];
+                }
+                return updated;
+            });
         };
 
         MySocket.socket.on("unread_count", handleUnreadCount);

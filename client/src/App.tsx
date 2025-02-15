@@ -4,7 +4,7 @@ import { useAppDispatch } from "./store/hooks"
 import { getTokenFromLocalStorage } from "./helpers/localstorage.helper"
 import { AuthService } from "./services/auth.service"
 import { login, logout } from "./store/user/userSlice"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { io, Socket } from "socket.io-client"
@@ -24,6 +24,7 @@ export function ensureSocket(token: string) {
 
 function App() {
   const dispatch = useAppDispatch()
+  const [isLoading, setIsLoading] = useState(true)
 
   const checkAuth = async () => {
     const token = getTokenFromLocalStorage()
@@ -39,13 +40,23 @@ function App() {
         }
       }
     } catch (error) {
-      // ignore
+      console.error('Auth check failed:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   useEffect(() => {
     checkAuth()
   }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3D5B82]"></div>
+      </div>
+    )
+  }
 
   return (
     <>

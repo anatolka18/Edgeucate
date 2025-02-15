@@ -70,7 +70,7 @@ const Header: FC = () => {
             )}
             {isAuth && (
             <>
-                <NavLink to="/chat/admin@edgeucate.ru" className={navLinkClass}>
+                <NavLink to="/chat/admin@yandex.ru" className={navLinkClass}>
                 <LifeBuoy className="w-4 h-4" />
                 <span>Поддержка</span>
                 </NavLink>
