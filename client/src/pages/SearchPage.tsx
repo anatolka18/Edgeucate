@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { NavLink, useLoaderData } from "react-router-dom";
 import { IAdvertisement } from "../types/advertisement";
 import { instance } from "../api/axios.api";
@@ -20,62 +20,46 @@ const SearchPage: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [openCategory, setOpenCategory] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const advertisementsPerPage = 10;
 
     const totalPages = Math.max(1, Math.ceil(advertisements.length / advertisementsPerPage));
     const startIndex = (currentPage - 1) * advertisementsPerPage;
     const currentAdvertisements = advertisements.slice(startIndex, startIndex + advertisementsPerPage);
 
-    const handleSearch = async () => {
+    const fetchAdvertisements = async (query = "", subject = "") => {
+        setIsLoading(true);
         try {
-            let endpoint = "/advertisement";
-            if (searchTerm) {
-                endpoint = `/advertisement/search/${encodeURIComponent(searchTerm)}`;
-            }
+            const endpoint = `/advertisement/search?query=${encodeURIComponent(query)}&subject=${encodeURIComponent(subject)}`;
             const { data } = await instance.get<IAdvertisement[]>(endpoint);
-            let filteredData = data;
-            if (selectedSubject && !isCategory(selectedSubject)) {
-                filteredData = data.filter((ad) => ad.subject === selectedSubject);
-            }
-            if (filteredData && filteredData.length > 0) {
-                setAdvertisements(filteredData);
-                setCurrentPage(1);
-            } else {
-                toast.error("Ничего не найдено.");
+            setAdvertisements(data);
+            setCurrentPage(1);
+            if (data.length === 0) {
+                toast.info("Ничего не найдено");
             }
         } catch (error) {
             toast.error("Ошибка при выполнении поиска.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const loadAllAdvertisements = async () => {
-        try {
-            const { data } = await instance.get<IAdvertisement[]>("/advertisement");
-            if (data && data.length > 0) {
-                setAdvertisements(data);
-                setCurrentPage(1);
-            }
-        } catch (error) {
-            toast.error("Ошибка при загрузке объявлений.");
-        }
-    };
-
-    useEffect(() => {
-        if (selectedSubject && !isCategory(selectedSubject)) {
-            handleSearch();
-        }
-    }, [selectedSubject]);
-
-    const handlePageChange = (page: number) => {
-        if (page >= 1 && page <= totalPages) {
-            setCurrentPage(page);
-        }
+    const handleSearch = () => {
+        fetchAdvertisements(searchTerm, selectedSubject && !isCategory(selectedSubject) ? selectedSubject : "");
     };
 
     const handleClearFilter = () => {
         setSelectedSubject("");
         setOpenCategory(null);
-        loadAllAdvertisements();
+        setSearchTerm("");
+        setAdvertisements(initialAdvertisements);
+        setCurrentPage(1);
+    };
+
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     return (
@@ -86,7 +70,7 @@ const SearchPage: React.FC = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Поиск по предметам..."
+                            placeholder="Поиск по предметам, преподавателям..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -96,8 +80,9 @@ const SearchPage: React.FC = () => {
                     <button
                         onClick={handleSearch}
                         className="px-6 py-2 bg-[#3D5B82] hover:bg-[#2D4B6E] text-white rounded-lg transition-colors"
+                        disabled={isLoading}
                     >
-                        Найти
+                        {isLoading ? "Поиск..." : "Найти"}
                     </button>
                 </div>
 
@@ -130,6 +115,7 @@ const SearchPage: React.FC = () => {
                                         onClick={() => {
                                             setSelectedSubject(subject);
                                             setOpenCategory(null);
+                                            fetchAdvertisements(searchTerm, subject);
                                         }}
                                         className={`px-3 py-1 text-sm rounded-full transition-colors ${
                                             selectedSubject === subject
@@ -157,87 +143,95 @@ const SearchPage: React.FC = () => {
                         </button>
                     </div>
                 )}
+
+                {isLoading && (
+                    <div className="flex justify-center mt-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#3D5B82]"></div>
+                    </div>
+                )}
             </div>
 
-            {advertisements.length === 0 ? (
+            {!isLoading && advertisements.length === 0 ? (
                 <div className="text-center py-16">
                     <p className="text-gray-400 text-lg">Ничего не найдено</p>
                     <p className="text-gray-400 text-sm mt-2">Попробуйте изменить параметры поиска</p>
                 </div>
             ) : (
-                <>
-                    <p className="mb-6 text-center text-gray-600">
-                        Найдено {advertisements.length} репетиторов
-                    </p>
-                    <div className="flex flex-col items-center gap-4">
-                        {currentAdvertisements.map((advertisement) => (
-                            <div
-                                key={advertisement.advertisementId}
-                                className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
-                            >
-                                <div className="flex items-start gap-4">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0">
-                                        <span className="text-white font-bold text-xl">
-                                            {advertisement.creator?.[0]?.toUpperCase() || "?"}
-                                        </span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-bold">{advertisement.creator}</h3>
-                                        <p className="text-gray-600">{advertisement.title}</p>
-                                        <p className="text-sm text-gray-400">{advertisement.subject}</p>
-                                        <div className="flex items-center gap-1 mt-2">
-                                            <span className="text-yellow-500">★</span>
-                                            <span className="font-medium">{advertisement.stars.toFixed(1)}</span>
-                                            <span className="text-gray-400 ml-2">{advertisement.price} ₽/час</span>
+                !isLoading && (
+                    <>
+                        <p className="mb-6 text-center text-gray-600">
+                            Найдено {advertisements.length} репетиторов
+                        </p>
+                        <div className="flex flex-col items-center gap-4">
+                            {currentAdvertisements.map((advertisement) => (
+                                <div
+                                    key={advertisement.advertisementId}
+                                    className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                                >
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0">
+                                            <span className="text-white font-bold text-xl">
+                                                {advertisement.creator?.[0]?.toUpperCase() || "?"}
+                                            </span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-lg font-bold">{advertisement.creator}</h3>
+                                            <p className="text-gray-600">{advertisement.title}</p>
+                                            <p className="text-sm text-gray-400">{advertisement.subject}</p>
+                                            <div className="flex items-center gap-1 mt-2">
+                                                <span className="text-yellow-500">★</span>
+                                                <span className="font-medium">{advertisement.stars.toFixed(1)}</span>
+                                                <span className="text-gray-400 ml-2">{advertisement.price} ₽/час</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="flex gap-2 mt-4">
-                                    <NavLink
-                                        to={
-                                            isAuth
-                                                ? `/advertisement/${advertisement.advertisementId}`
-                                                : "/auth"
-                                        }
-                                        className="flex-1 text-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                                    >
-                                        Подробнее
-                                    </NavLink>
-                                    {isAuth && (
+                                    <div className="flex gap-2 mt-4">
                                         <NavLink
-                                            to={`/chat/${advertisement.email}`}
-                                            className="flex-1 text-center px-4 py-2 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] transition-colors"
+                                            to={
+                                                isAuth
+                                                    ? `/advertisement/${advertisement.advertisementId}`
+                                                    : "/auth"
+                                            }
+                                            className="flex-1 text-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                                         >
-                                            Написать
+                                            Подробнее
                                         </NavLink>
-                                    )}
+                                        {isAuth && (
+                                            <NavLink
+                                                to={`/chat/${advertisement.email}`}
+                                                className="flex-1 text-center px-4 py-2 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] transition-colors"
+                                            >
+                                                Написать
+                                            </NavLink>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-4 mt-8">
-                            <button
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage === 1}
-                                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <span className="text-sm text-gray-600">
-                                {currentPage} из {totalPages}
-                            </span>
-                            <button
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage === totalPages}
-                                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
+                            ))}
                         </div>
-                    )}
-                </>
+
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-4 mt-8">
+                                <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <span className="text-sm text-gray-600">
+                                    {currentPage} из {totalPages}
+                                </span>
+                                <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+                            </div>
+                        )}
+                    </>
+                )
             )}
         </div>
     );

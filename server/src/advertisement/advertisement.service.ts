@@ -29,11 +29,22 @@ export class AdvertisementService {
     return this.advertisementModel.find();
   }
 
-  async searchByQuery(query: string): Promise<Advertisement[]> {
-    if (!query || query.trim() === '') {
-      throw new BadRequestException('Поисковый запрос не может быть пустым');
+  async search(query: string, subject: string): Promise<Advertisement[]> {
+    const filter: any = {};
+
+    if (query) {
+      filter.$or = [
+        { subject: { $regex: query, $options: 'i' } },
+        { title: { $regex: query, $options: 'i' } },
+        { creator: { $regex: query, $options: 'i' } },
+      ];
     }
-    return this.advertisementModel.find({ subject: { $regex: query, $options: 'i' } }).exec();
+
+    if (subject) {
+      filter.subject = subject;
+    }
+
+    return this.advertisementModel.find(filter).exec();
   }
 
   async createAdvertisement(createAdvertisementDto: CreateAdvertisementDto): Promise<Advertisement> {

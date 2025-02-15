@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { AdvertisementService } from './advertisement.service';
 import { Advertisement } from './schemas/advertisement.schema';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -18,9 +18,12 @@ export class AdvertisementController {
     return this.advertisementService.findMyAdvertisements(req.user.email);
   }
 
-  @Get('search/:query')
-  searchAdvertisements(@Param('query') query: string) {
-    return this.advertisementService.searchByQuery(query);
+  @Get('search')
+  searchAdvertisements(
+    @Query('query') query: string,
+    @Query('subject') subject: string,
+  ) {
+    return this.advertisementService.search(query || '', subject || '');
   }
 
   @Get()
