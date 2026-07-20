@@ -55,6 +55,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     if (email) {
       await this.userService.offline(email);
       await this.notifyOnlineStatus(email, false);
+      this.clearTypingStatus(email);
     }
   }
 
@@ -97,6 +98,25 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     } catch (error) {
       client.emit('error', { message: 'Ошибка отметки прочтения' });
     }
+  }
+
+  @SubscribeMessage('typing_start')
+  async typingStart(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
+    const sender = client.data.user.email;
+    if (!this.typingUsers.has(data.recipient)) this.typingUsers.set(data.recipient, new Set());
+    this.typingUsers.get(data.recipient).add(sender);
+    this.server.to(data.recipient).emit('typing', { user: sender, typing: true });
+  }
+
+  @SubscribeMessage('typing_end')
+  async typingEnd(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
+    const sender = client.data.user.email;
+    const typists = this.typingUsers.get(data.recipient);
+    if (typists) {
+      typists.delete(sender);
+      if (typists.size === 0) this.typingUsers.delete(data.recipient);
+    }
+    this.server.to(data.recipient).emit('typing', { user: sender, typing: false });
   }
 
   @SubscribeMessage(ACTIONS.JOIN)
@@ -218,6 +238,15 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
         online: interlocutor.online,
       });
     }
+  }
+
+  private clearTypingStatus(email: string) {
+    this.typingUsers.forEach((typists, recipient) => {
+      if (typists.has(email)) {
+        typists.delete(email);
+        this.server.to(recipient).emit('typing', { user: email, typing: false });
+      }
+    });
   }
 
   private disconnectWithError(client: Socket, message: string) {

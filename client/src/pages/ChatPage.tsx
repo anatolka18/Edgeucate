@@ -14,6 +14,28 @@ interface IStudentStatus {
   isStudent: boolean;
 }
 
+const formatMessageDate = (rawDate: any) => {
+  try {
+    if (!rawDate) return "—";
+    const date = new Date(rawDate);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "—";
+  }
+};
+
+function getMessageKey(message: IMessage, index: number): string {
+  if (!message._id) return `msg-${index}`;
+  const raw = message._id as any;
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object' && raw !== null) {
+    if (typeof raw.$oid === 'string') return raw.$oid;
+    if (typeof raw.toString === 'function' && raw.toString() !== '[object Object]') return raw.toString();
+  }
+  return `msg-${index}`;
+}
+
 export const chatLoader = async ({ params }: { params: { email?: string } }): Promise<{
   messages: IMessage[];
   interlocutorName: string;
@@ -54,10 +76,15 @@ const ChatPage: React.FC = () => {
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const oldestMessageRef = useRef<string | null>(null);
-  const latestMessageRef = useRef<string | null>(null);
+  const oldestMessageRef = useRef<string | null>(
+    initialMessages[0]?.date
+      ? new Date(initialMessages[0].date).toISOString()
+      : null
+  );
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isStudent, setIsStudent] = useState<boolean>(false);
   const [checkingStatus, setCheckingStatus] = useState<boolean>(true);
@@ -67,13 +94,6 @@ const ChatPage: React.FC = () => {
   const [calendarEvents, setCalendarEvents] = useState<ICalendarEvent[]>([]);
 
   const isInterlocutorAdmin = email === 'admin@yandex.ru';
-
-  useEffect(() => {
-    if (initialMessages.length > 0) {
-      oldestMessageRef.current = new Date(initialMessages[0].date).toISOString();
-      latestMessageRef.current = new Date(initialMessages[initialMessages.length - 1].date).toISOString();
-    }
-  }, [initialMessages]);
 
   const fetchCalendarEvents = async () => {
     try {
@@ -288,7 +308,6 @@ const ChatPage: React.FC = () => {
           if (data.sender === email) {
             MySocket.socket?.emit("read_messages", { from: email });
           }
-          latestMessageRef.current = new Date(data.date).toISOString();
         }
       };
 
@@ -296,15 +315,39 @@ const ChatPage: React.FC = () => {
         toast.error(data.message);
       };
 
+      const handleTyping = ({ user, typing }: { user: string; typing: boolean }) => {
+        if (user === email) setIsTyping(typing);
+      };
+
       MySocket.socket.on("on_send_message", handleIncomingMessage);
       MySocket.socket.on("error", handleError);
+      MySocket.socket.on("typing", handleTyping);
 
       return () => {
         MySocket.socket?.off("on_send_message", handleIncomingMessage);
         MySocket.socket?.off("error", handleError);
+        MySocket.socket?.off("typing", handleTyping);
       };
     }
   }, [email, myEmail]);
+
+  const handleTypingStart = () => {
+    if (MySocket.socket && email) {
+      MySocket.socket.emit("typing_start", { recipient: email });
+    }
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => handleTypingEnd(), 2000);
+  };
+
+  const handleTypingEnd = () => {
+    if (MySocket.socket && email) {
+      MySocket.socket.emit("typing_end", { recipient: email });
+    }
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+  };
 
   const handleSendMessage = () => {
     if (newMessage.trim() && email && myEmail && MySocket.socket?.connected) {
@@ -313,6 +356,7 @@ const ChatPage: React.FC = () => {
         message: newMessage,
       });
       setNewMessage("");
+      handleTypingEnd();
     }
   };
 
@@ -331,7 +375,14 @@ const ChatPage: React.FC = () => {
               </svg>
               Назад
             </NavLink>
-            <h2 className="text-lg font-semibold">{interlocutorName}</h2>
+            <div className="relative">
+              <h2 className="text-lg font-semibold">{interlocutorName}</h2>
+              {isTyping && (
+                <p className="absolute left-0 top-5 text-sm text-gray-500 animate-pulse whitespace-nowrap">
+                  печатает...
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             {myRole !== Role.ADMIN && !isInterlocutorAdmin && (
@@ -361,7 +412,7 @@ const ChatPage: React.FC = () => {
             )}
             {messages.map((message, index) => (
               <div
-                key={message._id || index}
+                key={getMessageKey(message, index)}
                 className={`flex ${message.sender === myEmail ? "justify-end" : "justify-start"}`}
               >
                 <div
@@ -373,7 +424,7 @@ const ChatPage: React.FC = () => {
                 >
                   <p className="break-words">{message.message}</p>
                   <p className={`text-xs mt-1 ${message.sender === myEmail ? "text-gray-700" : "text-gray-500"}`}>
-                    {new Date(message.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {formatMessageDate(message.date)}
                   </p>
                 </div>
               </div>
@@ -387,7 +438,10 @@ const ChatPage: React.FC = () => {
             type="text"
             placeholder="Введите сообщение"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              handleTypingStart();
+            }}
             onKeyDown={handleKeyPress}
             className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
           />

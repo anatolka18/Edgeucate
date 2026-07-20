@@ -48,42 +48,43 @@ export class MessageService {
     recipient: string,
     limit = 50,
     before?: string,
-    ): Promise<{ messages: Message[]; interlocutorName: string; hasMore: boolean }> {
+  ): Promise<{ messages: Message[]; interlocutorName: string; hasMore: boolean }> {
     const recipientUser = await this.userModel.findOne({ email: recipient });
     if (!recipientUser) {
-        throw new NotFoundException('Пользователь не найден.');
+      throw new NotFoundException('Пользователь не найден.');
     }
 
     const filter: any = {
-        $or: [
+      $or: [
         { sender, recipient },
         { sender: recipient, recipient: sender },
-        ],
+      ],
     };
 
     if (before) {
-        filter.date = { $lt: new Date(before) };
+      filter.date = { $lt: new Date(before) };
     }
 
     const messages = await this.messageModel
-        .find(filter)
-        .sort({ date: -1 })
-        .limit(limit + 1)
-        .exec();
+      .find(filter)
+      .sort({ date: -1 })
+      .limit(limit + 1)
+      .lean()
+      .exec();
 
     const reversed = messages.reverse();
 
     const hasMore = reversed.length > limit;
     if (hasMore) {
-        reversed.shift();
+      reversed.shift();
     }
 
     return {
-        messages: reversed,
-        interlocutorName: recipientUser.username,
-        hasMore,
+      messages: reversed as any,
+      interlocutorName: recipientUser.username,
+      hasMore,
     };
-    }
+  }
 
   async getChats(email: string): Promise<any[]> {
     const user = await this.userModel.findOne({ email });

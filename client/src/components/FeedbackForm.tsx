@@ -48,6 +48,13 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
     checkFeedbackAbility();
   }, [myProfile?.email, teacherEmail, advertisementId]);
 
+  useEffect(() => {
+    if (canLeaveFeedback) {
+      setText("");
+      setStars(5);
+    }
+  }, [canLeaveFeedback]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
