@@ -6,19 +6,25 @@ export interface INotification {
 }
 
 export interface IMessage {
+  _id?: string;
   message: string
   checked: boolean
   date: Date
   sender: string
+  recipient?: string
 }
 
 export interface IChat {
   interlocutor: string;
   avatar: string;
-  messages: IMessage[];
   online: boolean;
   username: string;
   unreadCount?: number;
+  lastMessage?: {
+    message: string;
+    date: Date;
+    sender: string;
+  };
 }
 
 export interface IUser {

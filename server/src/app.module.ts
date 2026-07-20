@@ -5,9 +5,10 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { AdvertisementModule } from './advertisement/advertisement.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { MessageModule } from './message/message.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { CalendarModule } from './calendar/calendar.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CalendarModule } from './calendar/calendar.module';
     AdvertisementModule,
     FeedbackModule,
     CalendarModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

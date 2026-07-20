@@ -21,18 +21,9 @@ export class Notification {
   date: Date
 }
 
-
-export class Message {
-  message: string;
-  checked: boolean;
-  date: Date;
-  sender: string;
-}
-
 export class Chat {
   interlocutor: string;
   avatar: string;
-  messages: Message[];
 }
 
 export class Feedback {

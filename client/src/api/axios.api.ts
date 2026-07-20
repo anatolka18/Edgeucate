@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getTokenFromLocalStorage, removeTokenFromLocalStorage } from "../helpers/localstorage.helper";
 
-export const apiUrl = import.meta.env.VITE_API_URL;
+export const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4200";
 
 export const instance = axios.create({
     baseURL: `${apiUrl}/api`,

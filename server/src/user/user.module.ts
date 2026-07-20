@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from './schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
 import { UserSocketService } from './user.gateway';
+import { MessageModule } from '../message/message.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -18,6 +19,7 @@ import { ConfigService } from '@nestjs/config';
         secret: config.get<string>('JWT_SECRET'),
       }),
     }),
+    MessageModule,
   ],
   controllers: [UserController],
   providers: [UserService, UserSocketService],

@@ -8,6 +8,7 @@ import * as jose from "jose";
 import { getTokenFromLocalStorage } from "../helpers/localstorage.helper";
 import { MessageCircle } from "lucide-react";
 import { MySocket } from "../App";
+import { useMyProfile } from "../hooks/useMyProfile";
 
 export const chatListLoader = async (): Promise<IChat[]> => {
     const token = getTokenFromLocalStorage();
@@ -17,7 +18,7 @@ export const chatListLoader = async (): Promise<IChat[]> => {
     }
     try {
         const email = jose.decodeJwt(token).email as string;
-        const { data } = await instance.post<IChat[]>("/profile/chats", { email });
+        const { data } = await instance.post<IChat[]>("/messages/chats", { email });
         return data;
     } catch (error) {
         toast.error("Ошибка при загрузке чатов.");
@@ -28,20 +29,27 @@ export const chatListLoader = async (): Promise<IChat[]> => {
 const ChatListPage: React.FC = () => {
     const initialChats = useLoaderData() as IChat[];
     const [chats, setChats] = useState<IChat[]>(initialChats);
+    const myProfile = useMyProfile();
+    const myEmail = myProfile?.email;
+
+    const getUsernameFromEmail = (email: string) => {
+        if (!email) return "Unknown";
+        return email.split('@')[0];
+    };
 
     useEffect(() => {
-        if (!MySocket.socket) return;
+        if (!MySocket.socket || !myEmail) return;
 
         const handleUnreadCount = ({ from, count }: { from: string; count: number }) => {
+            if (!from) return;
             setChats(prevChats => {
                 const chatExists = prevChats.some(chat => chat.interlocutor === from);
                 if (!chatExists && count > 0) {
                     const newChat: IChat = {
                         interlocutor: from,
                         avatar: "",
-                        messages: [],
                         online: false,
-                        username: from.split('@')[0],
+                        username: getUsernameFromEmail(from),
                         unreadCount: count
                     };
                     return [newChat, ...prevChats];
@@ -53,27 +61,39 @@ const ChatListPage: React.FC = () => {
         };
 
         const handleNewMessage = (message: IMessage) => {
+            if (!message || !message.sender) return;
+            const interlocutorEmail = message.sender === myEmail ? message.recipient : message.sender;
+            if (!interlocutorEmail) return;
+
             setChats(prevChats => {
                 let found = false;
                 const updated = prevChats.map(chat => {
-                    if (chat.interlocutor === message.sender || chat.interlocutor === message.sender) {
+                    if (chat.interlocutor === interlocutorEmail) {
                         found = true;
                         return {
                             ...chat,
-                            messages: [...chat.messages, message],
-                            unreadCount: (chat.unreadCount || 0) + 1
+                            lastMessage: {
+                                message: message.message,
+                                date: message.date,
+                                sender: message.sender
+                            },
+                            // unreadCount обновится отдельно через событие unread_count
                         };
                     }
                     return chat;
                 });
                 if (!found) {
                     const newChat: IChat = {
-                        interlocutor: message.sender,
+                        interlocutor: interlocutorEmail,
                         avatar: "",
-                        messages: [message],
                         online: false,
-                        username: message.sender.split('@')[0],
-                        unreadCount: 1
+                        username: getUsernameFromEmail(interlocutorEmail),
+                        unreadCount: 0,
+                        lastMessage: {
+                            message: message.message,
+                            date: message.date,
+                            sender: message.sender
+                        }
                     };
                     return [newChat, ...updated];
                 }
@@ -88,7 +108,7 @@ const ChatListPage: React.FC = () => {
             MySocket.socket?.off("unread_count", handleUnreadCount);
             MySocket.socket?.off("on_send_message", handleNewMessage);
         };
-    }, []);
+    }, [MySocket.socket, myEmail]);
 
     return (
         <div className="p-8">
@@ -124,9 +144,7 @@ const ChatListPage: React.FC = () => {
                                 <div className="flex-1">
                                     <h3 className="text-lg font-bold">{chat.username}</h3>
                                     <p className="text-sm text-gray-500 truncate">
-                                        {chat.messages.length > 0
-                                            ? chat.messages[chat.messages.length - 1].message
-                                            : "Сообщений пока нет"}
+                                        {chat.lastMessage?.message || "Сообщений пока нет"}
                                     </p>
                                 </div>
 
