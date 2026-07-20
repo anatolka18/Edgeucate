@@ -172,33 +172,4 @@ export class MessageService {
       checked: false,
     });
   }
-
-  async migrateExistingMessages(): Promise<void> {
-    const users = await this.userModel.collection.find({}).toArray();
-
-    for (const user of users) {
-      if (!user.chat) continue;
-      for (const chat of user.chat) {
-        if (!chat.messages || !Array.isArray(chat.messages)) continue;
-        for (const msg of chat.messages) {
-          const exists = await this.messageModel.findOne({
-            sender: msg.sender,
-            recipient: chat.interlocutor,
-            message: msg.message,
-            date: msg.date,
-          });
-
-          if (!exists) {
-            await this.messageModel.create({
-              sender: msg.sender,
-              recipient: chat.interlocutor,
-              message: msg.message,
-              checked: msg.checked || false,
-              date: msg.date,
-            });
-          }
-        }
-      }
-    }
-  }
 }

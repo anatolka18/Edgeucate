@@ -39,10 +39,4 @@ export class MessageController {
     const count = await this.messageService.getUnreadCount(body.recipientEmail, body.senderEmail);
     return { count };
   }
-
-  @Post('migrate')
-  async migrate() {
-    await this.messageService.migrateExistingMessages();
-    return { success: true };
-  }
 }

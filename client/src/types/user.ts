@@ -102,23 +102,22 @@ export interface ICalendarEvent {
 }
 
 export interface IResponseUser {
-  username: string
-  password: string
-  email: string
-  role: Role
-  avatar: string
-  courses: string[]
-  description: string
-  notifications: INotification[]
+  username: string;
+  email: string;
+  role: Role;
+  avatar: string;
+  courses: string[];
+  description: string;
+  notifications: INotification[];
   students: string[];
-  feedback: IFeedback[]
-  chat: IChat[]
-  online: boolean
-  dateLastOnline: Date
-  _id: string
-  createdAt: string
-  updatedAt: string
+  feedback: IFeedback[];
+  chat: IChat[];
+  online: boolean;
+  dateLastOnline: Date;
+  _id: string;
+  createdAt: string;
+  updatedAt: string;
   isBlocked: boolean;
   blockReason?: string;
-  __v: number
+  __v: number;
 }

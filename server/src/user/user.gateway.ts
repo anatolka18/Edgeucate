@@ -39,8 +39,11 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       const email = payload.email;
 
       client.data.user = payload;
+      await this.userService.online(email);
       client.join(email);
 
+      await this.notifyOnlineStatus(email, true);
+      await this.sendOnlineStatusesToUser(email);
       await this.sendUnreadNotifications(email);
     } catch (error) {
       this.disconnectWithError(client, 'Ошибка подключения');
@@ -50,7 +53,8 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   async handleDisconnect(client: AuthenticatedSocket) {
     const email = client.data.user?.email;
     if (email) {
-      // disconnect logic here if needed
+      await this.userService.offline(email);
+      await this.notifyOnlineStatus(email, false);
     }
   }
 
@@ -193,6 +197,27 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
               this.server.to(email).emit('unread_count', { from: chat.interlocutor, count: chat.unreadCount });
           }
       }
+  }
+
+  private async notifyOnlineStatus(email: string, online: boolean) {
+    const chats = await this.userService.getChats(email);
+    for (const chat of chats) {
+      this.server.to(chat.interlocutor).emit('user_status', { email, online });
+    }
+  }
+
+  private async sendOnlineStatusesToUser(email: string) {
+    const chats = await this.userService.getChats(email);
+    const interlocutorEmails = chats.map(c => c.interlocutor);
+    if (interlocutorEmails.length === 0) return;
+
+    const interlocutors = await this.userService.getUsersByEmails(interlocutorEmails);
+    for (const interlocutor of interlocutors) {
+      this.server.to(email).emit('user_status', {
+        email: interlocutor.email,
+        online: interlocutor.online,
+      });
+    }
   }
 
   private disconnectWithError(client: Socket, message: string) {

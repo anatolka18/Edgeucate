@@ -56,11 +56,8 @@ const ChatPage: React.FC = () => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const oldestMessageRef = useRef<string | null>(
-    initialMessages[0]?.date
-        ? new Date(initialMessages[0].date).toISOString()
-        : null
-    );
+  const oldestMessageRef = useRef<string | null>(null);
+  const latestMessageRef = useRef<string | null>(null);
 
   const [isStudent, setIsStudent] = useState<boolean>(false);
   const [checkingStatus, setCheckingStatus] = useState<boolean>(true);
@@ -70,6 +67,13 @@ const ChatPage: React.FC = () => {
   const [calendarEvents, setCalendarEvents] = useState<ICalendarEvent[]>([]);
 
   const isInterlocutorAdmin = email === 'admin@yandex.ru';
+
+  useEffect(() => {
+    if (initialMessages.length > 0) {
+      oldestMessageRef.current = new Date(initialMessages[0].date).toISOString();
+      latestMessageRef.current = new Date(initialMessages[initialMessages.length - 1].date).toISOString();
+    }
+  }, [initialMessages]);
 
   const fetchCalendarEvents = async () => {
     try {
@@ -211,6 +215,8 @@ const ChatPage: React.FC = () => {
   const loadMoreMessages = useCallback(async () => {
     if (isLoadingMore || !hasMore || !oldestMessageRef.current) return;
     setIsLoadingMore(true);
+    const prevScrollHeight = chatContainerRef.current?.scrollHeight || 0;
+
     try {
       const { data } = await instance.post<{ messages: IMessage[]; interlocutorName: string; hasMore: boolean }>(
         "/messages/get",
@@ -221,17 +227,29 @@ const ChatPage: React.FC = () => {
           before: oldestMessageRef.current,
         }
       );
-      setMessages(prev => [...data.messages, ...prev]);
-      setHasMore(data.hasMore);
+
       if (data.messages.length > 0) {
+        const newUnique = data.messages.filter(
+          msg => !messages.some(m => m._id === msg._id)
+        );
+
+        setMessages(prev => [...newUnique, ...prev]);
         oldestMessageRef.current = new Date(data.messages[0].date).toISOString();
       }
+
+      setHasMore(data.hasMore);
     } catch (error) {
       toast.error("Ошибка при загрузке старых сообщений");
     } finally {
       setIsLoadingMore(false);
+      requestAnimationFrame(() => {
+        if (chatContainerRef.current) {
+          const newScrollHeight = chatContainerRef.current.scrollHeight;
+          chatContainerRef.current.scrollTop = newScrollHeight - prevScrollHeight;
+        }
+      });
     }
-  }, [isLoadingMore, hasMore, myEmail, email]);
+  }, [isLoadingMore, hasMore, myEmail, email, messages]);
 
   useEffect(() => {
     const container = chatContainerRef.current;
@@ -263,10 +281,14 @@ const ChatPage: React.FC = () => {
 
       const handleIncomingMessage = (data: IMessage) => {
         if (data.sender === email || data.sender === myEmail) {
-          setMessages((prev) => [...prev, data]);
+          setMessages((prev) => {
+            if (data._id && prev.some(m => m._id === data._id)) return prev;
+            return [...prev, data];
+          });
           if (data.sender === email) {
             MySocket.socket?.emit("read_messages", { from: email });
           }
+          latestMessageRef.current = new Date(data.date).toISOString();
         }
       };
 
@@ -339,7 +361,7 @@ const ChatPage: React.FC = () => {
             )}
             {messages.map((message, index) => (
               <div
-                key={index}
+                key={message._id || index}
                 className={`flex ${message.sender === myEmail ? "justify-end" : "justify-start"}`}
               >
                 <div

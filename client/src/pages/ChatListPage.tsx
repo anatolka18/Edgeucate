@@ -77,7 +77,6 @@ const ChatListPage: React.FC = () => {
                                 date: message.date,
                                 sender: message.sender
                             },
-                            // unreadCount обновится отдельно через событие unread_count
                         };
                     }
                     return chat;
@@ -101,12 +100,22 @@ const ChatListPage: React.FC = () => {
             });
         };
 
+        const handleUserStatus = ({ email, online }: { email: string; online: boolean }) => {
+            setChats(prevChats =>
+                prevChats.map(chat =>
+                    chat.interlocutor === email ? { ...chat, online } : chat
+                )
+            );
+        };
+
         MySocket.socket.on("unread_count", handleUnreadCount);
         MySocket.socket.on("on_send_message", handleNewMessage);
+        MySocket.socket.on("user_status", handleUserStatus);
 
         return () => {
             MySocket.socket?.off("unread_count", handleUnreadCount);
             MySocket.socket?.off("on_send_message", handleNewMessage);
+            MySocket.socket?.off("user_status", handleUserStatus);
         };
     }, [MySocket.socket, myEmail]);
 
@@ -135,10 +144,17 @@ const ChatListPage: React.FC = () => {
                                 to={`/chat/${chat.interlocutor}`}
                                 className="flex items-center border border-gray-200 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow bg-white"
                             >
-                                <div className="w-12 h-12 bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] rounded-full flex items-center justify-center mr-4">
-                                    <span className="text-white font-bold text-lg">
+                                <div className="relative mr-4">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] rounded-full flex items-center justify-center">
+                                        <span className="text-white font-bold text-lg">
                                         {chat.username?.[0]?.toUpperCase() || "?"}
-                                    </span>
+                                        </span>
+                                    </div>
+                                    <span
+                                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                                        chat.online ? "bg-green-500" : "bg-gray-400"
+                                        }`}
+                                    />
                                 </div>
 
                                 <div className="flex-1">
