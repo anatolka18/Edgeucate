@@ -39,6 +39,7 @@ export interface IUser {
   isBlocked: boolean;
   blockReason?: string;
   token?: string
+  accessToken?: string
 }
 
 export interface IUserData {

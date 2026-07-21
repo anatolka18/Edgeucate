@@ -15,6 +15,7 @@ interface IAdvertisementResponse {
 
 export const advertisementDetailLoader = async ({ params }: any) => {
   const { id } = params;
+  if (!id) throw new Error("ID is required");
   const { data } = await instance.get<IAdvertisementResponse>(`/advertisement/${id}`);
   return data;
 };
@@ -89,7 +90,7 @@ const AdvertisementPage: React.FC = () => {
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                  <span className="font-semibold">{advertisement.stars.toFixed(1)}</span>
+                  <span className="font-semibold">{advertisement.stars?.toFixed(1) ?? '0'}</span>
                 </div>
                 <span className="text-gray-400">|</span>
                 <span className="font-semibold text-lg">{advertisement.price} ₽/час</span>
@@ -144,7 +145,7 @@ const AdvertisementPage: React.FC = () => {
           {feedbacks && feedbacks.length > 0 ? (
             <div className="mt-6 space-y-4">
               {feedbacks.map((feedback, index) => (
-                <div key={index} className="border-b border-gray-100 pb-4 last:border-b-0">
+                <div key={feedback.username + index} className="border-b border-gray-100 pb-4 last:border-b-0">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <User className="w-5 h-5 text-gray-400" />

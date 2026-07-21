@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import freeice from 'freeice';
 import useStateWithCallback from './useStateWithCallback';
-import { MySocket } from '../App';
+import { MySocket } from '../store/auth-state';
 import { ACTIONS } from './actions';
 
 export const LOCAL_VIDEO = 'LOCAL_VIDEO';
@@ -38,7 +38,6 @@ export default function useWebRTC(roomID: string) {
     }, cb);
   }, [updateClients]);
 
-  // Обработка подключения новых пиров
   useEffect(() => {
     async function handleNewPeer({ peerID, createOffer }: { peerID: string; createOffer: boolean }) {
       if (peerID in peerConnections.current) {
@@ -48,8 +47,6 @@ export default function useWebRTC(roomID: string) {
       peerConnections.current[peerID] = new RTCPeerConnection({
         iceServers: freeice(),
       });
-      // const iceServers = typeof (window as any).freeice === 'function' ? (window as any).freeice() : [];
-      // peerConnections.current[peerID] = new RTCPeerConnection({ iceServers });
 
       peerConnections.current[peerID].onicecandidate = (event) => {
         if (event.candidate && MySocket.socket) {
@@ -103,7 +100,6 @@ export default function useWebRTC(roomID: string) {
     };
   }, []);
 
-  // Обработка SDP
   useEffect(() => {
     async function setRemoteMedia({
       peerID,
@@ -131,7 +127,6 @@ export default function useWebRTC(roomID: string) {
     };
   }, []);
 
-  // Обработка ICE
   useEffect(() => {
     MySocket.socket?.on(ACTIONS.ICE_CANDIDATE, ({ peerID, iceCandidate }: { peerID: string; iceCandidate: RTCIceCandidateInit }) => {
       peerConnections.current[peerID]?.addIceCandidate(new RTCIceCandidate(iceCandidate));
@@ -141,7 +136,6 @@ export default function useWebRTC(roomID: string) {
     };
   }, []);
 
-  // Отключение пиров
   useEffect(() => {
     const handleRemovePeer = ({ peerID }: { peerID: string }) => {
       if (peerConnections.current[peerID]) {
@@ -158,7 +152,6 @@ export default function useWebRTC(roomID: string) {
     };
   }, []);
 
-  // Инициализация медиа
   useEffect(() => {
     async function startCapture() {
       try {
@@ -183,9 +176,6 @@ export default function useWebRTC(roomID: string) {
       });
 
       MySocket.socket?.emit(ACTIONS.JOIN, { room: roomID });
-      // if (MySocket.socket) {
-      //   MySocket.socket.emit(ACTIONS.JOIN, { room: roomID });
-      // }
     }
 
     startCapture()
@@ -194,18 +184,13 @@ export default function useWebRTC(roomID: string) {
     return () => {
       localMediaStream.current?.getTracks().forEach((track) => track.stop());
       MySocket.socket?.emit(ACTIONS.LEAVE);
-      // if (MySocket.socket) {
-      //   MySocket.socket.emit(ACTIONS.LEAVE);
-      // }
     };
   }, [roomID]);
 
-  // Рефы для видео
   const provideMediaRef = useCallback((id: string, node: HTMLVideoElement | null) => {
     peerMediaElements.current[id] = node;
   }, []);
 
-  // Управление аудио
   const toggleAudio = () => {
     if (localMediaStream.current) {
       const audioTrack = localMediaStream.current.getAudioTracks()[0];
@@ -216,7 +201,6 @@ export default function useWebRTC(roomID: string) {
     }
   };
 
-  // Управление видео
   const toggleVideo = () => {
     if (localMediaStream.current) {
       const videoTrack = localMediaStream.current.getVideoTracks()[0];
@@ -227,7 +211,6 @@ export default function useWebRTC(roomID: string) {
     }
   };
 
-  // Начало шаринга экрана
   const startScreenShare = async () => {
     try {
       screenStream.current = await navigator.mediaDevices.getDisplayMedia({ video: true });
@@ -260,7 +243,6 @@ export default function useWebRTC(roomID: string) {
     }
   };
 
-  // Остановка шаринга и возврат к камере
   const stopScreenShare = () => {
     if (screenStream.current) {
       screenStream.current.getTracks().forEach((track) => track.stop());

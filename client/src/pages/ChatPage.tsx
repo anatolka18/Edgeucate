@@ -3,12 +3,11 @@ import { useLoaderData, useParams, NavLink } from "react-router-dom";
 import { instance } from "../api/axios.api";
 import { toast } from "react-toastify";
 import { ICalendarEvent, IMessage, Role } from "../types/user";
-import { getTokenFromLocalStorage } from "../helpers/localstorage.helper";
-import * as jose from "jose";
-import { MySocket } from "../App";
+import { MySocket } from "../store/auth-state";
 import { useMyProfile } from "../hooks/useMyProfile";
 import CalendarView from "../components/CalendarView";
 import moment from "moment";
+import { authReadyPromise, accessToken } from '../store/auth-state';
 
 interface IStudentStatus {
   isStudent: boolean;
@@ -41,17 +40,17 @@ export const chatLoader = async ({ params }: { params: { email?: string } }): Pr
   interlocutorName: string;
   hasMore: boolean;
 }> => {
-  const token = getTokenFromLocalStorage();
-  if (!token) throw new Error("Токен отсутствует.");
-
-  const senderEmail = jose.decodeJwt(token).email as string;
+  await authReadyPromise;
   const recipientEmail = params.email;
   if (!recipientEmail) throw new Error("Параметр email обязателен.");
+  if (!accessToken) {
+    return { messages: [], interlocutorName: '', hasMore: false };
+  }
 
   try {
     const { data } = await instance.post<{ messages: IMessage[]; interlocutorName: string; hasMore: boolean }>(
       "/messages/get",
-      { sender: senderEmail, recipient: recipientEmail, limit: 30 }
+      { recipient: recipientEmail, limit: 30 }
     );
     return data;
   } catch (error) {
@@ -241,7 +240,6 @@ const ChatPage: React.FC = () => {
       const { data } = await instance.post<{ messages: IMessage[]; interlocutorName: string; hasMore: boolean }>(
         "/messages/get",
         {
-          sender: myEmail,
           recipient: email,
           limit: 30,
           before: oldestMessageRef.current,
@@ -269,7 +267,7 @@ const ChatPage: React.FC = () => {
         }
       });
     }
-  }, [isLoadingMore, hasMore, myEmail, email, messages]);
+  }, [isLoadingMore, hasMore, email, messages]);
 
   useEffect(() => {
     const container = chatContainerRef.current;

@@ -1,12 +1,12 @@
 import { FC, useState } from 'react'
 import { AuthService } from '../services/auth.service'
 import { toast } from 'react-toastify'
-import { setTokenToLocalStorage } from '../helpers/localstorage.helper'
 import { useAppDispatch } from '../store/hooks'
 import { login } from '../store/user/userSlice'
 import { useNavigate } from 'react-router-dom';
 import Logo from "../assets/Logo.png";
 import { ensureSocket } from '../App';
+import { accessToken } from '../store/auth-state';
 
 const AuthPage: FC = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -27,10 +27,9 @@ const AuthPage: FC = () => {
         try {
             const dataLogin = await AuthService.login({ email, password });
 
-            if (dataLogin && dataLogin.token) {
-                setTokenToLocalStorage('token', dataLogin.token);
+            if (dataLogin?.accessToken) {
                 dispatch(login(dataLogin));
-                ensureSocket(dataLogin.token);
+                ensureSocket(accessToken!);
                 toast.success('Вы успешно вошли в систему.');
                 navigate('/');
             }

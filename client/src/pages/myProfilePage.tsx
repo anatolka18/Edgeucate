@@ -1,9 +1,9 @@
 import { FC, useState } from 'react';
-import { removeTokenFromLocalStorage } from '../helpers/localstorage.helper';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../store/hooks';
 import { toast } from 'react-toastify';
-import { MySocket } from "../App";
+import { MySocket, setAccessToken } from "../store/auth-state";
+import { AuthService } from '../services/auth.service';
 import { logout } from '../store/user/userSlice';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { instance } from '../api/axios.api';
@@ -18,14 +18,15 @@ const MyProfilePage: FC = () => {
     const [description, setDescription] = useState(profile?.description || '');
     const [isSaving, setIsSaving] = useState(false);
 
-    const logoutHandler = () => {
+    const logoutHandler = async () => {
+        await AuthService.logout();
         dispatch(logout());
-        removeTokenFromLocalStorage('token');
         toast.success('Вы вышли из аккаунта');
         if (MySocket.socket) {
             MySocket.socket.disconnect();
             MySocket.socket = null;
         }
+        setAccessToken(null);
         navigate('/');
     };
 
@@ -53,7 +54,6 @@ const MyProfilePage: FC = () => {
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                    {/* Profile Header */}
                     <div className="p-8 border-b border-gray-100">
                         <div className="flex flex-col sm:flex-row items-center gap-6">
                             <div className="w-24 h-24 bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] rounded-2xl flex items-center justify-center shadow-lg">
@@ -81,7 +81,6 @@ const MyProfilePage: FC = () => {
                         </div>
                     </div>
 
-                    {/* About Section */}
                     <div className="p-8 border-b border-gray-100">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">О себе</h3>
                         <p className="text-gray-600 leading-relaxed">
@@ -89,7 +88,6 @@ const MyProfilePage: FC = () => {
                         </p>
                     </div>
 
-                    {/* Actions */}
                     <div className="p-8 flex flex-col sm:flex-row gap-4">
                         <button
                             onClick={editProfileHandler}
@@ -107,7 +105,6 @@ const MyProfilePage: FC = () => {
                 </div>
             </div>
 
-            {/* Edit Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
                     <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">

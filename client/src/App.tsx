@@ -1,24 +1,19 @@
 import { RouterProvider } from "react-router-dom"
 import { router } from "./router/router"
 import { useAppDispatch } from "./store/hooks"
-import { getTokenFromLocalStorage } from "./helpers/localstorage.helper"
 import { AuthService } from "./services/auth.service"
 import { login, logout } from "./store/user/userSlice"
 import { useEffect, useState } from "react"
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { io, Socket } from "socket.io-client"
-import { apiUrl } from "./api/axios.api"
-
-export let MySocket: { socket: Socket | null } = { socket: null }
+import { io } from "socket.io-client"
+import { setAccessToken, setAuthReady, MySocket } from "./store/auth-state"
 
 export function ensureSocket(token: string) {
   if (!MySocket.socket || !MySocket.socket.connected) {
-    MySocket.socket = io(`${apiUrl}/users`, {
+    MySocket.socket = io('/users', {
       auth: { token },
     })
-    MySocket.socket.on("connect", () => {})
-    MySocket.socket.on("connect_error", () => {})
   }
 }
 
@@ -26,29 +21,44 @@ function App() {
   const dispatch = useAppDispatch()
   const [isLoading, setIsLoading] = useState(true)
 
-  const checkAuth = async () => {
-    const token = getTokenFromLocalStorage()
-    try {
-      if (token) {
-        const data = await AuthService.getProfile()
-        if (data) {
-          dispatch(login(data))
-          ensureSocket(token)
-        } else {
-          dispatch(logout())
-          MySocket.socket = null
-        }
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const path = window.location.pathname
+
+    if (path === '/auth') {
+      setAuthReady(true)
+      setIsLoading(false)
+      return
+    }
+
+    const checkAuth = async () => {
+      try {
+        const newToken = await AuthService.refreshToken()
+        if (newToken) {
+          const data = await AuthService.getProfile()
+          if (data) {
+            dispatch(login(data))
+            ensureSocket(newToken)
+            setIsLoading(false)
+            setAuthReady(true)
+            return
+          }
+        }
+        dispatch(logout())
+        setAccessToken(null)
+        setIsLoading(false)
+        setAuthReady(true)
+        window.location.href = '/auth'
+      } catch {
+        dispatch(logout())
+        setAccessToken(null)
+        setIsLoading(false)
+        setAuthReady(true)
+        window.location.href = '/auth'
+      }
+    }
+
     checkAuth()
-  }, [])
+  }, [dispatch])
 
   if (isLoading) {
     return (

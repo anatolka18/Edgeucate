@@ -4,18 +4,20 @@ import { instance } from '../api/axios.api';
 import { IAdvertisement } from '../types/advertisement';
 import { toast } from 'react-toastify';
 import { useLoaderData } from 'react-router-dom';
-import * as jose from 'jose';
-import { getTokenFromLocalStorage } from '../helpers/localstorage.helper';
 import { allSubjects } from '../config/subjects';
+import { authReadyPromise, accessToken } from '../store/auth-state';
 
 export const myAdvertisementLoader = async () => {
-    const token = getTokenFromLocalStorage();
-    if (token) {
-        const email = jose.decodeJwt(token).email as string;
-        const { data } = await instance.post<IAdvertisement[]>(`/advertisement/my`, { email });
-        return data;
-    }
+  await authReadyPromise;
+  if (!accessToken) {
     return [];
+  }
+  try {
+    const { data } = await instance.post<IAdvertisement[]>(`/advertisement/my`, { email: "" });
+    return data;
+  } catch {
+    return [];
+  }
 };
 
 const MyAdvertisementPage: FC = () => {

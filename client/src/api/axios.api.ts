@@ -1,27 +1,53 @@
 import axios from "axios";
-import { getTokenFromLocalStorage, removeTokenFromLocalStorage } from "../helpers/localstorage.helper";
+import { accessToken } from "../store/auth-state";
+import { AuthService } from "../services/auth.service";
 
-export const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4200";
+export const apiUrl = import.meta.env.VITE_API_URL || "";
 
 export const instance = axios.create({
     baseURL: `${apiUrl}/api`,
+    withCredentials: true,
 });
 
 instance.interceptors.request.use((config) => {
-    const token = getTokenFromLocalStorage();
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
 });
 
 instance.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            removeTokenFromLocalStorage('token');
-            window.location.href = '/auth';
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (originalRequest.url?.includes('auth/refresh')) {
+            return Promise.reject(error);
         }
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (
+                originalRequest.url?.includes('auth/login') ||
+                originalRequest.url?.includes('auth/signup')
+            ) {
+                return Promise.reject(error);
+            }
+
+            originalRequest._retry = true;
+
+            try {
+                const newToken = await AuthService.refreshToken();
+                if (newToken) {
+                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                    return instance(originalRequest);
+                } else {
+                    throw new Error('Refresh token failed');
+                }
+            } catch {
+                return Promise.reject(error);
+            }
+        }
+
         return Promise.reject(error);
     }
 );

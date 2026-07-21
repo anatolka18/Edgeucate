@@ -4,26 +4,23 @@ import { instance } from "../api/axios.api";
 import { toast } from "react-toastify";
 import { IChat, IMessage } from "../types/user";
 import { motion } from "framer-motion";
-import * as jose from "jose";
-import { getTokenFromLocalStorage } from "../helpers/localstorage.helper";
 import { MessageCircle } from "lucide-react";
-import { MySocket } from "../App";
+import { MySocket } from "../store/auth-state";
 import { useMyProfile } from "../hooks/useMyProfile";
+import { authReadyPromise, accessToken } from '../store/auth-state';
 
 export const chatListLoader = async (): Promise<IChat[]> => {
-    const token = getTokenFromLocalStorage();
-    if (!token) {
-        toast.error("Токен отсутствует.");
-        return [];
-    }
-    try {
-        const email = jose.decodeJwt(token).email as string;
-        const { data } = await instance.post<IChat[]>("/messages/chats", { email });
-        return data;
-    } catch (error) {
-        toast.error("Ошибка при загрузке чатов.");
-        return [];
-    }
+  await authReadyPromise;
+  if (!accessToken) {
+    return [];
+  }
+  try {
+    const { data } = await instance.post<IChat[]>("/messages/chats", {});
+    return data;
+  } catch (error) {
+    toast.error("Ошибка при загрузке чатов.");
+    return [];
+  }
 };
 
 const ChatListPage: React.FC = () => {

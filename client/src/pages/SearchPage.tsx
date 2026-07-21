@@ -180,7 +180,9 @@ const SearchPage: React.FC = () => {
                                             <p className="text-sm text-gray-400">{advertisement.subject}</p>
                                             <div className="flex items-center gap-1 mt-2">
                                                 <span className="text-yellow-500">★</span>
-                                                <span className="font-medium">{advertisement.stars.toFixed(1)}</span>
+                                                <span className="font-medium">
+                                                    {advertisement.stars?.toFixed(1) ?? '0'}
+                                                </span>
                                                 <span className="text-gray-400 ml-2">{advertisement.price} ₽/час</span>
                                             </div>
                                         </div>

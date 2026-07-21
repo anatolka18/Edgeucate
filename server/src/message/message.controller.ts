@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { SendMessageDto } from '../user/dto/sendMessage.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -15,14 +15,16 @@ export class MessageController {
 
   @Post('get')
   @UseGuards(JwtAuthGuard)
-  async getMessages(@Body() body: { sender: string; recipient: string; limit?: number; before?: string }) {
-    const { sender, recipient, limit = 50, before } = body;
+  async getMessages(@Request() req, @Body() body: { recipient: string; limit?: number; before?: string }) {
+    const sender = req.user.email;
+    const { recipient, limit = 50, before } = body;
     return this.messageService.getMessages(sender, recipient, limit, before);
   }
 
   @Post('chats')
   @UseGuards(JwtAuthGuard)
-  async getChats(@Body('email') email: string) {
+  async getChats(@Request() req) {
+    const email = req.user.email;
     return this.messageService.getChats(email);
   }
 
