@@ -9,6 +9,8 @@ import { CalendarModule } from './calendar/calendar.module';
 import { MessageModule } from './message/message.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -19,6 +21,12 @@ import { MongooseModule } from '@nestjs/mongoose';
         uri: config.get<string>('MONGODB_URI'),
       }),
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     AuthModule,
     UserModule,
     AdvertisementModule,
@@ -27,6 +35,12 @@ import { MongooseModule } from '@nestjs/mongoose';
     MessageModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

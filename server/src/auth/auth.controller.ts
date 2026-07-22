@@ -4,12 +4,14 @@ import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { Response, Request as ExpressRequest } from 'express';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('/signup')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   async signUp(@Body() signUpDto: SignUpDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.signUp(signUpDto);
     response.cookie('refreshToken', result.refreshToken, {
@@ -22,6 +24,7 @@ export class AuthController {
   }
 
   @Post('/login')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(loginDto);
     if (result.refreshToken) {
@@ -37,6 +40,7 @@ export class AuthController {
   }
 
   @Post('/refresh')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   async refresh(@Req() request: ExpressRequest, @Res({ passthrough: true }) response: Response) {
     const refreshToken = request.cookies?.refreshToken;
     if (!refreshToken) {

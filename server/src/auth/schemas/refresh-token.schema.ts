@@ -11,7 +11,7 @@ export class RefreshToken {
   @Prop({ required: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, index: { expires: 0 } })
   expires: Date;
 }
 
