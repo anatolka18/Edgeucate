@@ -82,6 +82,9 @@ export class User {
 
   @Prop()
   blockReason?: string;
+
+  @Prop({ default: false })
+  isVerified: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

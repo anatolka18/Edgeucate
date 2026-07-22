@@ -14,11 +14,15 @@ import RoomPage from "../pages/RoomPage";
 import AllRoomPage from "../pages/AllRoomPage";
 import CalendarPage from "../pages/CalendarPage";
 import AllUsersPage from "../pages/AllUsersPage";
+import VerifyEmailPage from "../pages/VerifyEmailPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout />,
+    errorElement: <ErrorBoundary> <div /> </ErrorBoundary>, 
     children: [
       { index: true, element: <HomePage /> },
       { path: 'auth', element: <AuthPage /> },
@@ -70,6 +74,14 @@ export const router = createBrowserRouter([
             <AllUsersPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: 'verify-email',
+        element: <VerifyEmailPage />,
+      },
+      {
+        path: 'reset-password',
+        element: <ResetPasswordPage />,
       },
     ],
   },

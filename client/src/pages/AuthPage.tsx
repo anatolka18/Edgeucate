@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import Logo from "../assets/Logo.png";
 import { ensureSocket } from '../App';
 import { accessToken } from '../store/auth-state';
+import { instance } from '../api/axios.api';
 
 const AuthPage: FC = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -17,6 +18,9 @@ const AuthPage: FC = () => {
     const [passwordTwo, setPasswordTwo] = useState('');
     const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
     const [blockReason, setBlockReason] = useState('');
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const [resetLoading, setResetLoading] = useState(false);
 
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
@@ -38,6 +42,13 @@ const AuthPage: FC = () => {
                 const reason = err.message.split(':')[1];
                 setBlockReason(reason);
                 setIsBlockedModalOpen(true);
+            } else if (err.response?.status === 401) {
+                const message = err.response?.data?.message || '';
+                if (message.includes('Подтвердите email')) {
+                    toast.error('Подтвердите email, перейдя по ссылке в письме');
+                } else {
+                    toast.error('Неверный email или пароль');
+                }
             } else {
                 toast.error(err.response?.data?.message || err.message || "Ошибка авторизации");
             }
@@ -56,13 +67,35 @@ const AuthPage: FC = () => {
             const dataRegist = await AuthService.registration({ username, password, email, role })
 
             if (dataRegist) {
-                toast.success('Аккаунт успешно создан.')
-                setIsLogin(!isLogin)
+                toast.success('Аккаунт создан! На вашу почту отправлено письмо с подтверждением.');
+                setIsLogin(true);
+                setEmail('');
+                setPassword('');
+                setPasswordTwo('');
+                setUsername('');
             }
         } catch (err: any) {
-            toast.error(err.response?.data.message.toString());
+            toast.error(err.response?.data?.message || err.message || 'Ошибка при регистрации');
         }
-    }
+    };
+
+    const handleForgotPassword = async () => {
+        if (!resetEmail) {
+            toast.error('Введите email');
+            return;
+        }
+        setResetLoading(true);
+        try {
+            await instance.post('/auth/forgot-password', { email: resetEmail });
+            toast.success('Если аккаунт существует, письмо отправлено');
+            setShowForgotPassword(false);
+            setResetEmail('');
+        } catch {
+            toast.error('Ошибка при отправке письма');
+        } finally {
+            setResetLoading(false);
+        }
+    };
 
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100 font-montserrat">
@@ -81,6 +114,38 @@ const AuthPage: FC = () => {
                         >
                             Понятно
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {showForgotPassword && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <h2 className="text-xl font-bold mb-4">Восстановление пароля</h2>
+                        <p className="text-sm text-gray-600 mb-4">Введите email, на который отправить ссылку для сброса пароля.</p>
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            className="w-full mb-3 p-2 border border-gray-300 rounded"
+                            autoComplete="email"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setShowForgotPassword(false)}
+                                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+                            >
+                                Отмена
+                            </button>
+                            <button
+                                onClick={handleForgotPassword}
+                                disabled={resetLoading}
+                                className="px-4 py-2 bg-[#3D5B82] text-white rounded hover:bg-[#273b56] transition disabled:opacity-50"
+                            >
+                                {resetLoading ? 'Отправка...' : 'Отправить'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -177,6 +242,15 @@ const AuthPage: FC = () => {
                 >
                     {isLogin ? 'Создать аккаунт' : 'Уже есть аккаунт? Войти'}
                 </button>
+
+                {isLogin && (
+                    <button
+                        onClick={() => setShowForgotPassword(true)}
+                        className="mt-2 w-full text-sm text-gray-500 hover:text-[#3D5B82] hover:underline transition"
+                    >
+                        Забыли пароль?
+                    </button>
+                )}
             </div>
         </div>
     )

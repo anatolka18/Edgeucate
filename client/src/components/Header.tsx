@@ -53,7 +53,7 @@ const Header: FC = () => {
             {isAuth && isTeacher && (
               <NavLink to="/myadvertisement" className={navLinkClass}>
                 <BookOpen className="w-4 h-4" />
-                <span>Мои объявления</span>
+                <span>Объявления</span>
               </NavLink>
             )}
             {isAuth && !isAdmin && (
@@ -132,7 +132,7 @@ const Header: FC = () => {
             {isAuth && isTeacher && (
               <NavLink to="/myadvertisement" className={navLinkClass} onClick={() => setMobileMenuOpen(false)}>
                 <BookOpen className="w-4 h-4" />
-                <span>Мои объявления</span>
+                <span>Объявления</span>
               </NavLink>
             )}
             {isAuth && !isAdmin && (

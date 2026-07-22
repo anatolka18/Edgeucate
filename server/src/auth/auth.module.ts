@@ -4,10 +4,12 @@ import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from '../user/schemas/user.schema';
 import { RefreshTokenSchema } from './schemas/refresh-token.schema';
+import { EmailTokenSchema } from './schemas/email-token.schema';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -24,7 +26,9 @@ import { JwtStrategy } from './jwt.strategy';
     MongooseModule.forFeature([
       { name: 'User', schema: UserSchema },
       { name: 'RefreshToken', schema: RefreshTokenSchema },
+      { name: 'EmailToken', schema: EmailTokenSchema },
     ]),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

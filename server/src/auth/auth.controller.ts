@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Request, UseGuards, Res, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Request, UseGuards, Res, Req, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
@@ -20,7 +20,11 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    return { username: result.username, accessToken: result.accessToken };
+    return { 
+      username: result.username, 
+      accessToken: result.accessToken,
+      message: 'На вашу почту отправлено письмо с подтверждением' 
+    };
   }
 
   @Post('/login')
@@ -65,5 +69,37 @@ export class AuthController {
   getProfile(@Request() req) {
     const { password, ...user } = req.user.toObject();
     return user;
+  }
+
+  @Post('/verify-email')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  async verifyEmail(@Body('token') token: string) {
+    if (!token) {
+      throw new BadRequestException('Токен обязателен');
+    }
+    return this.authService.verifyEmail(token);
+  }
+
+  @Post('/forgot-password')
+  @Throttle({ default: { ttl: 3600000, limit: 3 } })
+  async forgotPassword(@Body('email') email: string) {
+    if (!email) {
+      throw new BadRequestException('Email обязателен');
+    }
+    await this.authService.forgotPassword(email);
+    return { success: true, message: 'Если аккаунт существует, письмо отправлено' };
+  }
+
+  @Post('/reset-password')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  async resetPassword(@Body() body: { token: string; password: string }) {
+    if (!body.token || !body.password) {
+      throw new BadRequestException('Токен и пароль обязательны');
+    }
+    if (body.password.length < 6) {
+      throw new BadRequestException('Пароль должен быть не менее 6 символов');
+    }
+    await this.authService.resetPassword(body.token, body.password);
+    return { success: true, message: 'Пароль успешно обновлён' };
   }
 }
