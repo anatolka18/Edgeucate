@@ -96,20 +96,21 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async refreshTokens(refreshToken: string): Promise<{ accessToken: string }> {
     const tokenDoc = await this.refreshTokenModel.findOne({ token: refreshToken });
     if (!tokenDoc || tokenDoc.expires < new Date()) {
       throw new UnauthorizedException('Refresh token expired');
     }
-
-    await this.refreshTokenModel.deleteOne({ _id: tokenDoc._id });
 
     const user = await this.userModel.findOne({ email: tokenDoc.email });
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    return this.generateTokens(user);
+    const payload = { id: (user as any)._id, email: user.email, role: user.role };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '5m' });
+
+    return { accessToken };
   }
 
   async logout(refreshToken: string): Promise<void> {
@@ -117,18 +118,19 @@ export class AuthService {
   }
 
   private async generateTokens(user: User) {
+    await this.refreshTokenModel.deleteMany({ email: user.email });
 
-  await this.refreshTokenModel.deleteMany({ email: user.email });
-  const payload = { id: (user as any)._id, email: user.email, role: user.role };
-  const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-  const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const payload = { id: (user as any)._id, email: user.email, role: user.role };
 
-  await this.refreshTokenModel.create({
-    token: refreshToken,
-    email: user.email,
-    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '5m' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-  return { accessToken, refreshToken };
-}
+    await this.refreshTokenModel.create({
+      token: refreshToken,
+      email: user.email,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    return { accessToken, refreshToken };
+  }
 }
