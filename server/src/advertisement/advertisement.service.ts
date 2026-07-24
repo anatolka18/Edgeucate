@@ -33,10 +33,11 @@ export class AdvertisementService {
     const filter: any = {};
 
     if (query) {
+      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { subject: { $regex: query, $options: 'i' } },
-        { title: { $regex: query, $options: 'i' } },
-        { creator: { $regex: query, $options: 'i' } },
+        { subject: { $regex: escapedQuery, $options: 'i' } },
+        { title: { $regex: escapedQuery, $options: 'i' } },
+        { creator: { $regex: escapedQuery, $options: 'i' } },
       ];
     }
 

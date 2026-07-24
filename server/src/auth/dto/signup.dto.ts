@@ -1,4 +1,5 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength, MaxLength } from 'class-validator';
+import { IsStrongPassword } from '../../common/validators/password.validator';
 
 export enum Role {
   STUDENT = 'Student',
@@ -8,18 +9,18 @@ export enum Role {
 export class SignUpDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(50, { message: 'Имя пользователя не должно превышать 50 символов' })
   readonly username: string;
 
-  @IsNotEmpty()
-  @IsString()
-  @MinLength(6, { message: 'Password must be more than 6 symbols.' })
+  @IsStrongPassword()
   readonly password: string;
 
   @IsNotEmpty()
-  @IsEmail({}, { message: 'Please enter correct email' })
+  @IsEmail({}, { message: 'Введите корректный email' })
+  @MaxLength(100)
   readonly email: string;
 
   @IsNotEmpty()
-  @IsEnum(Role, { message: 'Please enter correct role' })
+  @IsEnum(Role, { message: 'Роль должна быть Student или Teacher' })
   readonly role: Role;
 }

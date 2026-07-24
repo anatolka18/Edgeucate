@@ -3,8 +3,10 @@ import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { CsrfGuard } from '../guards/csrf.guard';
 import { Response, Request as ExpressRequest } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -12,6 +14,7 @@ export class AuthController {
 
   @Post('/signup')
   @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @UseGuards(CsrfGuard)
   async signUp(@Body() signUpDto: SignUpDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.signUp(signUpDto);
     response.cookie('refreshToken', result.refreshToken, {
@@ -29,6 +32,7 @@ export class AuthController {
 
   @Post('/login')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @UseGuards(CsrfGuard)
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(loginDto);
     if (result.refreshToken) {
@@ -45,6 +49,7 @@ export class AuthController {
 
   @Post('/refresh')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @UseGuards(CsrfGuard)
   async refresh(@Req() request: ExpressRequest, @Res({ passthrough: true }) response: Response) {
     const refreshToken = request.cookies?.refreshToken;
     if (!refreshToken) {
@@ -55,6 +60,7 @@ export class AuthController {
   }
 
   @Post('/logout')
+  @UseGuards(CsrfGuard)
   async logout(@Req() request: ExpressRequest, @Res({ passthrough: true }) response: Response) {
     const refreshToken = request.cookies?.refreshToken;
     if (refreshToken) {
@@ -73,6 +79,7 @@ export class AuthController {
 
   @Post('/verify-email')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @UseGuards(CsrfGuard)
   async verifyEmail(@Body('token') token: string) {
     if (!token) {
       throw new BadRequestException('Токен обязателен');
@@ -82,6 +89,7 @@ export class AuthController {
 
   @Post('/forgot-password')
   @Throttle({ default: { ttl: 3600000, limit: 3 } })
+  @UseGuards(CsrfGuard)
   async forgotPassword(@Body('email') email: string) {
     if (!email) {
       throw new BadRequestException('Email обязателен');
@@ -92,13 +100,8 @@ export class AuthController {
 
   @Post('/reset-password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  async resetPassword(@Body() body: { token: string; password: string }) {
-    if (!body.token || !body.password) {
-      throw new BadRequestException('Токен и пароль обязательны');
-    }
-    if (body.password.length < 6) {
-      throw new BadRequestException('Пароль должен быть не менее 6 символов');
-    }
+  @UseGuards(CsrfGuard)
+  async resetPassword(@Body() body: ResetPasswordDto) {
     await this.authService.resetPassword(body.token, body.password);
     return { success: true, message: 'Пароль успешно обновлён' };
   }

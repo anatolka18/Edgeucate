@@ -3,6 +3,7 @@ import { AdvertisementService } from './advertisement.service';
 import { Advertisement } from './schemas/advertisement.schema';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
+import { CsrfGuard } from '../guards/csrf.guard';
 import { Roles } from '../guards/roles.decorator';
 import { Role } from '../user/schemas/user.schema';
 import { CreateAdvertisementDto } from './dto/createAdvertisement.dto';
@@ -13,7 +14,7 @@ export class AdvertisementController {
   constructor(private advertisementService: AdvertisementService) { }
 
   @Post('/my')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard)
   getMyAdvertisement(@Request() req) {
     return this.advertisementService.findMyAdvertisements(req.user.email);
   }
@@ -32,7 +33,7 @@ export class AdvertisementController {
   }
 
   @Put('/update')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, CsrfGuard)
   @Roles(Role.TEACHER)
   updateAdvertisement(@Body() updateAdvertisementDto: UpdateAdvertisementDto): Promise<Advertisement> {
     return this.advertisementService.updateAdvertisement(updateAdvertisementDto);
@@ -44,14 +45,14 @@ export class AdvertisementController {
   }
 
   @Post('/create')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, CsrfGuard)
   @Roles(Role.TEACHER)
   async createAdvertisement(@Body() createAdvertisementDto: CreateAdvertisementDto) {
     return this.advertisementService.createAdvertisement(createAdvertisementDto);
   }
 
   @Delete(':advertisementId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard)
   async deleteAdvertisement(@Param('advertisementId') advertisementId: string) {
     return this.advertisementService.deleteAdvertisement(advertisementId);
   }

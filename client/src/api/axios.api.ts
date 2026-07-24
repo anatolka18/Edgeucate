@@ -1,6 +1,7 @@
 import axios from "axios";
 import { accessToken } from "../store/auth-state";
 import { AuthService } from "../services/auth.service";
+import { toast } from 'react-toastify';
 
 export const apiUrl = import.meta.env.VITE_API_URL || "";
 
@@ -13,6 +14,16 @@ instance.interceptors.request.use((config) => {
     if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
+    const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf-token='))
+        ?.split('=')[1];
+
+    if (csrfToken && !['get', 'head', 'options'].includes(config.method?.toLowerCase() || '')) {
+        config.headers['X-CSRF-Token'] = csrfToken;
+    }
+
     return config;
 });
 
@@ -46,6 +57,10 @@ instance.interceptors.response.use(
             } catch {
                 return Promise.reject(error);
             }
+        }
+
+        if (error.response?.status === 403) {
+            toast.error('CSRF token invalid. Please refresh the page.');
         }
 
         return Promise.reject(error);

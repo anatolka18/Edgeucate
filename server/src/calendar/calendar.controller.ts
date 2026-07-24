@@ -3,6 +3,7 @@ import { CalendarService } from './calendar.service';
 import { CreateCalendarEventDto } from './dto/create-calendar-event.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
+import { CsrfGuard } from '../guards/csrf.guard';
 import { Roles } from '../guards/roles.decorator';
 import { Role } from '../user/schemas/user.schema';
 
@@ -11,7 +12,7 @@ export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, CsrfGuard)
   @Roles(Role.TEACHER)
   create(@Body() createDto: CreateCalendarEventDto, @Request() req) {
     return this.calendarService.create(createDto, req.user.email);
@@ -38,7 +39,7 @@ export class CalendarController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard)
   delete(@Param('id') id: string, @Request() req) {
     return this.calendarService.delete(id, req.user.email);
   }

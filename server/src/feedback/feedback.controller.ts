@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, Param, UseGuards, Delete, Request, Forbidd
 import { FeedbackService } from './feedback.service';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { CsrfGuard } from '../guards/csrf.guard';
 import { Role } from '../user/schemas/user.schema';
 
 @Controller('feedback')
@@ -9,7 +10,7 @@ export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post('create')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard)
   async createFeedback(@Body() createFeedbackDto: CreateFeedbackDto) {
     return this.feedbackService.createFeedback(createFeedbackDto);
   }
@@ -20,7 +21,7 @@ export class FeedbackController {
   }
 
   @Post('can-leave')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard)
   async canStudentLeaveFeedback(
     @Body('teacherEmail') teacherEmail: string,
     @Body('studentEmail') studentEmail: string,
@@ -30,7 +31,7 @@ export class FeedbackController {
   }
 
   @Delete('delete/:teacherEmail/:advertisementId/:username')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard)
   async deleteFeedback(
     @Request() req,
     @Param('teacherEmail') teacherEmail: string,
