@@ -30,6 +30,11 @@ instance.interceptors.request.use((config) => {
 instance.interceptors.response.use(
     (response) => response,
     async (error) => {
+        if (!error.response) {
+            toast.error('Сервер недоступен. Проверьте подключение к интернету.');
+            return Promise.reject(error);
+        }
+
         const originalRequest = error.config;
 
         if (originalRequest.url?.includes('auth/refresh')) {

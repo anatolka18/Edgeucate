@@ -7,6 +7,7 @@ import { UserService } from './user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ACTIONS } from './actions';
+import { sanitizeHtml } from '../common/utils/sanitize';
 
 interface AuthenticatedSocket extends Socket {
   data: {
@@ -17,6 +18,7 @@ interface AuthenticatedSocket extends Socket {
 @WebSocketGateway({ namespace: 'users' })
 export class UserSocketService implements OnGatewayConnection, OnGatewayDisconnect {
   private typingUsers = new Map<string, Set<string>>();
+  private lastMessageTimes = new Map<string, number>();
 
   constructor(
     private userService: UserService,
@@ -67,15 +69,24 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     try {
       const sender = client.data.user?.email;
       if (!sender) return client.emit('error', { message: 'Ошибка аутентификации' });
-      if (!data.message?.trim()) return client.emit('error', { message: 'Сообщение пустое' });
-      if (data.message.length > 2000) return client.emit('error', { message: 'Слишком длинное' });
+
+      const now = Date.now();
+      const lastTime = this.lastMessageTimes.get(sender);
+      if (lastTime && now - lastTime < 1500) {
+        return client.emit('error', { message: 'Слишком часто. Подождите немного.' });
+      }
+      this.lastMessageTimes.set(sender, now);
+
+      const cleanMessage = sanitizeHtml(data.message?.trim() || '');
+      if (!cleanMessage) return client.emit('error', { message: 'Сообщение пустое' });
+      if (cleanMessage.length > 2000) return client.emit('error', { message: 'Слишком длинное' });
       if (!data.recipient) return client.emit('error', { message: 'Получатель не указан' });
       if (sender === data.recipient) return client.emit('error', { message: 'Нельзя отправить себе' });
 
       const result = await this.userService.sendMessage({
         sender,
         recipient: data.recipient,
-        message: data.message,
+        message: cleanMessage,
       });
 
       const plainMessage = (result as any).toObject

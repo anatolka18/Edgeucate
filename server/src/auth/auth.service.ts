@@ -193,6 +193,20 @@ export class AuthService {
     await this.emailTokenModel.deleteOne({ _id: tokenDoc._id });
   }
 
+  async changePassword(userId: string, oldPassword: string, newPassword: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new UnauthorizedException('Пользователь не найден');
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) throw new BadRequestException('Неверный старый пароль');
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    await user.save();
+
+    await this.refreshTokenModel.deleteMany({ email: user.email });
+  }
+
   private async generateTokens(user: User) {
     await this.refreshTokenModel.deleteMany({ email: user.email });
 

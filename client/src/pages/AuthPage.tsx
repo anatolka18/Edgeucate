@@ -8,6 +8,7 @@ import Logo from "../assets/Logo.png";
 import { ensureSocket } from '../App';
 import { accessToken } from '../store/auth-state';
 import { instance } from '../api/axios.api';
+import { Eye, EyeOff } from 'lucide-react';
 
 const AuthPage: FC = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -21,6 +22,8 @@ const AuthPage: FC = () => {
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [resetEmail, setResetEmail] = useState('');
     const [resetLoading, setResetLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordTwo, setShowPasswordTwo] = useState(false);
 
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
@@ -180,27 +183,45 @@ const AuthPage: FC = () => {
                         required
                     />
 
-                    <input
-                        type="password"
-                        placeholder="Пароль"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full mb-3 p-2 border border-gray-300 rounded"
-                        autoComplete="current-password"
-                        required
-                        minLength={6}
-                    />
-
-                    {!isLogin && (
+                    <div className="relative mb-3">
                         <input
-                            type="password"
-                            placeholder="Подтвердите пароль"
-                            value={passwordTwo}
-                            onChange={(e) => setPasswordTwo(e.target.value)}
-                            className="w-full mb-3 p-2 border border-gray-300 rounded"
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Пароль"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full p-2 pr-10 border border-gray-300 rounded"
+                            autoComplete="current-password"
                             required
                             minLength={6}
                         />
+                        <button
+                            type="button"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
+
+                    {!isLogin && (
+                        <div className="relative mb-3">
+                            <input
+                                type={showPasswordTwo ? 'text' : 'password'}
+                                placeholder="Подтвердите пароль"
+                                value={passwordTwo}
+                                onChange={(e) => setPasswordTwo(e.target.value)}
+                                className="w-full p-2 pr-10 border border-gray-300 rounded"
+                                required
+                                minLength={6}
+                            />
+                            <button
+                                type="button"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                onClick={() => setShowPasswordTwo(!showPasswordTwo)}
+                            >
+                                {showPasswordTwo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
                     )}
                     {!isLogin && (
                         <div className="flex justify-between items-center mb-3">

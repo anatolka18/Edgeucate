@@ -12,6 +12,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { MailModule } from './mail/mail.module';
+import { ClientErrorsController } from './common/controllers/client-errors.controller';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { MailModule } from './mail/mail.module';
     MessageModule,
     MailModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, ClientErrorsController],
   providers: [
     AppService,
     {

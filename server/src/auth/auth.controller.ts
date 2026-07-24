@@ -8,16 +8,21 @@ import { Response, Request as ExpressRequest } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ConfigService } from '@nestjs/config';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private configService: ConfigService,        
+    private configService: ConfigService,
   ) {}
 
   private get isCookieSecure(): boolean {
     return this.configService.get<string>('SECURE_COOKIE') === 'true';
+  }
+
+  private get cookieSameSite(): 'strict' | 'lax' {
+    return this.isCookieSecure ? 'strict' : 'lax';
   }
 
   @Post('/signup')
@@ -28,13 +33,13 @@ export class AuthController {
     response.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: this.isCookieSecure,
-      sameSite: 'lax',
+      sameSite: this.cookieSameSite,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    return { 
-      username: result.username, 
+    return {
+      username: result.username,
       accessToken: result.accessToken,
-      message: 'На вашу почту отправлено письмо с подтверждением' 
+      message: 'На вашу почту отправлено письмо с подтверждением',
     };
   }
 
@@ -47,7 +52,7 @@ export class AuthController {
       response.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
         secure: this.isCookieSecure,
-        sameSite: 'lax',
+        sameSite: this.cookieSameSite,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       delete result.refreshToken;
@@ -74,10 +79,10 @@ export class AuthController {
     if (refreshToken) {
       await this.authService.logout(refreshToken);
     }
-     response.clearCookie('refreshToken', {
+    response.clearCookie('refreshToken', {
       httpOnly: true,
       secure: this.isCookieSecure,
-      sameSite: 'lax',
+      sameSite: this.cookieSameSite,
     });
     return { success: true };
   }
@@ -108,6 +113,13 @@ export class AuthController {
     }
     await this.authService.forgotPassword(email);
     return { success: true, message: 'Если аккаунт существует, письмо отправлено' };
+  }
+
+  @Post('/change-password')
+  @UseGuards(JwtAuthGuard, CsrfGuard)
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    await this.authService.changePassword(req.user._id, dto.oldPassword, dto.newPassword);
+    return { success: true, message: 'Пароль успешно изменён' };
   }
 
   @Post('/reset-password')

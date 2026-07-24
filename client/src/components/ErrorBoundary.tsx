@@ -27,8 +27,50 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+    console.error('[ErrorBoundary] Caught render error:', error, errorInfo);
+    this.sendErrorToServer(error, errorInfo.componentStack ?? undefined);
   }
+  componentDidMount() {
+    window.addEventListener('unhandledrejection', this.handleGlobalError);
+    window.addEventListener('error', this.handleGlobalError);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('unhandledrejection', this.handleGlobalError);
+    window.removeEventListener('error', this.handleGlobalError);
+  }
+
+  sendErrorToServer(error: Error, componentStack?: string) {
+    try {
+      fetch('/api/errors/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: error.message,
+          stack: error.stack,
+          componentStack: componentStack || undefined,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+        }),
+      });
+    } catch {
+      // ничего не делаем
+    }
+  }
+
+  handleGlobalError = (event: Event | PromiseRejectionEvent) => {
+    let error: Error | null = null;
+    if (event instanceof PromiseRejectionEvent) {
+      error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+    } else if (event instanceof ErrorEvent) {
+      error = event.error instanceof Error ? event.error : new Error(event.message);
+    }
+    if (error) {
+      console.error('[ErrorBoundary] Global error:', error);
+      this.setState({ hasError: true, error });
+      this.sendErrorToServer(error);
+    }
+  };
 
   handleReset = () => {
     this.setState({ hasError: false, error: null });
