@@ -14,7 +14,7 @@ interface AuthenticatedSocket extends Socket {
   };
 }
 
-@WebSocketGateway({ cors: { origin: '*', credentials: true }, namespace: 'users' })
+@WebSocketGateway({ namespace: 'users' })
 export class UserSocketService implements OnGatewayConnection, OnGatewayDisconnect {
   private typingUsers = new Map<string, Set<string>>();
 

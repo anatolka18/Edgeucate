@@ -8,11 +8,13 @@ import { UserSocketService } from './user.gateway';
 import { MessageModule } from '../message/message.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { RefreshTokenSchema } from '../auth/schemas/refresh-token.schema';
 
 @Module({
   imports: [
     AuthModule,
-    MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
+    MongooseModule.forFeature([{ name: 'User', schema: UserSchema },
+  { name: 'RefreshToken', schema: RefreshTokenSchema }]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

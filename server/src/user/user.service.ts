@@ -8,6 +8,7 @@ import { MessageService } from '../message/message.service';
 
 @Injectable()
 export class UserService {
+  refreshTokenModel: any;
   constructor(
     @InjectModel(User.name) private userModel: mongoose.Model<User>,
     private messageService: MessageService,
@@ -121,5 +122,20 @@ export class UserService {
 
   async getUnreadCount(recipientEmail: string, senderEmail: string): Promise<number> {
     return this.messageService.getUnreadCount(recipientEmail, senderEmail);
+  }
+
+  async blockUser(email: string, isBlocked: boolean, blockReason?: string) {
+    const user = await this.userModel.findOne({ email });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    user.isBlocked = isBlocked;
+    user.blockReason = isBlocked ? blockReason || '' : '';
+    await user.save();
+
+    if (isBlocked) {
+      await this.refreshTokenModel.deleteMany({ email }); // удаляем все refresh-токены
+    }
+
+    return user;
   }
 }

@@ -9,7 +9,7 @@ export class CsrfMiddleware implements NestMiddleware {
       const token = crypto.randomBytes(32).toString('hex');
       res.cookie('csrf-token', token, {
         httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.SECURE_COOKIE === 'true',
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000,
       });

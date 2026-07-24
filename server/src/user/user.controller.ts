@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, Param, UseGuards, Post, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Put, Body, Param, UseGuards, Post, BadRequestException, Patch } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './schemas/user.schema';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -88,5 +88,16 @@ export class UserController {
     return {
       isStudent: await this.userService.checkIfStudent(teacherEmail, studentEmail)
     };
+  }
+
+  @Patch(':email/block')
+  @UseGuards(JwtAuthGuard, RolesGuard, CsrfGuard)
+  @Roles(Role.ADMIN)
+  async blockUser(
+    @Param('email') email: string,
+    @Body('isBlocked') isBlocked: boolean,
+    @Body('blockReason') blockReason?: string,
+  ) {
+    return this.userService.blockUser(email, isBlocked, blockReason);
   }
 }

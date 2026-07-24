@@ -22,7 +22,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.userModel.findById(id);
 
     if (!user) {
-      throw new UnauthorizedException('Login first to access this endpoint.');
+      throw new UnauthorizedException('Сначала войдите в систему, чтобы получить доступ к этой информации');
+    }
+
+    if (user.isBlocked) {
+      throw new UnauthorizedException('Аккаунт заблокирован');
     }
 
     return user;

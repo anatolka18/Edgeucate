@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { logger } from '../logger/winston.logger'; // <-- вверху
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -16,12 +17,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const res = exception.getResponse();
       message = typeof res === 'string' ? res : (res as any).message || message;
     } else if (exception instanceof Error) {
-      if (process.env.NODE_ENV === 'production') {
-        message = 'Внутренняя ошибка сервера';
-      } else {
-        message = exception.message;
-      }
+      message = process.env.NODE_ENV === 'production'
+        ? 'Внутренняя ошибка сервера'
+        : exception.message;
     }
+
+    logger.error({
+      message,
+      status,
+      path: request.url,
+      timestamp: new Date().toISOString(),
+    });
 
     response.status(status).json({
       statusCode: status,

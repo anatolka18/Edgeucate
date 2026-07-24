@@ -7,10 +7,18 @@ import { CsrfGuard } from '../guards/csrf.guard';
 import { Response, Request as ExpressRequest } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,        
+  ) {}
+
+  private get isCookieSecure(): boolean {
+    return this.configService.get<string>('SECURE_COOKIE') === 'true';
+  }
 
   @Post('/signup')
   @Throttle({ default: { ttl: 60000, limit: 3 } })
@@ -19,7 +27,7 @@ export class AuthController {
     const result = await this.authService.signUp(signUpDto);
     response.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: this.isCookieSecure,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -38,7 +46,7 @@ export class AuthController {
     if (result.refreshToken) {
       response.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
-        secure: false,
+        secure: this.isCookieSecure,
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
@@ -66,7 +74,11 @@ export class AuthController {
     if (refreshToken) {
       await this.authService.logout(refreshToken);
     }
-    response.clearCookie('refreshToken');
+     response.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: this.isCookieSecure,
+      sameSite: 'lax',
+    });
     return { success: true };
   }
 
