@@ -12,6 +12,8 @@ export interface IMessage {
   date: Date
   sender: string
   recipient?: string
+  edited?: boolean
+  deleted?: boolean
 }
 
 export interface IChat {

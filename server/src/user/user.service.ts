@@ -9,6 +9,7 @@ import { MessageService } from '../message/message.service';
 @Injectable()
 export class UserService {
   refreshTokenModel: any;
+  messageModel: any;
   constructor(
     @InjectModel(User.name) private userModel: mongoose.Model<User>,
     private messageService: MessageService,
@@ -22,6 +23,10 @@ export class UserService {
     const user = await this.userModel.findOne({ username }).exec();
     if (!user) throw new NotFoundException('User not found');
     return user;
+  }
+
+  async getMessageById(id: string) {
+    return this.messageModel.findById(id);
   }
 
   async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
@@ -42,6 +47,14 @@ export class UserService {
 
   async getChats(email: string) {
     return this.messageService.getChats(email);
+  }
+
+  async editMessage(messageId: string, senderEmail: string, newText: string) {
+    return this.messageService.editMessage(messageId, senderEmail, newText);
+  }
+
+  async deleteMessage(messageId: string, senderEmail: string) {
+    return this.messageService.deleteMessage(messageId, senderEmail);
   }
 
   async markMessagesAsRead(readerEmail: string, fromEmail: string) {
@@ -133,7 +146,7 @@ export class UserService {
     await user.save();
 
     if (isBlocked) {
-      await this.refreshTokenModel.deleteMany({ email }); // удаляем все refresh-токены
+      await this.refreshTokenModel.deleteMany({ email });
     }
 
     return user;

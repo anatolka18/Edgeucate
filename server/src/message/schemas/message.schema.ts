@@ -19,6 +19,12 @@ export class Message {
 
   @Prop({ default: Date.now })
   date: Date;
+
+  @Prop({ default: false })
+  edited: boolean;
+
+  @Prop({ default: false })
+  deleted: boolean;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

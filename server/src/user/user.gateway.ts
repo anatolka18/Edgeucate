@@ -111,6 +111,40 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     }
   }
 
+  @SubscribeMessage('edit_message')
+  async editMessage(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; message: string },
+  ) {
+    try {
+      const sender = client.data.user?.email;
+      if (!sender) return;
+      const cleanMessage = sanitizeHtml(data.message.trim());
+      if (!cleanMessage) return;
+      const updated = await this.userService.editMessage(data.messageId, sender, cleanMessage);
+      this.server.to(updated.sender).emit('message_edited', updated);
+      this.server.to(updated.recipient).emit('message_edited', updated);
+    } catch (error) {
+      client.emit('error', { message: 'Ошибка редактирования' });
+    }
+  }
+
+  @SubscribeMessage('delete_message')
+  async deleteMessage(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string },
+  ) {
+    try {
+      const sender = client.data.user?.email;
+      if (!sender) return;
+      const updated = await this.userService.deleteMessage(data.messageId, sender);
+      this.server.to(updated.sender).emit('message_deleted', updated);
+      this.server.to(updated.recipient).emit('message_deleted', updated);
+    } catch (error) {
+      client.emit('error', { message: 'Ошибка удаления' });
+    }
+  }
+
   @SubscribeMessage('typing_start')
   async typingStart(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
     const sender = client.data.user.email;

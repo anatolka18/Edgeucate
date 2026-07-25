@@ -8,6 +8,7 @@ import { useMyProfile } from "../hooks/useMyProfile";
 import CalendarView from "../components/CalendarView";
 import moment from "moment";
 import { authReadyPromise, accessToken } from '../store/auth-state';
+import { Pencil, Trash2, Send, ArrowLeft } from 'lucide-react';
 
 interface IStudentStatus {
   isStudent: boolean;
@@ -22,6 +23,14 @@ const formatMessageDate = (rawDate: any) => {
   } catch {
     return "—";
   }
+};
+
+const formatDateSeparator = (date: Date) => {
+  const today = moment().startOf('day');
+  const msgDate = moment(date).startOf('day');
+  if (msgDate.isSame(today)) return 'Сегодня';
+  if (msgDate.isSame(today.clone().subtract(1, 'day'))) return 'Вчера';
+  return moment(date).format('D MMMM YYYY');
 };
 
 function getMessageKey(message: IMessage, index: number): string {
@@ -92,6 +101,9 @@ const ChatPage: React.FC = () => {
   const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
   const [calendarEvents, setCalendarEvents] = useState<ICalendarEvent[]>([]);
 
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+
   const isInterlocutorAdmin = email === 'admin@yandex.ru';
 
   const fetchCalendarEvents = async () => {
@@ -99,17 +111,14 @@ const ChatPage: React.FC = () => {
       if (!email || !myEmail) return;
       const teacherEmail = myRole === Role.TEACHER ? myEmail : email;
       const studentEmail = myRole === Role.TEACHER ? email : myEmail;
-
       const response = await instance.get<ICalendarEvent[]>('/calendar/teacherstudent', {
         params: { teacherEmail, studentEmail }
       });
-
       const formattedEvents = response.data.map(event => ({
         ...event,
         start: new Date(event.date),
         end: moment(event.date).add(1, 'hour').toDate()
       }));
-
       setCalendarEvents(formattedEvents);
     } catch (error) {
       toast.error('Не удалось загрузить события календаря');
@@ -149,7 +158,6 @@ const ChatPage: React.FC = () => {
 
   const handleAddStudent = async () => {
     if (!myEmail || !email || processingAction) return;
-
     setProcessingAction(true);
     try {
       await instance.post('/profile/student/add', {
@@ -167,7 +175,6 @@ const ChatPage: React.FC = () => {
 
   const handleRemoveStudent = async () => {
     if (!myEmail || !email || processingAction) return;
-
     setProcessingAction(true);
     try {
       await instance.post('/profile/student/remove', {
@@ -185,7 +192,6 @@ const ChatPage: React.FC = () => {
 
   const renderStudentManagement = () => {
     if (myRole !== Role.TEACHER || isInterlocutorAdmin) return null;
-
     return (
       <div className="flex items-center ml-4">
         {checkingStatus ? (
@@ -235,26 +241,18 @@ const ChatPage: React.FC = () => {
     if (isLoadingMore || !hasMore || !oldestMessageRef.current) return;
     setIsLoadingMore(true);
     const prevScrollHeight = chatContainerRef.current?.scrollHeight || 0;
-
     try {
       const { data } = await instance.post<{ messages: IMessage[]; interlocutorName: string; hasMore: boolean }>(
         "/messages/get",
-        {
-          recipient: email,
-          limit: 30,
-          before: oldestMessageRef.current,
-        }
+        { recipient: email, limit: 30, before: oldestMessageRef.current }
       );
-
       if (data.messages.length > 0) {
         const newUnique = data.messages.filter(
           msg => !messages.some(m => m._id === msg._id)
         );
-
         setMessages(prev => [...newUnique, ...prev]);
         oldestMessageRef.current = new Date(data.messages[0].date).toISOString();
       }
-
       setHasMore(data.hasMore);
     } catch (error) {
       toast.error("Ошибка при загрузке старых сообщений");
@@ -272,13 +270,11 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     const container = chatContainerRef.current;
     if (!container) return;
-
     const handleScroll = () => {
       if (container.scrollTop === 0 && hasMore && !isLoadingMore) {
         loadMoreMessages();
       }
     };
-
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
   }, [hasMore, isLoadingMore, loadMoreMessages]);
@@ -296,7 +292,6 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     if (MySocket.socket) {
       MySocket.socket.emit("read_messages", { from: email });
-
       const handleIncomingMessage = (data: IMessage) => {
         if (data.sender === email || data.sender === myEmail) {
           setMessages((prev) => {
@@ -308,26 +303,55 @@ const ChatPage: React.FC = () => {
           }
         }
       };
-
       const handleError = (data: { message: string }) => {
         toast.error(data.message);
       };
-
       const handleTyping = ({ user, typing }: { user: string; typing: boolean }) => {
         if (user === email) setIsTyping(typing);
+      };
+      const handleEdited = (updatedMsg: IMessage) => {
+        setMessages(prev => prev.map(m => m._id === updatedMsg._id ? updatedMsg : m));
+      };
+      const handleDeleted = (updatedMsg: IMessage) => {
+        setMessages(prev => prev.map(m => m._id === updatedMsg._id ? updatedMsg : m));
       };
 
       MySocket.socket.on("on_send_message", handleIncomingMessage);
       MySocket.socket.on("error", handleError);
       MySocket.socket.on("typing", handleTyping);
+      MySocket.socket.on('message_edited', handleEdited);
+      MySocket.socket.on('message_deleted', handleDeleted);
 
       return () => {
         MySocket.socket?.off("on_send_message", handleIncomingMessage);
         MySocket.socket?.off("error", handleError);
         MySocket.socket?.off("typing", handleTyping);
+        MySocket.socket?.off('message_edited', handleEdited);
+        MySocket.socket?.off('message_deleted', handleDeleted);
       };
     }
   }, [email, myEmail]);
+
+  const handleEditMessage = (messageId: string, text: string) => {
+    setEditingMessageId(messageId);
+    setEditText(text);
+  };
+  const handleSaveEdit = () => {
+    if (editText.trim() && editingMessageId && MySocket.socket?.connected) {
+      MySocket.socket.emit('edit_message', { messageId: editingMessageId, message: editText.trim() });
+      setEditingMessageId(null);
+      setEditText('');
+    }
+  };
+  const handleDeleteMessage = (messageId: string) => {
+    if (MySocket.socket?.connected) {
+      MySocket.socket.emit('delete_message', { messageId });
+    }
+  };
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditText('');
+  };
 
   const handleTypingStart = () => {
     if (MySocket.socket && email) {
@@ -349,10 +373,7 @@ const ChatPage: React.FC = () => {
 
   const handleSendMessage = () => {
     if (newMessage.trim() && email && myEmail && MySocket.socket?.connected) {
-      MySocket.socket.emit("send_message", {
-        recipient: email,
-        message: newMessage,
-      });
+      MySocket.socket.emit("send_message", { recipient: email, message: newMessage });
       setNewMessage("");
       handleTypingEnd();
     }
@@ -362,16 +383,15 @@ const ChatPage: React.FC = () => {
     if (e.key === "Enter") handleSendMessage();
   };
 
+  let lastDateSeparator = '';
+
   return (
     <div className="h-full flex items-center justify-center p-4">
       <div className="w-full max-w-4xl mx-auto flex flex-col rounded-xl shadow-sm border border-gray-200 bg-white overflow-hidden" style={{ height: 'calc(100vh - 6rem)' }}>
         <div className="border-b border-gray-200 bg-white px-4 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center">
             <NavLink to="/chats" className="flex items-center text-[#3D5B82] hover:text-[#96C3D6] mr-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Назад
+              <ArrowLeft className="w-5 h-5 mr-1" />
             </NavLink>
             <div className="relative">
               <h2 className="text-lg font-semibold">{interlocutorName}</h2>
@@ -399,7 +419,7 @@ const ChatPage: React.FC = () => {
         </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">
-          <div ref={chatContainerRef} className="h-full overflow-y-auto px-4 py-4 space-y-4">
+          <div ref={chatContainerRef} className="h-full overflow-y-auto overflow-x-hidden px-4 py-4 space-y-1">
             {isLoadingMore && (
               <div className="text-center text-gray-400 py-2">
                 <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#3D5B82] mx-auto"></div>
@@ -408,50 +428,107 @@ const ChatPage: React.FC = () => {
             {messages.length === 0 && !isLoadingMore && (
               <div className="text-center text-gray-400 py-8">Начните общение</div>
             )}
-            {messages.map((message, index) => (
-              <div
-                key={getMessageKey(message, index)}
-                className={`flex ${message.sender === myEmail ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`p-3 rounded-lg max-w-[70%] ${
-                    message.sender === myEmail
-                      ? "bg-[#96C3D6] text-black rounded-br-none"
-                      : "bg-gray-100 text-gray-900 rounded-bl-none"
-                  }`}
-                >
-                  <p className="break-words">{message.message}</p>
-                  <p className={`text-xs mt-1 ${message.sender === myEmail ? "text-gray-700" : "text-gray-500"}`}>
-                    {formatMessageDate(message.date)}
-                  </p>
-                </div>
-              </div>
-            ))}
+            {messages.map((message, index) => {
+              const showDateSeparator = () => {
+                const currentDate = formatDateSeparator(new Date(message.date));
+                if (currentDate !== lastDateSeparator) {
+                  lastDateSeparator = currentDate;
+                  return true;
+                }
+                return false;
+              };
+              const dateSeparator = showDateSeparator();
+              return (
+                <React.Fragment key={getMessageKey(message, index)}>
+                  {dateSeparator && (
+                    <div className="flex justify-center my-3">
+                      <span className="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                        {lastDateSeparator}
+                      </span>
+                    </div>
+                  )}
+                  <div className={`flex ${message.sender === myEmail ? "justify-end" : "justify-start"} mb-1`}>
+                    {editingMessageId === message._id ? (
+                      <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm w-full max-w-xs">
+                        <input
+                          type="text"
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6] mb-2"
+                          autoFocus
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button onClick={handleCancelEdit} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Отмена</button>
+                          <button onClick={handleSaveEdit} className="px-3 py-1.5 text-sm bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E]">Сохранить</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`max-w-[75%] min-w-0 flex flex-col ${message.sender === myEmail ? 'items-end' : 'items-start'}`}>
+                        <div className={`relative group px-4 py-2.5 rounded-2xl ${
+                          message.sender === myEmail
+                            ? 'bg-[#3D5B82] text-white rounded-br-md'
+                            : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                        }`}>
+                          {message.deleted ? (
+                            <p className="italic opacity-70 break-words">Сообщение удалено</p>
+                          ) : (
+                            <p className="break-words text-[15px]" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{message.message}</p>
+                          )}
+                          <div className={`flex items-center gap-1 mt-1 ${message.sender === myEmail ? 'justify-end text-blue-100' : 'justify-start text-gray-400'}`}>
+                            <span className="text-xs whitespace-nowrap">{formatMessageDate(message.date)}</span>
+                            {message.edited && <span className="text-xs opacity-70">изменено</span>}
+                          </div>
+                          {message.sender === myEmail && !message.deleted && (
+                            <div className="absolute -top-1 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center bg-white border border-gray-200 rounded-full px-1 py-0.5 shadow-sm -translate-y-1/2 translate-x-1/3">
+                              <button
+                                onClick={() => handleEditMessage(message._id!, message.message)}
+                                className="p-1 text-gray-500 hover:text-[#3D5B82] transition-colors"
+                                title="Редактировать"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMessage(message._id!)}
+                                className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+                                title="Удалить"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </React.Fragment>
+              );
+            })}
             <div ref={messagesEndRef} />
           </div>
         </div>
 
         <div className="border-t border-gray-200 bg-white px-4 py-3 flex items-center gap-2 flex-shrink-0">
-          <input
-            type="text"
-            placeholder="Введите сообщение"
-            value={newMessage}
-            onChange={(e) => {
-              setNewMessage(e.target.value);
-              handleTypingStart();
-            }}
-            onKeyDown={handleKeyPress}
-            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
-            className="p-3 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] disabled:opacity-50 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </button>
+          <div className="relative flex-1 max-w-full">
+            <input
+              type="text"
+              placeholder="Введите сообщение..."
+              value={newMessage}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                handleTypingStart();
+              }}
+              onKeyDown={handleKeyPress}
+              className="w-full py-3 pl-4 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-gray-50 break-words"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] disabled:opacity-40 disabled:hover:bg-[#96C3D6] transition-colors"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -471,7 +548,6 @@ const ChatPage: React.FC = () => {
                 </svg>
               </button>
             </div>
-
             <div className="p-4 flex-grow overflow-auto">
               <CalendarView
                 events={calendarEvents}

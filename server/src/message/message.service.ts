@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Message } from './schemas/message.schema';
@@ -157,6 +157,23 @@ export class MessageService {
           : null,
       };
     });
+  }
+
+  async editMessage(messageId: string, senderEmail: string, newText: string) {
+    const msg = await this.messageModel.findById(messageId);
+    if (!msg || msg.sender !== senderEmail) throw new NotFoundException('Сообщение не найдено или нет прав');
+    if (msg.deleted) throw new BadRequestException('Нельзя редактировать удалённое сообщение');
+    msg.message = newText;
+    msg.edited = true;
+    return msg.save();
+  }
+
+  async deleteMessage(messageId: string, senderEmail: string) {
+    const msg = await this.messageModel.findById(messageId);
+    if (!msg || msg.sender !== senderEmail) throw new NotFoundException('Сообщение не найдено или нет прав');
+    msg.deleted = true;
+    msg.message = '(сообщение удалено)';
+    return msg.save();
   }
 
   async markMessagesAsRead(readerEmail: string, fromEmail: string): Promise<void> {
