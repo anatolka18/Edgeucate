@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC, useState, useEffect } from 'react'
 import { AuthService } from '../services/auth.service'
 import { toast } from 'react-toastify'
 import { useAppDispatch } from '../store/hooks'
@@ -27,6 +27,10 @@ const AuthPage: FC = () => {
 
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
+
+    useEffect(() => {
+        fetch('/api', { credentials: 'include' }).catch(() => {});
+    }, []);
 
     const loginHandler = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
