@@ -1,3 +1,5 @@
 .env
+.env.prod
+myDockerComand.md
 
 docker-compose.override.yml

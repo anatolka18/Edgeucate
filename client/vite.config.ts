@@ -6,11 +6,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://server:4200',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:4200',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://server:4200',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:4200',
         changeOrigin: true,
         ws: true,
       },

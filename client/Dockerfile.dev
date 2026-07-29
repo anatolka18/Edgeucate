@@ -1,0 +1,16 @@
+ARG NODE_VERSION=24.18.0
+FROM node:${NODE_VERSION}-alpine
+
+WORKDIR /app
+RUN chown -R node:node /app
+
+COPY --chown=node:node package*.json ./
+
+USER node
+
+RUN npm install && npm cache clean --force
+
+COPY --chown=node:node . .
+
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host"]

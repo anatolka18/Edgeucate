@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, Github } from "lucide-react";
+import { Mail, Phone, MapPin, ExternalLink } from "lucide-react";
 import FullLogo from "../assets/FullLogo.png";
 
 const Footer: FC = () => {
@@ -56,7 +56,7 @@ const Footer: FC = () => {
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-[#3D5B82] hover:text-white transition-all text-gray-600"
               >
-                <Github className="w-5 h-5" />
+                <ExternalLink className="w-5 h-5" />
               </a>
             </div>
           </div>
