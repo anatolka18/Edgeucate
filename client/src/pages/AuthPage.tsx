@@ -8,7 +8,10 @@ import Logo from "../assets/Logo.png";
 import { ensureSocket } from '../App';
 import { accessToken } from '../store/auth-state';
 import { instance } from '../api/axios.api';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import PasswordStrength from '../components/PasswordStrength';
+
+const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const AuthPage: FC = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -34,6 +37,11 @@ const AuthPage: FC = () => {
 
     const loginHandler = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        if (!validateEmail(email)) {
+            toast.error('Введите корректный email');
+            return;
+        }
 
         try {
             const dataLogin = await AuthService.login({ email, password });
@@ -65,6 +73,10 @@ const AuthPage: FC = () => {
     const registrationHandler = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
+        if (!validateEmail(email)) {
+            toast.error('Введите корректный email');
+            return;
+        }
         if (password !== passwordTwo) {
             toast.error("Пароли не совпадают!");
             return;
@@ -91,6 +103,10 @@ const AuthPage: FC = () => {
             toast.error('Введите email');
             return;
         }
+        if (!validateEmail(resetEmail)) {
+            toast.error('Введите корректный email');
+            return;
+        }
         setResetLoading(true);
         try {
             await instance.post('/auth/forgot-password', { email: resetEmail });
@@ -107,7 +123,7 @@ const AuthPage: FC = () => {
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100 font-montserrat">
             {isBlockedModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h2 className="text-xl font-bold mb-4 text-red-600">Аккаунт заблокирован</h2>
                         <p className="mb-4">Ваш аккаунт был заблокирован администратором.</p>
@@ -126,18 +142,21 @@ const AuthPage: FC = () => {
             )}
 
             {showForgotPassword && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h2 className="text-xl font-bold mb-4">Восстановление пароля</h2>
                         <p className="text-sm text-gray-600 mb-4">Введите email, на который отправить ссылку для сброса пароля.</p>
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={resetEmail}
-                            onChange={(e) => setResetEmail(e.target.value)}
-                            className="w-full mb-3 p-2 border border-gray-300 rounded"
-                            autoComplete="email"
-                        />
+                        <div className="relative mb-4">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                value={resetEmail}
+                                onChange={(e) => setResetEmail(e.target.value)}
+                                className="w-full pl-10 p-2 border border-gray-300 rounded"
+                                autoComplete="email"
+                            />
+                        </div>
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => setShowForgotPassword(false)}
@@ -177,26 +196,30 @@ const AuthPage: FC = () => {
                         />
                     )}
 
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full mb-3 p-2 border border-gray-300 rounded"
-                        autoComplete="email"
-                        required
-                    />
+                    <div className="relative mb-3">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className={`w-full pl-10 p-2 border rounded ${email && !validateEmail(email) ? 'border-red-400' : 'border-gray-300'}`}
+                            autoComplete="email"
+                            required
+                        />
+                    </div>
 
                     <div className="relative mb-3">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Пароль"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full p-2 pr-10 border border-gray-300 rounded"
+                            className="w-full pl-10 pr-10 p-2 border border-gray-300 rounded"
                             autoComplete="current-password"
                             required
-                            minLength={6}
+                            minLength={8}
                         />
                         <button
                             type="button"
@@ -208,25 +231,30 @@ const AuthPage: FC = () => {
                     </div>
 
                     {!isLogin && (
-                        <div className="relative mb-3">
-                            <input
-                                type={showPasswordTwo ? 'text' : 'password'}
-                                placeholder="Подтвердите пароль"
-                                value={passwordTwo}
-                                onChange={(e) => setPasswordTwo(e.target.value)}
-                                className="w-full p-2 pr-10 border border-gray-300 rounded"
-                                required
-                                minLength={6}
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                onClick={() => setShowPasswordTwo(!showPasswordTwo)}
-                            >
-                                {showPasswordTwo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                        </div>
+                        <>
+                            <PasswordStrength password={password} />
+                            <div className="relative mb-3 mt-3">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type={showPasswordTwo ? 'text' : 'password'}
+                                    placeholder="Подтвердите пароль"
+                                    value={passwordTwo}
+                                    onChange={(e) => setPasswordTwo(e.target.value)}
+                                    className={`w-full pl-10 pr-10 p-2 border rounded ${passwordTwo && password !== passwordTwo ? 'border-red-400' : 'border-gray-300'}`}
+                                    required
+                                    minLength={8}
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    onClick={() => setShowPasswordTwo(!showPasswordTwo)}
+                                >
+                                    {showPasswordTwo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
+                        </>
                     )}
+
                     {!isLogin && (
                         <div className="flex justify-between items-center mb-3">
                             <label className="flex items-center">

@@ -7,6 +7,20 @@ x-logging: &default-logging
     max-file: "3"
 
 services:
+  redis:
+    build:
+      context: .
+      dockerfile: Dockerfile.redis
+    container_name: edgeucate-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    logging: *default-logging
+    networks:
+      - backend
+
   server:
     build:
       context: ./server
@@ -15,12 +29,43 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
     volumes:
       - ./server:/app
       - /app/node_modules
     logging: *default-logging
     networks:
       - backend
+    depends_on:
+      - redis
+
+  bull-board:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: edgeucate-bullboard-dev
+    restart: unless-stopped
+    ports:
+      - "4201:4201"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - NODE_ENV=development
+    command: npx ts-node src/queue/bull-board-server.ts
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    logging: *default-logging
+    networks:
+      - backend
+    depends_on:
+      - redis
 
   client:
     build:
@@ -46,6 +91,9 @@ services:
     networks:
       - frontend
       - backend
+
+volumes:
+  redis_data:
 
 networks:
   frontend:

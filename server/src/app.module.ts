@@ -13,6 +13,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { MailModule } from './mail/mail.module';
 import { ClientErrorsController } from './common/controllers/client-errors.controller';
+import { QueueModule } from './queue/queue.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ClientErrorsController } from './common/controllers/client-errors.contr
     CalendarModule,
     MessageModule,
     MailModule,
+    QueueModule,
   ],
   controllers: [AppController, ClientErrorsController],
   providers: [

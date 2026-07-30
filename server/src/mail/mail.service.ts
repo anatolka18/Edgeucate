@@ -15,16 +15,20 @@ export class MailService {
     const pass = this.configService.get('SMTP_PASS');
 
     this.transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
+      host: this.configService.get('SMTP_HOST'),
+      port: parseInt(this.configService.get('SMTP_PORT') || '465'),
+      secure: this.configService.get('SMTP_SECURE') === 'true',
       auth: {
-        user,
-        pass,
+        user: this.configService.get('SMTP_USER'),
+        pass: this.configService.get('SMTP_PASS'),
       },
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 10000,
+      tls: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
   }
 

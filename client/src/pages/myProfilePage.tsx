@@ -9,6 +9,7 @@ import { useMyProfile } from '../hooks/useMyProfile';
 import { instance } from '../api/axios.api';
 import { IUser } from '../types/user';
 import { Eye, EyeOff, Lock } from 'lucide-react';
+import PasswordStrength from '../components/PasswordStrength';
 
 const MyProfilePage: FC = () => {
     const profile = useMyProfile();
@@ -154,7 +155,7 @@ const MyProfilePage: FC = () => {
             </div>
 
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50 p-4">
                     <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Редактировать информацию</h2>
                         <textarea
@@ -184,15 +185,16 @@ const MyProfilePage: FC = () => {
             )}
 
             {isPasswordModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50 p-4">
                     <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Смена пароля</h2>
                         <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
                             <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type={showOldPassword ? 'text' : 'password'}
                                     placeholder="Старый пароль"
-                                    className="w-full p-3 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                                    className="w-full pl-10 pr-12 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
                                     value={oldPassword}
                                     onChange={(e) => setOldPassword(e.target.value)}
                                 />
@@ -204,27 +206,32 @@ const MyProfilePage: FC = () => {
                                     {showOldPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
-                            <div className="relative">
-                                <input
-                                    type={showNewPassword ? 'text' : 'password'}
-                                    placeholder="Новый пароль"
-                                    className="w-full p-3 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                    onClick={() => setShowNewPassword(!showNewPassword)}
-                                >
-                                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
+                            <div>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type={showNewPassword ? 'text' : 'password'}
+                                        placeholder="Новый пароль"
+                                        className="w-full pl-10 pr-12 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                    >
+                                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+                                <PasswordStrength password={newPassword} />
                             </div>
                             <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type={showConfirmPassword ? 'text' : 'password'}
                                     placeholder="Подтвердите новый пароль"
-                                    className="w-full p-3 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                                    className={`w-full pl-10 pr-12 p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] ${confirmPassword && newPassword !== confirmPassword ? 'border-red-400' : 'border-gray-200'}`}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                 />

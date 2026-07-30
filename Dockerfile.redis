@@ -1,0 +1,9 @@
+FROM redis:7.4-bookworm AS source
+
+FROM gcr.io/distroless/base-debian12
+
+COPY --from=source /usr/local/bin/redis-server /usr/local/bin/
+COPY --from=source /usr/local/bin/redis-cli /usr/local/bin/
+
+EXPOSE 6379
+CMD ["/usr/local/bin/redis-server"]

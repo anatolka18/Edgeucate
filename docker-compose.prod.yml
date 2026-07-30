@@ -7,6 +7,18 @@ x-logging: &default-logging
     max-file: "3"
 
 services:
+  redis:
+    build:
+      context: .
+      dockerfile: Dockerfile.redis
+    container_name: edgeucate-redis-prod
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    logging: *default-logging
+    networks:
+      - backend
+
   server:
     build:
       context: ./server
@@ -16,6 +28,9 @@ services:
     restart: unless-stopped
     env_file:
       - .env.prod
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:4200/api', (res) => { process.exit(res.statusCode < 400 ? 0 : 1) })"]
       interval: 30s
@@ -25,6 +40,8 @@ services:
     logging: *default-logging
     networks:
       - backend
+    depends_on:
+      - redis
     deploy:
       resources:
         limits:
@@ -69,9 +86,11 @@ services:
       - "com.edgeucate.service=frontend"
       - "com.edgeucate.version=${VERSION:-1.0.0}"
 
+volumes:
+  redis_data:
+
 networks:
   frontend:
     driver: bridge
   backend:
     driver: bridge
-    # internal: true

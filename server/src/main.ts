@@ -5,7 +5,7 @@ import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { SocketAdapter } from './common/adapters/socket.adapter';
 import * as express from 'express';
-const cookieParser = require('cookie-parser');;
+const cookieParser = require('cookie-parser');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,10 +19,9 @@ async function bootstrap() {
   });
   app.use(new CsrfMiddleware().use);
   app.use(cookieParser());
-  
+
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe());
-
   app.useGlobalFilters(new AllExceptionsFilter());
 
   await app.listen(4200);

@@ -24,7 +24,7 @@ function App() {
   useEffect(() => {
     const path = window.location.pathname
 
-    if (path === '/auth') {
+    if (path === '/auth' || path.startsWith('/verify-email') || path.startsWith('/reset-password')) {
       setAuthReady(true)
       setIsLoading(false)
       return
