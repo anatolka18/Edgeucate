@@ -1,0 +1,13 @@
+{
+  "watch": ["src"],
+  "ext": "ts",
+  "ignore": [
+    "src/**/*.spec.ts",
+    "node_modules",
+    "dist",
+    ".git"
+  ],
+  "exec": "npx nest start --bswc",
+  "legacyWatch": true,
+  "pollingInterval": 1500
+}

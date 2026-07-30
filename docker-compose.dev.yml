@@ -33,6 +33,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
       - CHOKIDAR_INTERVAL=1000
     volumes:
       - ./server:/app
