@@ -2,16 +2,16 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import * as mongoose from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, Notification, NotificationType } from './schemas/user.schema';
+import { RefreshToken } from '../auth/schemas/refresh-token.schema';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { SendMessageDto } from './dto/sendMessage.dto';
 import { MessageService } from '../message/message.service';
 
 @Injectable()
 export class UserService {
-  refreshTokenModel: any;
-  messageModel: any;
   constructor(
     @InjectModel(User.name) private userModel: mongoose.Model<User>,
+    @InjectModel(RefreshToken.name) private refreshTokenModel: mongoose.Model<RefreshToken>,
     private messageService: MessageService,
   ) {}
 
@@ -23,10 +23,6 @@ export class UserService {
     const user = await this.userModel.findOne({ username }).exec();
     if (!user) throw new NotFoundException('User not found');
     return user;
-  }
-
-  async getMessageById(id: string) {
-    return this.messageModel.findById(id);
   }
 
   async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
@@ -71,8 +67,8 @@ export class UserService {
 
   async getUsersByEmails(emails: string[]): Promise<{ email: string; online: boolean }[]> {
     const users = await this.userModel.find(
-        { email: { $in: emails } },
-        { email: 1, online: 1 }
+      { email: { $in: emails } },
+      { email: 1, online: 1 }
     ).lean();
     return users;
   }

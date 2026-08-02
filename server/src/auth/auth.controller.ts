@@ -90,8 +90,7 @@ export class AuthController {
   @Get('/profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Request() req) {
-    const { password, ...user } = req.user.toObject();
-    return user;
+    return req.user.toJSON();
   }
 
   @Post('/verify-email')

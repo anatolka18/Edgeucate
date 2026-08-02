@@ -167,22 +167,30 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage(ACTIONS.JOIN)
   joinRoom(@ConnectedSocket() client: Socket, @MessageBody() config: { room: string }) {
     const { room } = config;
-    const { rooms: joinedRooms } = client;
 
+    const authClient = client as AuthenticatedSocket;
+    if (!authClient.data?.user) {
+      return client.emit('error', { message: 'Необходима авторизация' });
+    }
+
+    const { rooms: joinedRooms } = client;
     if (Array.from(joinedRooms).includes(room)) {
       return;
     }
 
+    const userEmail = authClient.data.user.email;
     const clients = Array.from(this.server.adapter.rooms.get(room) || []);
 
     clients.forEach(clientID => {
       this.server.to(clientID).emit(ACTIONS.ADD_PEER, {
         peerID: client.id,
+        email: userEmail,
         createOffer: false,
       });
 
       client.emit(ACTIONS.ADD_PEER, {
         peerID: clientID,
+        email: userEmail,
         createOffer: true,
       });
     });
@@ -204,7 +212,6 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
           this.server.to(clientID).emit(ACTIONS.REMOVE_PEER, {
             peerID: client.id,
           });
-
           client.emit(ACTIONS.REMOVE_PEER, {
             peerID: clientID,
           });
@@ -256,12 +263,12 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   }
 
   private async sendUnreadNotifications(email: string) {
-      const chats = await this.userService.getChats(email);
-      for (const chat of chats) {
-          if (chat.unreadCount > 0) {
-              this.server.to(email).emit('unread_count', { from: chat.interlocutor, count: chat.unreadCount });
-          }
+    const chats = await this.userService.getChats(email);
+    for (const chat of chats) {
+      if (chat.unreadCount > 0) {
+        this.server.to(email).emit('unread_count', { from: chat.interlocutor, count: chat.unreadCount });
       }
+    }
   }
 
   private async notifyOnlineStatus(email: string, online: boolean) {

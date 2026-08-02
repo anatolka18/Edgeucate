@@ -1,110 +1,163 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import useWebRTC, { LOCAL_VIDEO } from '../hooks/useWebRTC';
 import { useMyProfile } from '../hooks/useMyProfile';
-import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaSignOutAlt, FaDesktop } from 'react-icons/fa';
+import {
+  FaMicrophone,
+  FaMicrophoneSlash,
+  FaVideo,
+  FaVideoSlash,
+  FaSignOutAlt,
+  FaDesktop,
+} from 'react-icons/fa';
 
 interface RoomParams {
   [key: string]: string | undefined;
 }
 
+function getUserName(email: string): string {
+  if (email === LOCAL_VIDEO) return 'Вы';
+  return email.split('@')[0] || email;
+}
+
 export default function RoomPage() {
   const { id: roomID } = useParams<RoomParams>();
   const profile = useMyProfile();
+  const navigate = useNavigate();
 
   if (!roomID) {
-    return <div className="text-white text-xl">Error: Room ID is missing!</div>;
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-950 text-white text-lg">
+        Ошибка: ID комнаты отсутствует!
+      </div>
+    );
   }
 
-  const { 
-    clients, 
-    provideMediaRef, 
-    toggleAudio, 
-    toggleVideo, 
-    startScreenShare, 
-    stopScreenShare, 
-    isAudioEnabled, 
-    isVideoEnabled, 
-    isScreenSharing
+  const {
+    clients,
+    provideMediaRef,
+    toggleAudio,
+    toggleVideo,
+    startScreenShare,
+    stopScreenShare,
+    isAudioEnabled,
+    isVideoEnabled,
+    isScreenSharing,
   } = useWebRTC(roomID);
-
-  const navigate = useNavigate();
 
   const getGridLayout = () => {
     const count = clients.length;
-    if (count === 1) return "grid-cols-1";
-    if (count === 2) return "grid-cols-2";
-    if (count <= 4) return "grid-cols-2";
-    if (count <= 6) return "grid-cols-3";
-    return "grid-cols-3";
+    if (count <= 1) return 'grid-cols-1';
+    if (count === 2) return 'grid-cols-1 sm:grid-cols-2';
+    if (count <= 4) return 'grid-cols-2';
+    if (count <= 9) return 'grid-cols-2 md:grid-cols-3';
+    return 'grid-cols-3 md:grid-cols-4';
   };
 
   return (
-    <div className="relative w-full h-screen flex bg-gray-900 p-4">
-      <div
-        className={`grid w-full gap-4 ${getGridLayout()}`}
-        style={{
-          gridAutoRows: 'minmax(200px, 1fr)',
-        }}
-      >
-        {clients.map((client) => {
-          const clientID = client.email;
+    <div className="relative flex h-screen w-full flex-col bg-gray-950 text-white font-sans select-none">
+      <div className="flex-1 w-full overflow-hidden px-2 sm:px-4 pb-20 sm:pb-24 pt-2 sm:pt-4">
+        <div className={`grid gap-2 sm:gap-4 auto-rows-fr h-full ${getGridLayout()}`}>
+          {clients.map((client) => {
+            const email = client.email;
+            const isLocal = email === LOCAL_VIDEO;
+            const displayName = isLocal
+              ? profile?.username || 'Вы'
+              : getUserName(email);
 
-          return (
-            <div
-              key={clientID}
-              className="relative border rounded-lg overflow-hidden bg-gray-800 flex justify-center items-center shadow-lg"
-            >
-              <div className="w-full h-full">
-                <video
-                  width="100%"
-                  height="100%"
-                  ref={instance => {
-                    provideMediaRef(clientID, instance);
-                  }}
-                  autoPlay
-                  playsInline
-                  muted={clientID === LOCAL_VIDEO}
-                  className="object-cover w-full h-full"
-                />
-              </div>
+            const videoActive = isLocal ? isVideoEnabled : true;
+            const audioActive = isLocal ? isAudioEnabled : true;
 
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-white font-medium">
-                    {clientID === LOCAL_VIDEO ? profile?.username || 'Вы' : ''}
+            return (
+              <div
+                key={email}
+                className="relative flex items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl bg-gray-900 border border-gray-800 shadow-lg min-h-0"
+              >
+                <div className="absolute inset-0">
+                  <video
+                    ref={(node) => provideMediaRef(email, node)}
+                    autoPlay
+                    playsInline
+                    muted={isLocal}
+                    className={`h-full w-full object-cover ${
+                      videoActive ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                </div>
+
+                {!videoActive && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
+                    <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-blue-600 text-xl sm:text-2xl font-bold uppercase">
+                      {displayName.charAt(0)}
+                    </div>
+                  </div>
+                )}
+
+                <div className="absolute bottom-2 left-2 right-2 z-10 flex items-center justify-between rounded-lg bg-black/60 px-2 py-1 sm:px-3 sm:py-2 backdrop-blur-md text-xs sm:text-sm">
+                  <span className="truncate max-w-[75%] font-medium">
+                    {displayName} {isLocal && '(Вы)'}
                   </span>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    {!audioActive && (
+                      <span className="text-red-400">
+                        <FaMicrophoneSlash size={12} />
+                      </span>
+                    )}
+                    {!videoActive && (
+                      <span className="text-red-400">
+                        <FaVideoSlash size={12} />
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 flex space-x-6 bg-gray-800/80 px-6 py-3 rounded-full backdrop-blur-sm shadow-lg">
-        <button 
-          onClick={toggleAudio} 
-          className={`p-3 rounded-full ${isAudioEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'} text-white transition-colors`}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 sm:gap-4 rounded-3xl bg-gray-900/95 px-4 sm:px-6 py-2 sm:py-3 backdrop-blur-lg border border-gray-800 shadow-xl">
+        <button
+          onClick={() => toggleAudio()}
+          title={isAudioEnabled ? 'Выключить микрофон' : 'Включить микрофон'}
+          className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full text-base sm:text-lg transition-all hover:scale-105 active:scale-95 ${
+            isAudioEnabled
+              ? 'bg-gray-800 text-white hover:bg-gray-700'
+              : 'bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20'
+          }`}
         >
           {isAudioEnabled ? <FaMicrophone /> : <FaMicrophoneSlash />}
         </button>
 
-        <button 
-          onClick={toggleVideo} 
-          className={`p-3 rounded-full ${isVideoEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'} text-white transition-colors`}
+        <button
+          onClick={() => toggleVideo()}
+          title={isVideoEnabled ? 'Выключить камеру' : 'Включить камеру'}
+          className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full text-base sm:text-lg transition-all hover:scale-105 active:scale-95 ${
+            isVideoEnabled
+              ? 'bg-gray-800 text-white hover:bg-gray-700'
+              : 'bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20'
+          }`}
         >
           {isVideoEnabled ? <FaVideo /> : <FaVideoSlash />}
         </button>
 
-        <button 
-          onClick={isScreenSharing ? stopScreenShare : startScreenShare} 
-          className={`p-3 rounded-full ${isScreenSharing ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white transition-colors`}
+        <button
+          onClick={() => isScreenSharing ? stopScreenShare() : startScreenShare()}
+          title={isScreenSharing ? 'Остановить показ экрана' : 'Демонстрация экрана'}
+          className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full text-base sm:text-lg transition-all hover:scale-105 active:scale-95 ${
+            isScreenSharing
+              ? 'bg-green-500 text-white hover:bg-green-600 shadow-lg shadow-green-500/20'
+              : 'bg-gray-800 text-white hover:bg-gray-700'
+          }`}
         >
           <FaDesktop />
         </button>
 
-        <button 
-          onClick={() => navigate("/")} 
-          className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition-colors"
+        <div className="h-6 w-px bg-gray-700" />
+
+        <button
+          onClick={() => navigate('/')}
+          title="Покинуть встречу"
+          className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-600/30"
         >
           <FaSignOutAlt />
         </button>

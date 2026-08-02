@@ -42,6 +42,7 @@ export class User {
   username: string;
 
   @Prop({ required: true })
+  @Exclude()
   password: string;
 
   @Prop({ required: true })
@@ -88,3 +89,14 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (doc, ret: any) => {
+    delete ret.password;
+    delete ret.__v;
+    if (ret._id) ret._id = ret._id.toString();
+    return ret;
+  }
+});;

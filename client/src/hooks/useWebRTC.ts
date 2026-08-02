@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import freeice from 'freeice';
-import useStateWithCallback from './useStateWithCallback';
 import { MySocket } from '../store/auth-state';
 import { ACTIONS } from './actions';
+import { toast } from 'react-toastify';
+import useStateWithCallback from './useStateWithCallback';
 
 export const LOCAL_VIDEO = 'LOCAL_VIDEO';
 
@@ -17,6 +17,19 @@ interface MediaElements {
 interface Client {
   email: string;
 }
+
+const ICE_SERVERS: RTCIceServer[] = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun.l.google.com:5349" },
+  { urls: "stun:stun1.l.google.com:3478" },
+  { urls: "stun:stun1.l.google.com:5349" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:5349" },
+  { urls: "stun:stun3.l.google.com:3478" },
+  { urls: "stun:stun3.l.google.com:5349" },
+  { urls: "stun:stun4.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:5349" },
+];
 
 export default function useWebRTC(roomID: string) {
   const [clients, updateClients] = useStateWithCallback<Client[]>([]);
@@ -39,45 +52,41 @@ export default function useWebRTC(roomID: string) {
   }, [updateClients]);
 
   useEffect(() => {
-    async function handleNewPeer({ peerID, createOffer }: { peerID: string; createOffer: boolean }) {
+    async function handleNewPeer({ peerID, email, createOffer = false }: { peerID: string; email?: string; createOffer?: boolean }) {
       if (peerID in peerConnections.current) {
-        return console.warn(`Already connected to peer ${peerID}`);
+        return;
       }
 
+      const peerEmail = email || peerID;
+
       peerConnections.current[peerID] = new RTCPeerConnection({
-        iceServers: freeice(),
+        iceServers: ICE_SERVERS,
       });
 
       peerConnections.current[peerID].onicecandidate = (event) => {
-        if (event.candidate && MySocket.socket) {
-          MySocket.socket.emit(ACTIONS.RELAY_ICE, {
+        if (event.candidate) {
+          MySocket.socket?.emit(ACTIONS.RELAY_ICE, {
             peerID,
             iceCandidate: event.candidate,
           });
         }
       };
 
-      let tracksNumber = 0;
       peerConnections.current[peerID].ontrack = ({ streams: [remoteStream] }) => {
-        tracksNumber++;
-
-        if (tracksNumber === 2) {
-          tracksNumber = 0;
-          addNewClient(peerID, () => {
-            if (peerMediaElements.current[peerID]) {
-              peerMediaElements.current[peerID]!.srcObject = remoteStream;
-            } else {
-              let settled = false;
-              const interval = setInterval(() => {
-                if (peerMediaElements.current[peerID]) {
-                  peerMediaElements.current[peerID]!.srcObject = remoteStream;
-                  settled = true;
-                }
-                if (settled) clearInterval(interval);
-              }, 1000);
-            }
-          });
-        }
+        addNewClient(peerEmail, () => {
+          if (peerMediaElements.current[peerEmail]) {
+            peerMediaElements.current[peerEmail]!.srcObject = remoteStream;
+          } else {
+            let settled = false;
+            const interval = setInterval(() => {
+              if (peerMediaElements.current[peerEmail]) {
+                peerMediaElements.current[peerEmail]!.srcObject = remoteStream;
+                settled = true;
+              }
+              if (settled) clearInterval(interval);
+            }, 1000);
+          }
+        });
       };
 
       localMediaStream.current?.getTracks().forEach((track) => {
@@ -128,9 +137,10 @@ export default function useWebRTC(roomID: string) {
   }, []);
 
   useEffect(() => {
-    MySocket.socket?.on(ACTIONS.ICE_CANDIDATE, ({ peerID, iceCandidate }: { peerID: string; iceCandidate: RTCIceCandidateInit }) => {
+    const handler = ({ peerID, iceCandidate }: { peerID: string; iceCandidate: RTCIceCandidateInit }) => {
       peerConnections.current[peerID]?.addIceCandidate(new RTCIceCandidate(iceCandidate));
-    });
+    };
+    MySocket.socket?.on(ACTIONS.ICE_CANDIDATE, handler);
     return () => {
       MySocket.socket?.off(ACTIONS.ICE_CANDIDATE);
     };
@@ -142,7 +152,6 @@ export default function useWebRTC(roomID: string) {
         peerConnections.current[peerID].close();
       }
       delete peerConnections.current[peerID];
-      delete peerMediaElements.current[peerID];
       updateClients((list) => list.filter((c) => c.email !== peerID));
     };
 
@@ -160,12 +169,26 @@ export default function useWebRTC(roomID: string) {
           video: { width: 1280, height: 720 },
         });
       } catch (e) {
-        console.error('Error getting userMedia:', e);
-        return;
+        localMediaStream.current = new MediaStream();
+        try {
+          const audioContext = new AudioContext();
+          const oscillator = audioContext.createOscillator();
+          const destination = audioContext.createMediaStreamDestination();
+          oscillator.connect(destination);
+          const audioTrack = destination.stream.getAudioTracks()[0];
+          localMediaStream.current.addTrack(audioTrack);
+          oscillator.start();
+          setTimeout(() => {
+            oscillator.stop();
+            audioContext.close();
+          }, 1000);
+        } catch (audioError) {
+          console.error('[WEBRTC] Failed to create audio track:', audioError);
+        }
       }
 
       const audioTrack = localMediaStream.current.getAudioTracks()[0];
-      setIsAudioEnabled(audioTrack?.enabled ?? true);
+      setIsAudioEnabled(audioTrack?.enabled ?? false);
 
       addNewClient(LOCAL_VIDEO, () => {
         const localVideoElement = peerMediaElements.current[LOCAL_VIDEO];
@@ -178,8 +201,7 @@ export default function useWebRTC(roomID: string) {
       MySocket.socket?.emit(ACTIONS.JOIN, { room: roomID });
     }
 
-    startCapture()
-      .catch((e) => console.error('Error starting capture:', e));
+    startCapture().catch((e) => console.error('[WEBRTC] startCapture error:', e));
 
     return () => {
       localMediaStream.current?.getTracks().forEach((track) => track.stop());
@@ -239,7 +261,7 @@ export default function useWebRTC(roomID: string) {
       const audioTrack = localMediaStream.current.getAudioTracks()[0];
       setIsAudioEnabled(audioTrack?.enabled ?? true);
     } catch (e) {
-      console.error('Error starting screen share', e);
+      toast.error('Не удалось начать демонстрацию экрана');
     }
   };
 
@@ -274,7 +296,7 @@ export default function useWebRTC(roomID: string) {
         const audioTrack = newLocalStream.getAudioTracks()[0];
         setIsAudioEnabled(audioTrack?.enabled ?? true);
       }).catch((e) => {
-        console.error('Error restoring video stream', e);
+        console.error('[WEBRTC] Error restoring video stream:', e);
       });
     }
   };

@@ -16,7 +16,9 @@ export default function AllRoomPage() {
   const [newRoomID, setNewRoomID] = useState<string>('');
 
   useEffect(() => {
-    if (!MySocket.socket) return;
+    if (!MySocket.socket) {
+      return;
+    }
 
     const handleShareRooms = ({ rooms = [] }: { rooms?: string[] } = {}) => {
       setRooms(rooms.map((roomID) => ({ roomID })));
