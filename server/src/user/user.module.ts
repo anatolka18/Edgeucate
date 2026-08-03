@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UserService } from './user.service';
+import { StudentService } from './student.service';
+import { PresenceService } from './presence.service';
 import { UserController } from './user.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from './schemas/user.schema';
@@ -26,7 +28,7 @@ import { ConfigService } from '@nestjs/config';
     MessageModule,
   ],
   controllers: [UserController],
-  providers: [UserService, UserSocketService],
-  exports: [UserService],
+  providers: [UserService, StudentService, PresenceService, UserSocketService],
+  exports: [UserService, StudentService, PresenceService],
 })
 export class UserModule {}

@@ -20,3 +20,13 @@ export class EmailToken {
 
 export const EmailTokenSchema = SchemaFactory.createForClass(EmailToken);
 EmailTokenSchema.index({ expires: 1 }, { expireAfterSeconds: 0 });
+
+EmailTokenSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (doc, ret: any) => {
+    delete ret.__v;
+    if (ret._id) ret._id = ret._id.toString();
+    return ret;
+  }
+});

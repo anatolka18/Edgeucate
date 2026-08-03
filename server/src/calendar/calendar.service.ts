@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException, ForbiddenException 
 import { InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { CalendarEvent } from './schemas/calendar-event.schema';
+import { APP_CONFIG } from '../common/config/app.config';
 import { CreateCalendarEventDto } from './dto/create-calendar-event.dto';
 
 @Injectable()
@@ -18,27 +19,24 @@ export class CalendarService {
 
     const parsedDate = new Date(createDto.date);
     const [hours, minutes] = createDto.time.split(':').map(Number);
-    const eventStart = new Date(parsedDate.setHours(hours, minutes, 0, 0));
-    const eventEnd = new Date(eventStart.getTime() + 60 * 60 * 1000);
+    const eventStart = new Date(parsedDate);
+    eventStart.setHours(hours, minutes, 0, 0);
+    const eventEnd = new Date(eventStart.getTime() + APP_CONFIG.CALENDAR.EVENT_DURATION_MS);
 
-    const conflict = await this.calendarEventModel.findOne({
+    const existingEvents = await this.calendarEventModel.find({
       teacher_email: createDto.teacher_email,
       date: parsedDate,
-      $or: [
-        { time: createDto.time },
-        {
-          $expr: {
-            $and: [
-              { $lt: ['$time', createDto.time] },
-              { $gt: ['$time', createDto.time] }
-            ]
-          }
-        }
-      ]
-    });
+    }).lean();
 
-    if (conflict) {
-      throw new BadRequestException('Выбранное время уже занято');
+    for (const event of existingEvents) {
+      const [existingHours, existingMinutes] = event.time.split(':').map(Number);
+      const existingStart = new Date(parsedDate);
+      existingStart.setHours(existingHours, existingMinutes, 0, 0);
+      const existingEnd = new Date(existingStart.getTime() + APP_CONFIG.CALENDAR.EVENT_DURATION_MS);;
+
+      if (eventStart < existingEnd && eventEnd > existingStart) {
+        throw new BadRequestException('Выбранное время уже занято');
+      }
     }
 
     return this.calendarEventModel.create({

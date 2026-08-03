@@ -8,6 +8,7 @@ import { access, mkdir, writeFile } from 'fs/promises';
 import { CreateAdvertisementDto } from './dto/createAdvertisement.dto';
 import { User } from '../user/schemas/user.schema';
 import { UpdateAdvertisementDto } from './dto/updateAdvertisement.dto';
+import { APP_CONFIG } from '../common/config/app.config';
 
 @Injectable()
 export class AdvertisementService {
@@ -18,15 +19,35 @@ export class AdvertisementService {
     private userModel: mongoose.Model<User>,
   ) { }
 
-  async findMyAdvertisements(email: string): Promise<Advertisement[]> {
+  async findMyAdvertisements(email: string): Promise<any[]> {
     if (!email || email.trim() === '') {
       throw new BadRequestException('Email не может быть пустым');
     }
-    return this.advertisementModel.find({ email: email });
+    const ads = await this.advertisementModel.find({ email }).lean().exec();
+    return ads.map(ad => ({
+      ...ad,
+      _id: ad._id.toString(),
+    }));
   }
 
-  async findAll(): Promise<Advertisement[]> {
-    return this.advertisementModel.find();
+  async findAll(page = 1, limit = 20): Promise<{ data: any[]; total: number; page: number; totalPages: number }> {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.advertisementModel.find().skip(skip).limit(limit).lean().exec(),
+      this.advertisementModel.countDocuments(),
+    ]);
+    
+    const serialized = data.map(ad => ({
+      ...ad,
+      _id: ad._id.toString(),
+    }));
+    
+    return {
+      data: serialized,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async search(query: string, subject: string): Promise<Advertisement[]> {
@@ -49,7 +70,6 @@ export class AdvertisementService {
   }
 
   async createAdvertisement(createAdvertisementDto: CreateAdvertisementDto): Promise<Advertisement> {
-    this.validateCreateAdvertisementDto(createAdvertisementDto);
     const user = await this.userModel.findOne({ email: createAdvertisementDto.email });
     if (!user) throw new NotFoundException('Пользователь не найден');
     if (user.role !== 'Teacher') throw new BadRequestException('Только преподаватели могут создавать объявления');
@@ -59,7 +79,6 @@ export class AdvertisementService {
       subject: createAdvertisementDto.subject
     });
     if (advertisementYet) throw new BadRequestException('Объявление с таким предметом уже существует');
-    if (createAdvertisementDto.price < 0) throw new BadRequestException('Цена не может быть отрицательной');
 
     let stars = 0;
     let cstars = 0;
@@ -87,33 +106,31 @@ export class AdvertisementService {
     });
   }
 
-  private validateCreateAdvertisementDto(dto: CreateAdvertisementDto): void {
-    if (!dto.email?.trim()) throw new BadRequestException('Email не может быть пустым');
-    if (!dto.title?.trim()) throw new BadRequestException('Заголовок не может быть пустым');
-    if (!dto.subject?.trim()) throw new BadRequestException('Предмет не может быть пустым');
-    if (!dto.aboutAdvertisement?.trim()) throw new BadRequestException('Описание объявления не может быть пустым');
-    if (dto.title.length > 100) throw new BadRequestException('Заголовок не должен превышать 100 символов');
-    if (dto.subject.length > 50) throw new BadRequestException('Название предмета не должно превышать 50 символов');
-    if (dto.aboutAdvertisement.length > 1000) throw new BadRequestException('Описание объявления не должно превышать 1000 символов');
-    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(dto.email)) throw new BadRequestException('Некорректный формат email');
-  }
-
   private generateUniqueId(): string {
     return `${new Date().getTime().toString(36)}-${Math.floor(Math.random() * 1000000).toString(36)}`;
   }
 
-  async findByAdvertisementId(advertisementId: string): Promise<{ advertisement: Advertisement; feedbacks: any[] }> {
+  async findByAdvertisementId(advertisementId: string): Promise<{ advertisement: any; feedbacks: any[] }> {
     if (!advertisementId?.trim()) throw new BadRequestException('ID объявления не может быть пустым');
-    const advertisement = await this.advertisementModel.findOne({ advertisementId });
+    
+    const advertisement = await this.advertisementModel.findOne({ advertisementId }).lean().exec();
     if (!advertisement) throw new NotFoundException('Объявление не найдено');
-    const user = await this.userModel.findOne({ email: advertisement.email });
+    
+    const user = await this.userModel.findOne({ email: advertisement.email }).lean().exec();
     if (!user) throw new NotFoundException('Пользователь не найден');
-    const feedbacks = user.feedback.filter(f => f.advertisementId === advertisementId);
-    return { advertisement, feedbacks };
+    
+    const feedbacks = (user.feedback || []).filter(f => f.advertisementId === advertisementId);
+    
+    return {
+      advertisement: {
+        ...advertisement,
+        _id: advertisement._id.toString(),
+      },
+      feedbacks,
+    };
   }
 
   async updateAdvertisement(updateAdvertisementDto: UpdateAdvertisementDto): Promise<Advertisement> {
-    this.validateUpdateAdvertisementDto(updateAdvertisementDto);
     const advertisement = await this.advertisementModel.findOne({ advertisementId: updateAdvertisementDto.advertisementId });
     if (!advertisement) throw new NotFoundException('Объявление не найдено');
     return this.advertisementModel.findOneAndUpdate(
@@ -125,15 +142,6 @@ export class AdvertisementService {
       },
       { new: true }
     );
-  }
-
-  private validateUpdateAdvertisementDto(dto: UpdateAdvertisementDto): void {
-    if (!dto.advertisementId?.trim()) throw new BadRequestException('ID объявления не может быть пустым');
-    if (!dto.title?.trim()) throw new BadRequestException('Заголовок не может быть пустым');
-    if (!dto.aboutAdvertisement?.trim()) throw new BadRequestException('Описание объявления не может быть пустым');
-    if (dto.title.length > 100) throw new BadRequestException('Заголовок не должен превышать 100 символов');
-    if (dto.aboutAdvertisement.length > 1000) throw new BadRequestException('Описание объявления не должно превышать 1000 символов');
-    if (dto.price < 0) throw new BadRequestException('Цена не может быть отрицательной');
   }
 
   async deleteAdvertisement(advertisementId: string) {
@@ -150,8 +158,8 @@ export class AdvertisementService {
     const mimetype = file.mimetype;
     const type = mimetype.split('/')[1];
     if (!mimetype.includes('image')) throw new BadRequestException('Файл должен быть изображением');
-    if (!['svg+xml', 'png', 'jpeg', 'jpg'].includes(type)) throw new BadRequestException('Поддерживаются только форматы SVG, PNG и JPEG/JPG');
-    if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Размер файла не должен превышать 5 МБ');
+    if (!APP_CONFIG.FILE_UPLOAD.ALLOWED_TYPES.includes(type as "svg+xml" | "png" | "jpeg" | "jpg")) {throw new BadRequestException('Поддерживаются только форматы SVG, PNG и JPEG/JPG');}
+    if (file.size > APP_CONFIG.FILE_UPLOAD.MAX_SIZE_BYTES) throw new BadRequestException('Размер файла не должен превышать 5 МБ');
 
     const advertisement = await this.advertisementModel.findOne({ name });
     if (!advertisement) throw new NotFoundException('Объявление не найдено');

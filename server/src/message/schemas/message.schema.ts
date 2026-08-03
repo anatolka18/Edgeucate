@@ -31,3 +31,13 @@ export const MessageSchema = SchemaFactory.createForClass(Message);
 
 MessageSchema.index({ sender: 1, recipient: 1, date: -1 });
 MessageSchema.index({ recipient: 1, checked: 1, sender: 1 });
+
+MessageSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (doc, ret: any) => {
+    delete ret.__v;
+    if (ret._id) ret._id = ret._id.toString();
+    return ret;
+  }
+});

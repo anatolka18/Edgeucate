@@ -28,8 +28,14 @@ export class AdvertisementController {
   }
 
   @Get()
-  findAll() {
-    return this.advertisementService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.advertisementService.findAll(
+      parseInt(page) || 1,
+      parseInt(limit) || 20,
+    );
   }
 
   @Put('/update')

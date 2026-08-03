@@ -22,43 +22,52 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const path = window.location.pathname
+    const path = window.location.pathname;
 
     if (path === '/auth' || path.startsWith('/verify-email') || path.startsWith('/reset-password')) {
-      setAuthReady(true)
-      setIsLoading(false)
-      return
+      setAuthReady(true);
+      setIsLoading(false);
+      return;
     }
+
+    const initCsrf = async () => {
+      try {
+        await fetch('/api/csrf-token', { credentials: 'include' });
+      } catch {
+        // ignore
+      }
+    };
 
     const checkAuth = async () => {
+      await initCsrf();
       try {
-        const newToken = await AuthService.refreshToken()
+        const newToken = await AuthService.refreshToken();
         if (newToken) {
-          const data = await AuthService.getProfile()
+          const data = await AuthService.getProfile();
           if (data) {
-            dispatch(login(data))
-            ensureSocket(newToken)
-            setIsLoading(false)
-            setAuthReady(true)
-            return
+            dispatch(login(data));
+            ensureSocket(newToken);
+            setIsLoading(false);
+            setAuthReady(true);
+            return;
           }
         }
-        dispatch(logout())
-        setAccessToken(null)
-        setIsLoading(false)
-        setAuthReady(true)
-        window.location.href = '/auth'
+        dispatch(logout());
+        setAccessToken(null);
+        setIsLoading(false);
+        setAuthReady(true);
+        window.location.href = '/auth';
       } catch {
-        dispatch(logout())
-        setAccessToken(null)
-        setIsLoading(false)
-        setAuthReady(true)
-        window.location.href = '/auth'
+        dispatch(logout());
+        setAccessToken(null);
+        setIsLoading(false);
+        setAuthReady(true);
+        window.location.href = '/auth';
       }
-    }
+    };
 
-    checkAuth()
-  }, [dispatch])
+    checkAuth();
+  }, [dispatch]);
 
   if (isLoading) {
     return (

@@ -1,5 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { APP_CONFIG } from '../config/app.config';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class CsrfMiddleware implements NestMiddleware {
         httpOnly: false,
         secure: process.env.SECURE_COOKIE === 'true',
         sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: APP_CONFIG.TOKEN.CSRF_COOKIE_MAX_AGE_MS,
       });
     }
     next();

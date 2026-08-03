@@ -19,3 +19,13 @@ export class Advertisement {
 }
 
 export const AdvertisementSchema = SchemaFactory.createForClass(Advertisement);
+
+AdvertisementSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (doc, ret: any) => {
+    delete ret.__v;
+    if (ret._id) ret._id = ret._id.toString();
+    return ret;
+  }
+});

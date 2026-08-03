@@ -16,3 +16,13 @@ export class RefreshToken {
 }
 
 export const RefreshTokenSchema = SchemaFactory.createForClass(RefreshToken);
+
+RefreshTokenSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (doc, ret: any) => {
+    delete ret.__v;
+    if (ret._id) ret._id = ret._id.toString();
+    return ret;
+  }
+});

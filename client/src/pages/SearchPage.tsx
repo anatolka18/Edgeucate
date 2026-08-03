@@ -8,8 +8,8 @@ import { subjectCategories, isCategory } from "../config/subjects";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const advertisementLoader = async () => {
-    const { data } = await instance.get<IAdvertisement[]>(`/advertisement`);
-    return data;
+  const { data } = await instance.get<{ data: IAdvertisement[]; total: number; page: number; totalPages: number }>(`/advertisement?page=1&limit=100`);
+  return data.data;
 };
 
 const SearchPage: React.FC = () => {

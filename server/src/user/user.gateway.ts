@@ -4,10 +4,13 @@ import {
 } from '@nestjs/websockets';
 import { Socket, Namespace } from 'socket.io';
 import { UserService } from './user.service';
+import { PresenceService } from './presence.service';
+import { MessageService } from '../message/message.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ACTIONS } from './actions';
 import { sanitizeHtml } from '../common/utils/sanitize';
+import { APP_CONFIG } from '../common/config/app.config';
 
 interface AuthenticatedSocket extends Socket {
   data: {
@@ -22,6 +25,8 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
   constructor(
     private userService: UserService,
+    private presenceService: PresenceService,
+    private messageService: MessageService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
@@ -41,7 +46,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       const email = payload.email;
 
       client.data.user = payload;
-      await this.userService.online(email);
+      await this.presenceService.online(email);
       client.join(email);
 
       await this.notifyOnlineStatus(email, true);
@@ -55,7 +60,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   async handleDisconnect(client: AuthenticatedSocket) {
     const email = client.data.user?.email;
     if (email) {
-      await this.userService.offline(email);
+      await this.presenceService.offline(email);
       await this.notifyOnlineStatus(email, false);
       this.clearTypingStatus(email);
     }
@@ -72,18 +77,18 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
       const now = Date.now();
       const lastTime = this.lastMessageTimes.get(sender);
-      if (lastTime && now - lastTime < 1500) {
+      if (lastTime && now - lastTime < APP_CONFIG.MESSAGE.THROTTLE_MS) {
         return client.emit('error', { message: 'Слишком часто. Подождите немного.' });
       }
       this.lastMessageTimes.set(sender, now);
 
       const cleanMessage = sanitizeHtml(data.message?.trim() || '');
       if (!cleanMessage) return client.emit('error', { message: 'Сообщение пустое' });
-      if (cleanMessage.length > 2000) return client.emit('error', { message: 'Слишком длинное' });
+      if (cleanMessage.length > APP_CONFIG.MESSAGE.MAX_LENGTH) return client.emit('error', { message: 'Слишком длинное' });
       if (!data.recipient) return client.emit('error', { message: 'Получатель не указан' });
       if (sender === data.recipient) return client.emit('error', { message: 'Нельзя отправить себе' });
 
-      const result = await this.userService.sendMessage({
+      const result = await this.messageService.sendMessage({
         sender,
         recipient: data.recipient,
         message: cleanMessage,
@@ -104,7 +109,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage('read_messages')
   async readMessages(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { from: string }) {
     try {
-      await this.userService.markMessagesAsRead(client.data.user.email, data.from);
+      await this.messageService.markMessagesAsRead(client.data.user.email, data.from);
       this.sendUnreadCount(client.data.user.email, data.from);
     } catch (error) {
       client.emit('error', { message: 'Ошибка отметки прочтения' });
@@ -121,7 +126,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       if (!sender) return;
       const cleanMessage = sanitizeHtml(data.message.trim());
       if (!cleanMessage) return;
-      const updated = await this.userService.editMessage(data.messageId, sender, cleanMessage);
+      const updated = await this.messageService.editMessage(data.messageId, sender, cleanMessage);
       this.server.to(updated.sender).emit('message_edited', updated);
       this.server.to(updated.recipient).emit('message_edited', updated);
     } catch (error) {
@@ -137,7 +142,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     try {
       const sender = client.data.user?.email;
       if (!sender) return;
-      const updated = await this.userService.deleteMessage(data.messageId, sender);
+      const updated = await this.messageService.deleteMessage(data.messageId, sender);
       this.server.to(updated.sender).emit('message_deleted', updated);
       this.server.to(updated.recipient).emit('message_deleted', updated);
     } catch (error) {
@@ -258,12 +263,12 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   }
 
   private async sendUnreadCount(recipientEmail: string, senderEmail: string) {
-    const count = await this.userService.getUnreadCount(recipientEmail, senderEmail);
+    const count = await this.messageService.getUnreadCount(recipientEmail, senderEmail);
     this.server.to(recipientEmail).emit('unread_count', { from: senderEmail, count });
   }
 
   private async sendUnreadNotifications(email: string) {
-    const chats = await this.userService.getChats(email);
+    const chats = await this.messageService.getChats(email);
     for (const chat of chats) {
       if (chat.unreadCount > 0) {
         this.server.to(email).emit('unread_count', { from: chat.interlocutor, count: chat.unreadCount });
@@ -272,18 +277,18 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   }
 
   private async notifyOnlineStatus(email: string, online: boolean) {
-    const chats = await this.userService.getChats(email);
+    const chats = await this.messageService.getChats(email);
     for (const chat of chats) {
       this.server.to(chat.interlocutor).emit('user_status', { email, online });
     }
   }
 
   private async sendOnlineStatusesToUser(email: string) {
-    const chats = await this.userService.getChats(email);
+    const chats = await this.messageService.getChats(email);
     const interlocutorEmails = chats.map(c => c.interlocutor);
     if (interlocutorEmails.length === 0) return;
 
-    const interlocutors = await this.userService.getUsersByEmails(interlocutorEmails);
+    const interlocutors = await this.presenceService.getUsersByEmails(interlocutorEmails);
     for (const interlocutor of interlocutors) {
       this.server.to(email).emit('user_status', {
         email: interlocutor.email,

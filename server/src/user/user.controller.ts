@@ -1,5 +1,7 @@
-import { Controller, Get, Put, Body, Param, UseGuards, Post, BadRequestException, Patch } from '@nestjs/common';
+import { Controller, Get, Put, Body, Param, UseGuards, Post, BadRequestException, Patch, Query } from '@nestjs/common';
 import { UserService } from './user.service';
+import { StudentService } from './student.service';
+import { MessageService } from '../message/message.service';
 import { User } from './schemas/user.schema';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
@@ -10,13 +12,23 @@ import { UpdateUserDto } from './dto/updateUser.dto';
 
 @Controller('profile')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private studentService: StudentService,
+    private messageService: MessageService,
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  findAll() {
-    return this.userService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.userService.findAll(
+      parseInt(page) || 1,
+      parseInt(limit) || 20,
+    );
   }
 
   @Put()
@@ -40,14 +52,14 @@ export class UserController {
     if (!senderEmail || !recipientEmail) {
       throw new BadRequestException('Оба email обязательны.');
     }
-    return this.userService.getMessages(senderEmail, recipientEmail);
+    return this.messageService.getMessages(senderEmail, recipientEmail);
   }
 
   @Post('chats')
   @UseGuards(JwtAuthGuard, CsrfGuard)
   async getChats(@Body('email') email: string) {
     if (!email) throw new BadRequestException('Email is required');
-    return await this.userService.getChats(email);
+    return this.messageService.getChats(email);
   }
 
   @Post('student/add')
@@ -60,7 +72,7 @@ export class UserController {
     if (!teacherEmail || !studentEmail) {
       throw new BadRequestException('Teacher email and student email are required');
     }
-    return this.userService.addStudent(teacherEmail, studentEmail);
+    return this.studentService.addStudent(teacherEmail, studentEmail);
   }
 
   @Post('student/remove')
@@ -73,7 +85,7 @@ export class UserController {
     if (!teacherEmail || !studentEmail) {
       throw new BadRequestException('Teacher email and student email are required');
     }
-    return this.userService.removeStudent(teacherEmail, studentEmail);
+    return this.studentService.removeStudent(teacherEmail, studentEmail);
   }
 
   @Post('student/check')
@@ -86,7 +98,7 @@ export class UserController {
       throw new BadRequestException('Teacher email and student email are required');
     }
     return {
-      isStudent: await this.userService.checkIfStudent(teacherEmail, studentEmail)
+      isStudent: await this.studentService.checkIfStudent(teacherEmail, studentEmail)
     };
   }
 

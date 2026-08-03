@@ -31,3 +31,13 @@ export class CalendarEvent {
 }
 
 export const CalendarEventSchema = SchemaFactory.createForClass(CalendarEvent);
+
+CalendarEventSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (doc, ret: any) => {
+    delete ret.__v;
+    if (ret._id) ret._id = ret._id.toString();
+    return ret;
+  }
+});

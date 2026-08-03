@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectModel, InjectConnection } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { User, Feedback } from '../user/schemas/user.schema';
 import { Advertisement } from '../advertisement/schemas/advertisement.schema';
@@ -12,6 +12,8 @@ export class FeedbackService {
     private userModel: mongoose.Model<User>,
     @InjectModel(Advertisement.name)
     private advertisementModel: mongoose.Model<Advertisement>,
+    @InjectConnection()
+    private connection: mongoose.Connection,
   ) {}
 
   async createFeedback(createFeedbackDto: CreateFeedbackDto): Promise<Feedback> {
@@ -49,30 +51,43 @@ export class FeedbackService {
       date: new Date()
     };
 
-    await this.userModel.findOneAndUpdate(
-      { email: teacherEmail },
-      { $push: { feedback: newFeedback } }
-    );
+    const session = await this.connection.startSession();
+    session.startTransaction();
 
-    const updatedTeacher = await this.userModel.findOne({ email: teacherEmail });
-    let totalStars = 0;
-    let feedbackCount = 0;
+    try {
+      await this.userModel.findOneAndUpdate(
+        { email: teacherEmail },
+        { $push: { feedback: newFeedback } },
+        { session }
+      );
 
-    updatedTeacher.feedback.forEach(feedback => {
-      if (feedback.advertisementId === advertisementId) {
-        totalStars += feedback.stars;
-        feedbackCount++;
-      }
-    });
+      const updatedTeacher = await this.userModel.findOne({ email: teacherEmail }).session(session);
+      let totalStars = 0;
+      let feedbackCount = 0;
 
-    const averageStars = feedbackCount > 0 ? totalStars / feedbackCount : 0;
+      updatedTeacher.feedback.forEach(feedback => {
+        if (feedback.advertisementId === advertisementId) {
+          totalStars += feedback.stars;
+          feedbackCount++;
+        }
+      });
 
-    await this.advertisementModel.findOneAndUpdate(
-      { advertisementId },
-      { stars: averageStars }
-    );
+      const averageStars = feedbackCount > 0 ? totalStars / feedbackCount : 0;
 
-    return newFeedback;
+      await this.advertisementModel.findOneAndUpdate(
+        { advertisementId },
+        { stars: averageStars },
+        { session }
+      );
+
+      await session.commitTransaction();
+      return newFeedback;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   }
 
   async getUserFeedbacks(email: string): Promise<Feedback[]> {
@@ -123,18 +138,31 @@ export class FeedbackService {
 
     if (feedbackIndex === -1) throw new NotFoundException('Отзыв не найден');
 
-    teacher.feedback.splice(feedbackIndex, 1);
-    await teacher.save();
+    const session = await this.connection.startSession();
+    session.startTransaction();
 
-    const advertisement = await this.advertisementModel.findOne({ advertisementId });
-    if (advertisement) {
+    try {
+      teacher.feedback.splice(feedbackIndex, 1);
+      await teacher.save({ session });
+
       const relevantFeedbacks = teacher.feedback.filter(f => f.advertisementId === advertisementId);
       let totalStars = 0;
       relevantFeedbacks.forEach(feedback => { totalStars += feedback.stars; });
       const averageStars = relevantFeedbacks.length > 0 ? totalStars / relevantFeedbacks.length : 0;
-      await this.advertisementModel.findOneAndUpdate({ advertisementId }, { stars: averageStars });
-    }
 
-    return true;
+      await this.advertisementModel.findOneAndUpdate(
+        { advertisementId },
+        { stars: averageStars },
+        { session }
+      );
+
+      await session.commitTransaction();
+      return true;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   }
 }

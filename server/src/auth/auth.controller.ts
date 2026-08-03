@@ -9,6 +9,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ConfigService } from '@nestjs/config';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { APP_CONFIG } from '../common/config/app.config';
 
 @Controller('auth')
 export class AuthController {
@@ -34,7 +35,7 @@ export class AuthController {
       httpOnly: true,
       secure: this.isCookieSecure,
       sameSite: this.cookieSameSite,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: APP_CONFIG.TOKEN.REFRESH_COOKIE_MAX_AGE_MS,
     });
     return {
       username: result.username,
@@ -53,8 +54,8 @@ export class AuthController {
         httpOnly: true,
         secure: this.isCookieSecure,
         sameSite: this.cookieSameSite,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+        maxAge: APP_CONFIG.TOKEN.REFRESH_COOKIE_MAX_AGE_MS,
+      }); 
       delete result.refreshToken;
     }
     return result;

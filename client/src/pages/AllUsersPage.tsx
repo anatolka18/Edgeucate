@@ -15,8 +15,8 @@ const AllUsersPage: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data } = await instance.get<IResponseUser[]>('/profile');
-      const filteredUsers = data.filter(user => user.role !== 'Admin');
+      const { data } = await instance.get<{ data: IResponseUser[]; total: number }>('/profile?page=1&limit=200');
+      const filteredUsers = data.data.filter(user => user.role !== 'Admin');
       setUsers(filteredUsers);
     } catch (error) {
       toast.error("Не удалось загрузить список пользователей");

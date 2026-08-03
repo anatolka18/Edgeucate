@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException, OnModuleDestroy } from '@nestjs/common';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,9 +11,10 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import * as crypto from 'crypto';
 import { Redis } from 'ioredis';
+import { APP_CONFIG } from '../common/config/app.config';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleDestroy {
   private redis: Redis;
 
   constructor(
@@ -26,6 +27,10 @@ export class AuthService {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
     });
+  }
+
+  async onModuleDestroy() {
+    await this.redis.quit();
   }
 
   async signUp(signUpDto: SignUpDto): Promise<{ username: string; accessToken: string; refreshToken: string }> {
@@ -62,7 +67,7 @@ export class AuthService {
     });
 
     const token = crypto.randomBytes(32).toString('hex');
-    await this.redis.set(`verify:email:${token}`, email, 'EX', 24 * 60 * 60);
+    await this.redis.set(`verify:email:${token}`, email, 'EX', APP_CONFIG.TOKEN.VERIFY_EMAIL_TTL_SECONDS);
 
     await this.emailQueue.add('send-verification', { email, token, type: 'verify' });
 
@@ -156,7 +161,7 @@ export class AuthService {
     if (!user) return;
 
     const token = crypto.randomBytes(32).toString('hex');
-    await this.redis.set(`reset:password:${token}`, email, 'EX', 60 * 60);
+    await this.redis.set(`reset:password:${token}`, email, 'EX', APP_CONFIG.TOKEN.RESET_PASSWORD_TTL_SECONDS);
 
     await this.emailQueue.add('send-reset', { email, token, type: 'reset' });
   }
@@ -202,7 +207,7 @@ export class AuthService {
     await this.refreshTokenModel.create({
       token: refreshToken,
       email: user.email,
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expires: new Date(Date.now() + APP_CONFIG.TOKEN.REFRESH_COOKIE_MAX_AGE_MS),
     });
 
     return { accessToken, refreshToken };

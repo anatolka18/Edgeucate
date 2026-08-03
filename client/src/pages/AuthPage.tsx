@@ -32,7 +32,7 @@ const AuthPage: FC = () => {
     const navigate = useNavigate()
 
     useEffect(() => {
-        fetch('/api', { credentials: 'include' }).catch(() => {});
+        fetch('/api/csrf-token', { credentials: 'include' }).catch(() => {});
     }, []);
 
     const loginHandler = async (e: React.FormEvent<HTMLFormElement>) => {
