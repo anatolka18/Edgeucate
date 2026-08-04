@@ -66,10 +66,7 @@ export class AuthService implements OnModuleDestroy {
       isVerified: false,
     });
 
-    const token = crypto.randomBytes(32).toString('hex');
-    await this.redis.set(`verify:email:${token}`, email, 'EX', APP_CONFIG.TOKEN.VERIFY_EMAIL_TTL_SECONDS);
-
-    await this.emailQueue.add('send-verification', { email, token, type: 'verify' });
+    await this.sendVerificationEmail(email);
 
     const tokens = await this.generateTokens(user);
     return { username: user.username, ...tokens };
@@ -134,6 +131,14 @@ export class AuthService implements OnModuleDestroy {
       throw new UnauthorizedException('User not found');
     }
 
+    if (!user.isVerified) {
+      throw new UnauthorizedException('Подтвердите email');
+    }
+
+    if (user.isBlocked) {
+      throw new UnauthorizedException('Аккаунт заблокирован');
+    }
+
     const payload = { id: (user as any)._id, email: user.email, role: user.role };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '5m' });
 
@@ -145,13 +150,12 @@ export class AuthService implements OnModuleDestroy {
   }
 
   async verifyEmail(token: string): Promise<{ success: boolean }> {
-    const email = await this.redis.get(`verify:email:${token}`);
+    const email = await this.redis.getdel(`verify:email:${token}`);
     if (!email) {
       throw new BadRequestException('Токен недействителен или истёк');
     }
 
     await this.userModel.findOneAndUpdate({ email }, { isVerified: true });
-    await this.redis.del(`verify:email:${token}`);
 
     return { success: true };
   }
@@ -160,14 +164,26 @@ export class AuthService implements OnModuleDestroy {
     const user = await this.userModel.findOne({ email });
     if (!user) return;
 
+    const key = `forgot_password:${email}`;
+    const count = await this.redis.get(key);
+    
+    if (count && parseInt(count) >= 3) {
+      throw new BadRequestException('Слишком много запросов. Попробуйте через час.');
+    }
+
     const token = crypto.randomBytes(32).toString('hex');
     await this.redis.set(`reset:password:${token}`, email, 'EX', APP_CONFIG.TOKEN.RESET_PASSWORD_TTL_SECONDS);
 
     await this.emailQueue.add('send-reset', { email, token, type: 'reset' });
+
+    await this.redis.multi()
+      .incr(key)
+      .expire(key, 3600)
+      .exec();
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const email = await this.redis.get(`reset:password:${token}`);
+    const email = await this.redis.getdel(`reset:password:${token}`);
     if (!email) {
       throw new BadRequestException('Токен недействителен или истёк');
     }
@@ -179,7 +195,7 @@ export class AuthService implements OnModuleDestroy {
       { password: hashedPassword }
     );
 
-    await this.redis.del(`reset:password:${token}`);
+    await this.refreshTokenModel.deleteMany({ email });
   }
 
   async changePassword(userId: string, oldPassword: string, newPassword: string) {
@@ -211,5 +227,24 @@ export class AuthService implements OnModuleDestroy {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  async sendVerificationEmail(email: string): Promise<void> {
+    const key = `verify_email:${email}`;
+    const count = await this.redis.get(key);
+    
+    if (count && parseInt(count) >= 5) {
+      throw new BadRequestException('Слишком много запросов. Попробуйте через час.');
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await this.redis.set(`verify:email:${token}`, email, 'EX', APP_CONFIG.TOKEN.VERIFY_EMAIL_TTL_SECONDS);
+
+    await this.emailQueue.add('send-verification', { email, token, type: 'verify' });
+
+    await this.redis.multi()
+      .incr(key)
+      .expire(key, 3600)
+      .exec();
   }
 }

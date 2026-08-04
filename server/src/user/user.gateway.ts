@@ -22,6 +22,13 @@ interface AuthenticatedSocket extends Socket {
 export class UserSocketService implements OnGatewayConnection, OnGatewayDisconnect {
   private typingUsers = new Map<string, Set<string>>();
   private lastMessageTimes = new Map<string, number>();
+  
+  private connectionCounts = new Map<string, { count: number; resetAt: number }>();
+  private readonly MAX_CONNECTIONS_PER_IP = 5;
+  private readonly CONNECTION_WINDOW_MS = 60000;
+  
+  private eventCounts = new Map<string, { count: number; resetAt: number }>();
+  private readonly MAX_EVENTS_PER_SECOND = 20;
 
   constructor(
     private userService: UserService,
@@ -35,6 +42,19 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
   async handleConnection(client: AuthenticatedSocket) {
     try {
+      const ip = client.handshake.address;
+      const now = Date.now();
+      
+      const record = this.connectionCounts.get(ip);
+      if (!record || now > record.resetAt) {
+        this.connectionCounts.set(ip, { count: 1, resetAt: now + this.CONNECTION_WINDOW_MS });
+      } else {
+        if (record.count >= this.MAX_CONNECTIONS_PER_IP) {
+          return this.disconnectWithError(client, 'Слишком много подключений');
+        }
+        record.count++;
+      }
+
       const token = client.handshake.auth.token;
       if (!token) {
         return this.disconnectWithError(client, 'Токен не предоставлен');
@@ -59,11 +79,35 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
   async handleDisconnect(client: AuthenticatedSocket) {
     const email = client.data.user?.email;
+    const ip = client.handshake.address;
+    
+    const record = this.connectionCounts.get(ip);
+    if (record && record.count > 0) {
+      record.count--;
+    }
+    
     if (email) {
       await this.presenceService.offline(email);
       await this.notifyOnlineStatus(email, false);
       this.clearTypingStatus(email);
     }
+  }
+
+  private checkRateLimit(key: string, maxCount: number, windowMs: number): boolean {
+    const now = Date.now();
+    const record = this.eventCounts.get(key);
+    
+    if (!record || now > record.resetAt) {
+      this.eventCounts.set(key, { count: 1, resetAt: now + windowMs });
+      return true;
+    }
+    
+    if (record.count >= maxCount) {
+      return false;
+    }
+    
+    record.count++;
+    return true;
   }
 
   @SubscribeMessage('send_message')
@@ -153,6 +197,11 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage('typing_start')
   async typingStart(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
     const sender = client.data.user.email;
+    
+    if (!this.checkRateLimit(`typing:${sender}`, 10, 1000)) {
+      return;
+    }
+    
     if (!this.typingUsers.has(data.recipient)) this.typingUsers.set(data.recipient, new Set());
     this.typingUsers.get(data.recipient).add(sender);
     this.server.to(data.recipient).emit('typing', { user: sender, typing: true });
@@ -161,6 +210,11 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage('typing_end')
   async typingEnd(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() data: { recipient: string }) {
     const sender = client.data.user.email;
+    
+    if (!this.checkRateLimit(`typing:${sender}`, 10, 1000)) {
+      return;
+    }
+    
     const typists = this.typingUsers.get(data.recipient);
     if (typists) {
       typists.delete(sender);
@@ -176,6 +230,10 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     const authClient = client as AuthenticatedSocket;
     if (!authClient.data?.user) {
       return client.emit('error', { message: 'Необходима авторизация' });
+    }
+
+    if (!this.checkRateLimit(`webrtc:${client.id}`, 10, 1000)) {
+      return client.emit('error', { message: 'Слишком много запросов' });
     }
 
     const { rooms: joinedRooms } = client;

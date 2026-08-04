@@ -104,15 +104,16 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
-  @Post('/forgot-password')
-  @Throttle({ default: { ttl: 3600000, limit: 3 } })
+  @Post('forgot-password')
   @UseGuards(CsrfGuard)
   async forgotPassword(@Body('email') email: string) {
-    if (!email) {
-      throw new BadRequestException('Email обязателен');
+    if (!email || !email.includes('@')) {
+      throw new BadRequestException('Некорректный email');
     }
-    await this.authService.forgotPassword(email);
-    return { success: true, message: 'Если аккаунт существует, письмо отправлено' };
+    
+    await this.authService.forgotPassword(email.toLowerCase().trim());
+    
+    return { message: 'Если email существует, письмо отправлено' };
   }
 
   @Post('/change-password')

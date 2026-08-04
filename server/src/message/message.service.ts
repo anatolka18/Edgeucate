@@ -15,11 +15,23 @@ export class MessageService {
   async sendMessage(dto: SendMessageDto): Promise<Message> {
     const { sender, recipient, message } = dto;
 
+    if (!sender || !recipient) {
+      throw new BadRequestException('Sender and recipient are required');
+    }
+
+    if (sender === recipient) {
+      throw new BadRequestException('Нельзя отправить сообщение себе');
+    }
+
     const senderUser = await this.userModel.findOne({ email: sender });
     const recipientUser = await this.userModel.findOne({ email: recipient });
 
     if (!senderUser || !recipientUser) {
       throw new NotFoundException('Пользователь не найден.');
+    }
+
+    if (senderUser.isBlocked) {
+      throw new BadRequestException('Аккаунт заблокирован');
     }
 
     const newMessage = await this.messageModel.create({

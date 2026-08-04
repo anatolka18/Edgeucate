@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { SendMessageDto } from '../user/dto/sendMessage.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -10,7 +10,8 @@ export class MessageController {
 
   @Post('send')
   @UseGuards(JwtAuthGuard, CsrfGuard)
-  async sendMessage(@Body() dto: SendMessageDto) {
+  async sendMessage(@Request() req, @Body() dto: SendMessageDto) {
+    dto.sender = req.user.email;
     return this.messageService.sendMessage(dto);
   }
 
@@ -19,6 +20,11 @@ export class MessageController {
   async getMessages(@Request() req, @Body() body: { recipient: string; limit?: number; before?: string }) {
     const sender = req.user.email;
     const { recipient, limit = 50, before } = body;
+    
+    if (!recipient) {
+      throw new BadRequestException('Recipient is required');
+    }
+    
     return this.messageService.getMessages(sender, recipient, limit, before);
   }
 
@@ -31,15 +37,17 @@ export class MessageController {
 
   @Post('mark-read')
   @UseGuards(JwtAuthGuard, CsrfGuard)
-  async markAsRead(@Body() body: { readerEmail: string; fromEmail: string }) {
-    await this.messageService.markMessagesAsRead(body.readerEmail, body.fromEmail);
+  async markAsRead(@Request() req, @Body() body: { fromEmail: string }) {
+    const readerEmail = req.user.email;
+    await this.messageService.markMessagesAsRead(readerEmail, body.fromEmail);
     return { success: true };
   }
 
   @Post('unread-count')
   @UseGuards(JwtAuthGuard, CsrfGuard)
-  async getUnreadCount(@Body() body: { recipientEmail: string; senderEmail: string }) {
-    const count = await this.messageService.getUnreadCount(body.recipientEmail, body.senderEmail);
+  async getUnreadCount(@Request() req, @Body() body: { senderEmail: string }) {
+    const recipientEmail = req.user.email;
+    const count = await this.messageService.getUnreadCount(recipientEmail, body.senderEmail);
     return { count };
   }
 }
