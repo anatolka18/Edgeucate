@@ -44,13 +44,13 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
+        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg max-w-md w-full mx-4 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Недействительная ссылка</h2>
           <p className="text-gray-600">Токен отсутствует. Запросите сброс пароля заново.</p>
           <button
             onClick={() => navigate('/auth')}
-            className="mt-4 px-6 py-2 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors"
+            className="mt-4 w-full sm:w-auto px-6 py-3 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors font-medium"
           >
             На страницу входа
           </button>
@@ -60,8 +60,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-[400px]">
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-[400px] mx-4">
         <h2 className="text-2xl font-bold text-center mb-6">Сброс пароля</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
@@ -72,14 +72,15 @@ export default function ResetPasswordPage() {
                 placeholder="Новый пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-12 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#3D5B82]"
+                className="w-full pl-10 pr-12 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#3D5B82]"
                 required
                 minLength={8}
               />
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -93,14 +94,15 @@ export default function ResetPasswordPage() {
               placeholder="Подтвердите пароль"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full pl-10 pr-12 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#3D5B82] ${confirmPassword && password !== confirmPassword ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full pl-10 pr-12 p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#3D5B82] ${confirmPassword && password !== confirmPassword ? 'border-red-400' : 'border-gray-300'}`}
               required
               minLength={8}
             />
             <button
               type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              aria-label={showConfirmPassword ? 'Скрыть пароль' : 'Показать пароль'}
             >
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -108,7 +110,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#3D5B82] text-white py-2 rounded hover:bg-[#273b56] transition disabled:opacity-50"
+            className="w-full bg-[#3D5B82] text-white py-3 rounded hover:bg-[#273b56] transition disabled:opacity-50 font-medium"
           >
             {loading ? 'Сохранение...' : 'Сохранить пароль'}
           </button>

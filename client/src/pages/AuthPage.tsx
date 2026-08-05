@@ -121,19 +121,19 @@ const AuthPage: FC = () => {
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-100 font-montserrat">
+        <div className="flex justify-center items-center min-h-screen bg-gray-100 font-montserrat p-4">
             {isBlockedModalOpen && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                         <h2 className="text-xl font-bold mb-4 text-red-600">Аккаунт заблокирован</h2>
                         <p className="mb-4">Ваш аккаунт был заблокирован администратором.</p>
                         <p className="mb-4 font-semibold">Причина:</p>
                         <div className="bg-gray-100 p-3 rounded mb-4">
-                            <p className="text-gray-800">{blockReason}</p>
+                            <p className="text-gray-800 break-words">{blockReason}</p>
                         </div>
                         <button
                             onClick={() => setIsBlockedModalOpen(false)}
-                            className="px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-500 hover:text-white"
+                            className="w-full sm:w-auto px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-500 hover:text-white"
                         >
                             Понятно
                         </button>
@@ -142,8 +142,8 @@ const AuthPage: FC = () => {
             )}
 
             {showForgotPassword && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                         <h2 className="text-xl font-bold mb-4">Восстановление пароля</h2>
                         <p className="text-sm text-gray-600 mb-4">Введите email, на который отправить ссылку для сброса пароля.</p>
                         <div className="relative mb-4">
@@ -153,11 +153,11 @@ const AuthPage: FC = () => {
                                 placeholder="Email"
                                 value={resetEmail}
                                 onChange={(e) => setResetEmail(e.target.value)}
-                                className="w-full pl-10 p-2 border border-gray-300 rounded"
+                                className="w-full pl-10 p-3 border border-gray-300 rounded"
                                 autoComplete="email"
                             />
                         </div>
-                        <div className="flex justify-end gap-2">
+                        <div className="flex flex-col sm:flex-row justify-end gap-2">
                             <button
                                 onClick={() => setShowForgotPassword(false)}
                                 className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
@@ -176,7 +176,7 @@ const AuthPage: FC = () => {
                 </div>
             )}
 
-            <div className="bg-gray-200 p-6 rounded-lg shadow-lg w-[400px]">
+            <div className="bg-gray-200 p-6 rounded-lg shadow-lg w-full max-w-[400px] mx-4">
                 <div className="flex justify-center mb-4">
                     <img src={Logo} alt="Logo" className="h-12" />
                 </div>
@@ -190,7 +190,7 @@ const AuthPage: FC = () => {
                             placeholder="Ваше имя"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full mb-3 p-2 border border-gray-300 rounded"
+                            className="w-full mb-3 p-3 border border-gray-300 rounded"
                             autoComplete="username"
                             required
                         />
@@ -203,7 +203,7 @@ const AuthPage: FC = () => {
                             placeholder="Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className={`w-full pl-10 p-2 border rounded ${email && !validateEmail(email) ? 'border-red-400' : 'border-gray-300'}`}
+                            className={`w-full pl-10 pr-3 p-3 border rounded ${email && !validateEmail(email) ? 'border-red-400' : 'border-gray-300'}`}
                             autoComplete="email"
                             required
                         />
@@ -216,15 +216,16 @@ const AuthPage: FC = () => {
                             placeholder="Пароль"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full pl-10 pr-10 p-2 border border-gray-300 rounded"
+                            className="w-full pl-10 pr-12 p-3 border border-gray-300 rounded"
                             autoComplete="current-password"
                             required
                             minLength={8}
                         />
                         <button
                             type="button"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
                             onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
                         >
                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -240,14 +241,15 @@ const AuthPage: FC = () => {
                                     placeholder="Подтвердите пароль"
                                     value={passwordTwo}
                                     onChange={(e) => setPasswordTwo(e.target.value)}
-                                    className={`w-full pl-10 pr-10 p-2 border rounded ${passwordTwo && password !== passwordTwo ? 'border-red-400' : 'border-gray-300'}`}
+                                    className={`w-full pl-10 pr-12 p-3 border rounded ${passwordTwo && password !== passwordTwo ? 'border-red-400' : 'border-gray-300'}`}
                                     required
                                     minLength={8}
                                 />
                                 <button
                                     type="button"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
                                     onClick={() => setShowPasswordTwo(!showPasswordTwo)}
+                                    aria-label={showPasswordTwo ? 'Скрыть пароль' : 'Показать пароль'}
                                 >
                                     {showPasswordTwo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
@@ -256,34 +258,34 @@ const AuthPage: FC = () => {
                     )}
 
                     {!isLogin && (
-                        <div className="flex justify-between items-center mb-3">
-                            <label className="flex items-center">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                            <label className="flex items-center p-2">
                                 <input
                                     type="radio"
                                     value="Student"
                                     checked={role === 'Student'}
                                     onChange={() => setRole('Student')}
-                                    className="mr-2"
+                                    className="mr-2 w-5 h-5"
                                     required
                                 />
-                                Студент
+                                <span>Студент</span>
                             </label>
-                            <label className="flex items-center">
+                            <label className="flex items-center p-2">
                                 <input
                                     type="radio"
                                     value="Teacher"
                                     checked={role === 'Teacher'}
                                     onChange={() => setRole('Teacher')}
-                                    className="mr-2"
+                                    className="mr-2 w-5 h-5"
                                 />
-                                Репетитор
+                                <span>Репетитор</span>
                             </label>
                         </div>
                     )}
 
                     <button
                         type="submit"
-                        className="w-full bg-[#3D5B82] text-white py-2 rounded hover:bg-[#273b56] transition"
+                        className="w-full bg-[#3D5B82] text-white py-3 rounded hover:bg-[#273b56] transition font-medium"
                     >
                         {isLogin ? 'Войти' : 'Зарегистрироваться'}
                     </button>
@@ -291,7 +293,7 @@ const AuthPage: FC = () => {
 
                 <button
                     onClick={() => setIsLogin(!isLogin)}
-                    className="mt-3 w-full text-blue-500 hover:underline"
+                    className="mt-4 w-full py-2 text-blue-500 hover:underline"
                 >
                     {isLogin ? 'Создать аккаунт' : 'Уже есть аккаунт? Войти'}
                 </button>
@@ -299,7 +301,7 @@ const AuthPage: FC = () => {
                 {isLogin && (
                     <button
                         onClick={() => setShowForgotPassword(true)}
-                        className="mt-2 w-full text-sm text-gray-500 hover:text-[#3D5B82] hover:underline transition"
+                        className="mt-2 w-full py-2 text-sm text-gray-500 hover:text-[#3D5B82] hover:underline transition"
                     >
                         Забыли пароль?
                     </button>

@@ -25,22 +25,22 @@ const Header: FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+    `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 min-h-[44px] ${
       isActive
         ? "bg-[#3D5B82] text-white"
         : "text-gray-700 hover:bg-gray-100"
     }`;
 
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Логотип */}
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 min-w-[44px] min-h-[44px]">
             <img src={FullLogo} alt="Edgeucate" className="h-10" />
           </Link>
 
-          {/* Десктопная навигация */}
           <nav className="hidden lg:flex items-center gap-2">
             <NavLink to="/" className={navLinkClass} end>
               <BookOpen className="w-4 h-4" />
@@ -69,12 +69,10 @@ const Header: FC = () => {
               </NavLink>
             )}
             {isAuth && (
-            <>
-                <NavLink to="/chat/admin@yandex.ru" className={navLinkClass}>
+              <NavLink to="/chat/admin@yandex.ru" className={navLinkClass}>
                 <LifeBuoy className="w-4 h-4" />
                 <span>Поддержка</span>
-                </NavLink>
-            </>
+              </NavLink>
             )}
             {isAuth && !isAdmin && (
               <NavLink to="/rooms" className={navLinkClass}>
@@ -90,8 +88,7 @@ const Header: FC = () => {
             )}
           </nav>
 
-          {/* Правая часть */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {isAuth ? (
               <NavLink to="/myprofile" className={navLinkClass}>
                 <User className="w-4 h-4" />
@@ -104,10 +101,11 @@ const Header: FC = () => {
               </NavLink>
             )}
 
-            {/* Мобильное меню */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+              aria-label={mobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? (
                 <X className="w-6 h-6 text-gray-700" />
@@ -117,51 +115,63 @@ const Header: FC = () => {
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Мобильная навигация */}
-        {mobileMenuOpen && (
-          <nav className="lg:hidden py-4 border-t border-gray-200 space-y-2">
-            <NavLink to="/" className={navLinkClass} end onClick={() => setMobileMenuOpen(false)}>
-              <BookOpen className="w-4 h-4" />
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="lg:hidden fixed inset-0 top-16 bg-black/30 z-40"
+            onClick={closeMobileMenu}
+            aria-hidden="true"
+          />
+          <nav className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 py-3 px-4 space-y-1 z-50 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <NavLink to="/" className={navLinkClass} end onClick={closeMobileMenu}>
+              <BookOpen className="w-5 h-5" />
               <span>Главная</span>
             </NavLink>
-            <NavLink to="/search" className={navLinkClass} onClick={() => setMobileMenuOpen(false)}>
-              <Search className="w-4 h-4" />
+            <NavLink to="/search" className={navLinkClass} onClick={closeMobileMenu}>
+              <Search className="w-5 h-5" />
               <span>Поиск</span>
             </NavLink>
             {isAuth && isTeacher && (
-              <NavLink to="/myadvertisement" className={navLinkClass} onClick={() => setMobileMenuOpen(false)}>
-                <BookOpen className="w-4 h-4" />
+              <NavLink to="/myadvertisement" className={navLinkClass} onClick={closeMobileMenu}>
+                <BookOpen className="w-5 h-5" />
                 <span>Объявления</span>
               </NavLink>
             )}
             {isAuth && !isAdmin && (
-              <NavLink to="/calendar" className={navLinkClass} onClick={() => setMobileMenuOpen(false)}>
-                <Calendar className="w-4 h-4" />
+              <NavLink to="/calendar" className={navLinkClass} onClick={closeMobileMenu}>
+                <Calendar className="w-5 h-5" />
                 <span>Календарь</span>
               </NavLink>
             )}
             {isAuth && (
-              <NavLink to="/chats" className={navLinkClass} onClick={() => setMobileMenuOpen(false)}>
-                <MessageCircle className="w-4 h-4" />
+              <NavLink to="/chats" className={navLinkClass} onClick={closeMobileMenu}>
+                <MessageCircle className="w-5 h-5" />
                 <span>Чаты</span>
               </NavLink>
             )}
+            {isAuth && (
+              <NavLink to="/chat/admin@yandex.ru" className={navLinkClass} onClick={closeMobileMenu}>
+                <LifeBuoy className="w-5 h-5" />
+                <span>Поддержка</span>
+              </NavLink>
+            )}
             {isAuth && !isAdmin && (
-              <NavLink to="/rooms" className={navLinkClass} onClick={() => setMobileMenuOpen(false)}>
-                <Video className="w-4 h-4" />
+              <NavLink to="/rooms" className={navLinkClass} onClick={closeMobileMenu}>
+                <Video className="w-5 h-5" />
                 <span>Комнаты</span>
               </NavLink>
             )}
             {isAdmin && (
-              <NavLink to="/admin/users" className={navLinkClass} onClick={() => setMobileMenuOpen(false)}>
-                <Shield className="w-4 h-4" />
+              <NavLink to="/admin/users" className={navLinkClass} onClick={closeMobileMenu}>
+                <Shield className="w-5 h-5" />
                 <span>Пользователи</span>
               </NavLink>
             )}
           </nav>
-        )}
-      </div>
+        </>
+      )}
     </header>
   );
 };

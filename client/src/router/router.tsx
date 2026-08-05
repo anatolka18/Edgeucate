@@ -1,87 +1,108 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import Layout from "../pages/Layout";
-import HomePage from "../pages/HomePage";
-import AuthPage from "../pages/AuthPage";
-import MyProfilePage from "../pages/myProfilePage";
-import SearchPage, { advertisementLoader } from "../pages/SearchPage";
-import MyAdvertisementPage, { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
-import AdvertisementPage, { advertisementDetailLoader } from "../pages/AdvertisementPage";
-import ChatListPage, { chatListLoader } from "../pages/ChatListPage";
-import ChatPage, { chatLoader } from "../pages/ChatPage";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Role } from "../types/user";
-import RoomPage from "../pages/RoomPage";
-import AllRoomPage from "../pages/AllRoomPage";
-import CalendarPage from "../pages/CalendarPage";
-import AllUsersPage from "../pages/AllUsersPage";
-import VerifyEmailPage from "../pages/VerifyEmailPage";
-import ResetPasswordPage from "../pages/ResetPasswordPage";
 import ErrorBoundary from "../components/ErrorBoundary";
+import { chatListLoader } from "../pages/ChatListPage";
+import { advertisementLoader } from "../pages/SearchPage";
+import { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
+import { advertisementDetailLoader } from "../pages/AdvertisementPage";
+import { chatLoader } from "../pages/ChatPage";
+export { advertisementLoader } from "../pages/SearchPage";
+export { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
+export { advertisementDetailLoader } from "../pages/AdvertisementPage";
+export { chatListLoader } from "../pages/ChatListPage";
+export { chatLoader } from "../pages/ChatPage";
+const HomePage = lazy(() => import("../pages/HomePage"));
+const AuthPage = lazy(() => import("../pages/AuthPage"));
+const MyProfilePage = lazy(() => import("../pages/myProfilePage"));
+const SearchPage = lazy(() => import("../pages/SearchPage"));
+const MyAdvertisementPage = lazy(() => import("../pages/MyAdvertisementPage"));
+const AdvertisementPage = lazy(() => import("../pages/AdvertisementPage"));
+const ChatListPage = lazy(() => import("../pages/ChatListPage"));
+const ChatPage = lazy(() => import("../pages/ChatPage"));
+const RoomPage = lazy(() => import("../pages/RoomPage"));
+const AllRoomPage = lazy(() => import("../pages/AllRoomPage"));
+const CalendarPage = lazy(() => import("../pages/CalendarPage"));
+const AllUsersPage = lazy(() => import("../pages/AllUsersPage"));
+const VerifyEmailPage = lazy(() => import("../pages/VerifyEmailPage"));
+const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
+
+const PageLoader = () => (
+  <div className="flex justify-center items-center min-h-[50vh]">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3D5B82]"></div>
+  </div>
+);
+
+const Lazy = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<PageLoader />}>{children}</Suspense>
+);
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout />,
-    errorElement: <ErrorBoundary> <div /> </ErrorBoundary>, 
+    errorElement: <ErrorBoundary><div /></ErrorBoundary>,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'auth', element: <AuthPage /> },
+      { index: true, element: <Lazy><HomePage /></Lazy> },
+      { path: 'auth', element: <Lazy><AuthPage /></Lazy> },
       {
         path: 'myprofile',
-        element: <ProtectedRoute><MyProfilePage /></ProtectedRoute>,
+        element: <ProtectedRoute><Lazy><MyProfilePage /></Lazy></ProtectedRoute>,
       },
       {
         path: 'search',
         loader: advertisementLoader,
-        element: <SearchPage />,
+        element: <Lazy><SearchPage /></Lazy>,
       },
       {
         path: 'myadvertisement',
         loader: myAdvertisementLoader,
-        element: <ProtectedRoute allowedRoles={[Role.TEACHER]}><MyAdvertisementPage /></ProtectedRoute>,
+        element: <ProtectedRoute allowedRoles={[Role.TEACHER]}><Lazy><MyAdvertisementPage /></Lazy></ProtectedRoute>,
       },
       {
         path: "advertisement/:id",
         loader: advertisementDetailLoader,
-        element: <AdvertisementPage />,
+        element: <Lazy><AdvertisementPage /></Lazy>,
       },
       {
         path: "chats",
         loader: chatListLoader,
-        element: <ProtectedRoute><ChatListPage /></ProtectedRoute>,
+        element: <ProtectedRoute><Lazy><ChatListPage /></Lazy></ProtectedRoute>,
       },
       {
         path: "chat/:email",
         loader: chatLoader,
-        element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
+        element: <ProtectedRoute><Lazy><ChatPage /></Lazy></ProtectedRoute>,
       },
       {
         path: 'rooms',
-        element: <AllRoomPage />,
+        element: <Lazy><AllRoomPage /></Lazy>,
       },
       {
         path: 'room/:id',
-        element: <RoomPage />,
-      }, 
+        element: <Lazy><RoomPage /></Lazy>,
+      },
       {
         path: 'calendar',
-        element: <CalendarPage />,
+        element: <Lazy><CalendarPage /></Lazy>,
       },
       {
         path: 'admin/users',
         element: (
           <ProtectedRoute allowedRoles={[Role.ADMIN]}>
-            <AllUsersPage />
+            <Lazy><AllUsersPage /></Lazy>
           </ProtectedRoute>
         ),
       },
       {
         path: 'verify-email',
-        element: <VerifyEmailPage />,
+        element: <Lazy><VerifyEmailPage /></Lazy>,
       },
       {
         path: 'reset-password',
-        element: <ResetPasswordPage />,
+        element: <Lazy><ResetPasswordPage /></Lazy>,
       },
     ],
   },

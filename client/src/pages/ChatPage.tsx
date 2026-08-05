@@ -8,10 +8,41 @@ import { useMyProfile } from "../hooks/useMyProfile";
 import CalendarView from "../components/CalendarView";
 import moment from "moment";
 import { authReadyPromise, accessToken } from '../store/auth-state';
-import { Pencil, Trash2, Send, ArrowLeft } from 'lucide-react';
+import { Pencil, Trash2, Send, ArrowLeft, X } from 'lucide-react';
 
 interface IStudentStatus {
   isStudent: boolean;
+}
+
+function normalizeId(raw: any): string {
+  if (!raw) return '';
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object' && raw !== null) {
+    if (typeof raw.$oid === 'string') return raw.$oid;
+
+    if (raw.buffer && raw.buffer.data && Array.isArray(raw.buffer.data)) {
+      return raw.buffer.data.map((b: number) => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    if (raw.data && Array.isArray(raw.data) && raw.type === 'Buffer') {
+      return raw.data.map((b: number) => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    if (typeof raw.toHexString === 'function') {
+      return raw.toHexString();
+    }
+
+    if (typeof raw.toString === 'function') {
+      const str = raw.toString();
+      if (str !== '[object Object]') return str;
+    }
+  }
+  return '';
+}
+
+function getMessageKey(message: IMessage, index: number): string {
+  const normalized = normalizeId(message._id);
+  return normalized || `msg-${index}`;
 }
 
 const formatMessageDate = (rawDate: any) => {
@@ -32,17 +63,6 @@ const formatDateSeparator = (date: Date) => {
   if (msgDate.isSame(today.clone().subtract(1, 'day'))) return 'Вчера';
   return moment(date).format('D MMMM YYYY');
 };
-
-function getMessageKey(message: IMessage, index: number): string {
-  if (!message._id) return `msg-${index}`;
-  const raw = message._id as any;
-  if (typeof raw === 'string') return raw;
-  if (typeof raw === 'object' && raw !== null) {
-    if (typeof raw.$oid === 'string') return raw.$oid;
-    if (typeof raw.toString === 'function' && raw.toString() !== '[object Object]') return raw.toString();
-  }
-  return `msg-${index}`;
-}
 
 export const chatLoader = async ({ params }: { params: { email?: string } }): Promise<{
   messages: IMessage[];
@@ -103,6 +123,7 @@ const ChatPage: React.FC = () => {
 
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [activeMessageMenu, setActiveMessageMenu] = useState<string | null>(null);
 
   const isInterlocutorAdmin = email === 'admin@yandex.ru';
 
@@ -193,44 +214,44 @@ const ChatPage: React.FC = () => {
   const renderStudentManagement = () => {
     if (myRole !== Role.TEACHER || isInterlocutorAdmin) return null;
     return (
-      <div className="flex items-center ml-4">
+      <div className="flex items-center">
         {checkingStatus ? (
-          <div className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg flex items-center">
-            <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <div className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg flex items-center min-h-[40px] text-sm">
+            <svg className="animate-spin h-4 w-4 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Проверка...
+            <span className="hidden sm:inline">Проверка...</span>
           </div>
         ) : isStudent ? (
           <button
             onClick={handleRemoveStudent}
             disabled={processingAction}
-            className="px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 disabled:opacity-50 flex items-center"
+            className="px-3 sm:px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 disabled:opacity-50 flex items-center min-h-[40px] text-sm whitespace-nowrap"
           >
             {processingAction ? (
-              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-4 w-4 sm:mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-            ) : (
-              'Удалить из учеников'
-            )}
+            ) : null}
+            <span className="hidden sm:inline">{processingAction ? '' : 'Удалить из учеников'}</span>
+            <span className="sm:hidden">{processingAction ? '' : 'Удалить'}</span>
           </button>
         ) : (
           <button
             onClick={handleAddStudent}
             disabled={processingAction}
-            className="px-4 py-2 bg-emerald-400 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 flex items-center"
+            className="px-3 sm:px-4 py-2 bg-emerald-400 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 flex items-center min-h-[40px] text-sm whitespace-nowrap"
           >
             {processingAction ? (
-              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-4 w-4 sm:mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-            ) : (
-              'Добавить в ученики'
-            )}
+            ) : null}
+            <span className="hidden sm:inline">{processingAction ? '' : 'Добавить в ученики'}</span>
+            <span className="sm:hidden">{processingAction ? '' : 'Добавить'}</span>
           </button>
         )}
       </div>
@@ -248,7 +269,7 @@ const ChatPage: React.FC = () => {
       );
       if (data.messages.length > 0) {
         const newUnique = data.messages.filter(
-          msg => !messages.some(m => m._id === msg._id)
+          msg => !messages.some(m => normalizeId(m._id) === normalizeId(msg._id))
         );
         setMessages(prev => [...newUnique, ...prev]);
         oldestMessageRef.current = new Date(data.messages[0].date).toISOString();
@@ -295,7 +316,8 @@ const ChatPage: React.FC = () => {
       const handleIncomingMessage = (data: IMessage) => {
         if (data.sender === email || data.sender === myEmail) {
           setMessages((prev) => {
-            if (data._id && prev.some(m => m._id === data._id)) return prev;
+            const incomingKey = normalizeId(data._id);
+            if (incomingKey && prev.some(m => normalizeId(m._id) === incomingKey)) return prev;
             return [...prev, data];
           });
           if (data.sender === email) {
@@ -310,10 +332,12 @@ const ChatPage: React.FC = () => {
         if (user === email) setIsTyping(typing);
       };
       const handleEdited = (updatedMsg: IMessage) => {
-        setMessages(prev => prev.map(m => m._id === updatedMsg._id ? updatedMsg : m));
+        const updatedKey = normalizeId(updatedMsg._id);
+        setMessages(prev => prev.map(m => normalizeId(m._id) === updatedKey ? updatedMsg : m));
       };
       const handleDeleted = (updatedMsg: IMessage) => {
-        setMessages(prev => prev.map(m => m._id === updatedMsg._id ? updatedMsg : m));
+        const updatedKey = normalizeId(updatedMsg._id);
+        setMessages(prev => prev.map(m => normalizeId(m._id) === updatedKey ? updatedMsg : m));
       };
 
       MySocket.socket.on("on_send_message", handleIncomingMessage);
@@ -332,10 +356,12 @@ const ChatPage: React.FC = () => {
     }
   }, [email, myEmail]);
 
-  const handleEditMessage = (messageId: string, text: string) => {
-    setEditingMessageId(messageId);
+  const handleEditMessage = (messageKey: string, text: string) => {
+    setEditingMessageId(messageKey);
     setEditText(text);
+    setActiveMessageMenu(null);
   };
+
   const handleSaveEdit = () => {
     if (editText.trim() && editingMessageId && MySocket.socket?.connected) {
       MySocket.socket.emit('edit_message', { messageId: editingMessageId, message: editText.trim() });
@@ -343,11 +369,14 @@ const ChatPage: React.FC = () => {
       setEditText('');
     }
   };
-  const handleDeleteMessage = (messageId: string) => {
+
+  const handleDeleteMessage = (messageKey: string) => {
     if (MySocket.socket?.connected) {
-      MySocket.socket.emit('delete_message', { messageId });
+      MySocket.socket.emit('delete_message', { messageId: messageKey });
     }
+    setActiveMessageMenu(null);
   };
+
   const handleCancelEdit = () => {
     setEditingMessageId(null);
     setEditText('');
@@ -380,175 +409,232 @@ const ChatPage: React.FC = () => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSendMessage();
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const toggleMessageMenu = (messageKey: string) => {
+    setActiveMessageMenu(activeMessageMenu === messageKey ? null : messageKey);
   };
 
   let lastDateSeparator = '';
 
   return (
-    <div className="h-full flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl mx-auto flex flex-col rounded-xl shadow-sm border border-gray-200 bg-white overflow-hidden" style={{ height: 'calc(100vh - 6rem)' }}>
-        <div className="border-b border-gray-200 bg-white px-4 py-3 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center">
-            <NavLink to="/chats" className="flex items-center text-[#3D5B82] hover:text-[#96C3D6] mr-4">
-              <ArrowLeft className="w-5 h-5 mr-1" />
-            </NavLink>
-            <div className="relative">
-              <h2 className="text-lg font-semibold">{interlocutorName}</h2>
-              {isTyping && (
-                <p className="absolute left-0 top-5 text-sm text-gray-500 animate-pulse whitespace-nowrap">
-                  печатает...
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            {myRole !== Role.ADMIN && !isInterlocutorAdmin && (
-              <button
-                onClick={() => setIsCalendarModalVisible(true)}
-                className="px-4 py-2 bg-[#96C3D6] hover:bg-[#3D5B82] text-black rounded-lg transition-colors flex items-center"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Календарь
-              </button>
+    <div className="h-[calc(100dvh-4rem)] md:h-[calc(100vh-6rem)] flex flex-col bg-white md:my-4 md:mx-4 md:rounded-xl md:shadow-sm md:border md:border-gray-200 overflow-hidden">
+      <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <NavLink
+            to="/chats"
+            className="flex items-center justify-center text-[#3D5B82] hover:text-[#96C3D6] min-w-[40px] min-h-[40px] rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+            aria-label="Назад к чатам"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </NavLink>
+          <div className="relative min-w-0">
+            <h2 className="text-base sm:text-lg font-semibold truncate">{interlocutorName}</h2>
+            {isTyping && (
+              <p className="text-xs sm:text-sm text-gray-500 animate-pulse truncate">
+                печатает...
+              </p>
             )}
-            {myRole === Role.TEACHER && !isInterlocutorAdmin && renderStudentManagement()}
           </div>
         </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {myRole !== Role.ADMIN && !isInterlocutorAdmin && (
+            <button
+              onClick={() => setIsCalendarModalVisible(true)}
+              className="px-3 sm:px-4 py-2 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black rounded-lg transition-colors flex items-center min-h-[40px] text-sm whitespace-nowrap"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="hidden sm:inline">Календарь</span>
+            </button>
+          )}
+          {myRole === Role.TEACHER && !isInterlocutorAdmin && renderStudentManagement()}
+        </div>
+      </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div ref={chatContainerRef} className="h-full overflow-y-auto overflow-x-hidden px-4 py-4 space-y-1">
-            {isLoadingMore && (
-              <div className="text-center text-gray-400 py-2">
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#3D5B82] mx-auto"></div>
-              </div>
-            )}
-            {messages.length === 0 && !isLoadingMore && (
-              <div className="text-center text-gray-400 py-8">Начните общение</div>
-            )}
-            {messages.map((message, index) => {
-              const showDateSeparator = () => {
-                const currentDate = formatDateSeparator(new Date(message.date));
-                if (currentDate !== lastDateSeparator) {
-                  lastDateSeparator = currentDate;
-                  return true;
-                }
-                return false;
-              };
-              const dateSeparator = showDateSeparator();
-              return (
-                <React.Fragment key={getMessageKey(message, index)}>
-                  {dateSeparator && (
-                    <div className="flex justify-center my-3">
-                      <span className="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
-                        {lastDateSeparator}
-                      </span>
-                    </div>
-                  )}
-                  <div className={`flex ${message.sender === myEmail ? "justify-end" : "justify-start"} mb-1`}>
-                    {editingMessageId === message._id ? (
-                      <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm w-full max-w-xs">
-                        <input
-                          type="text"
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6] mb-2"
-                          autoFocus
-                        />
-                        <div className="flex justify-end gap-2">
-                          <button onClick={handleCancelEdit} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Отмена</button>
-                          <button onClick={handleSaveEdit} className="px-3 py-1.5 text-sm bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E]">Сохранить</button>
-                        </div>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div ref={chatContainerRef} className="h-full overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 space-y-1">
+          {isLoadingMore && (
+            <div className="text-center text-gray-400 py-2">
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#3D5B82] mx-auto"></div>
+            </div>
+          )}
+          {messages.length === 0 && !isLoadingMore && (
+            <div className="text-center text-gray-400 py-8 px-4">
+              <p className="text-base">Начните общение</p>
+              <p className="text-sm mt-1">Отправьте первое сообщение</p>
+            </div>
+          )}
+          {messages.map((message, index) => {
+            const showDateSeparator = () => {
+              const currentDate = formatDateSeparator(new Date(message.date));
+              if (currentDate !== lastDateSeparator) {
+                lastDateSeparator = currentDate;
+                return true;
+              }
+              return false;
+            };
+            const dateSeparator = showDateSeparator();
+            const isOwn = message.sender === myEmail;
+            const messageKey = getMessageKey(message, index);
+            const isMenuOpen = activeMessageMenu === messageKey;
+            const isEditing = editingMessageId === messageKey;
+            return (
+              <React.Fragment key={messageKey}>
+                {dateSeparator && (
+                  <div className="flex justify-center my-3">
+                    <span className="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                      {lastDateSeparator}
+                    </span>
+                  </div>
+                )}
+                <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-1`}>
+                  {isEditing ? (
+                    <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm w-full max-w-sm">
+                      <input
+                        type="text"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveEdit();
+                          if (e.key === 'Escape') handleCancelEdit();
+                        }}
+                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6] mb-2 min-h-[44px]"
+                        autoFocus
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[40px]"
+                        >
+                          Отмена
+                        </button>
+                        <button
+                          onClick={handleSaveEdit}
+                          className="px-3 py-2 text-sm bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] min-h-[40px]"
+                        >
+                          Сохранить
+                        </button>
                       </div>
-                    ) : (
-                      <div className={`max-w-[75%] min-w-0 flex flex-col ${message.sender === myEmail ? 'items-end' : 'items-start'}`}>
-                        <div className={`relative group px-4 py-2.5 rounded-2xl ${
-                          message.sender === myEmail
+                    </div>
+                  ) : (
+                    <div className={`max-w-[85%] sm:max-w-[75%] min-w-0 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                      <div
+                        className={`group relative px-4 py-2.5 rounded-2xl ${
+                          isOwn
                             ? 'bg-[#3D5B82] text-white rounded-br-md'
                             : 'bg-gray-100 text-gray-900 rounded-bl-md'
-                        }`}>
-                          {message.deleted ? (
-                            <p className="italic opacity-70 break-words">Сообщение удалено</p>
-                          ) : (
-                            <p className="break-words text-[15px]" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{message.message}</p>
-                          )}
-                          <div className={`flex items-center gap-1 mt-1 ${message.sender === myEmail ? 'justify-end text-blue-100' : 'justify-start text-gray-400'}`}>
-                            <span className="text-xs whitespace-nowrap">{formatMessageDate(message.date)}</span>
-                            {message.edited && <span className="text-xs opacity-70">изменено</span>}
-                          </div>
-                          {message.sender === myEmail && !message.deleted && (
-                            <div className="absolute -top-1 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center bg-white border border-gray-200 rounded-full px-1 py-0.5 shadow-sm -translate-y-1/2 translate-x-1/3">
+                        }`}
+                        onDoubleClick={() => {
+                          if (isOwn && !message.deleted && messageKey) {
+                            handleEditMessage(messageKey, message.message);
+                          }
+                        }}
+                      >
+                        {message.deleted ? (
+                          <p className="italic opacity-70 break-words">Сообщение удалено</p>
+                        ) : (
+                          <p className="break-words text-[15px]" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{message.message}</p>
+                        )}
+                        <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end text-blue-100' : 'justify-start text-gray-400'}`}>
+                          <span className="text-xs whitespace-nowrap">{formatMessageDate(message.date)}</span>
+                          {message.edited && <span className="text-xs opacity-70">изменено</span>}
+                        </div>
+                        {isOwn && !message.deleted && messageKey && (
+                          <>
+                            <button
+                              onClick={() => toggleMessageMenu(messageKey)}
+                              className="md:hidden absolute -top-2 right-0 bg-white border border-gray-200 rounded-full w-7 h-7 flex items-center justify-center shadow-sm -translate-y-1/2 translate-x-1/3 text-gray-500 active:scale-95 transition-transform z-10"
+                              aria-label="Действия с сообщением"
+                            >
+                              <span className="text-xs">⋯</span>
+                            </button>
+                            <div className={`absolute -top-2 right-0 bg-white border border-gray-200 rounded-full px-1 py-0.5 shadow-sm -translate-y-1/2 translate-x-1/3 flex items-center transition-opacity z-10 ${
+                              isMenuOpen ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'
+                            }`}>
                               <button
-                                onClick={() => handleEditMessage(message._id!, message.message)}
-                                className="p-1 text-gray-500 hover:text-[#3D5B82] transition-colors"
+                                onClick={() => handleEditMessage(messageKey, message.message)}
+                                className="p-1.5 text-gray-500 hover:text-[#3D5B82] transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center"
                                 title="Редактировать"
+                                aria-label="Редактировать"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => handleDeleteMessage(message._id!)}
-                                className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+                                onClick={() => handleDeleteMessage(messageKey)}
+                                className="p-1.5 text-gray-500 hover:text-red-500 transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center"
                                 title="Удалить"
+                                aria-label="Удалить"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
-                          )}
-                        </div>
+                          </>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </React.Fragment>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
+                      {isMenuOpen && isOwn && !message.deleted && (
+                        <div
+                          className="fixed inset-0 z-[5]"
+                          onClick={() => setActiveMessageMenu(null)}
+                          aria-hidden="true"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              </React.Fragment>
+            );
+          })}
+          <div ref={messagesEndRef} />
         </div>
+      </div>
 
-        <div className="border-t border-gray-200 bg-white px-4 py-3 flex items-center gap-2 flex-shrink-0">
-          <div className="relative flex-1 max-w-full">
-            <input
-              type="text"
-              placeholder="Введите сообщение..."
-              value={newMessage}
-              onChange={(e) => {
-                setNewMessage(e.target.value);
-                handleTypingStart();
-              }}
-              onKeyDown={handleKeyPress}
-              className="w-full py-3 pl-4 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-gray-50 break-words"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] disabled:opacity-40 disabled:hover:bg-[#96C3D6] transition-colors"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
+      <div className="border-t border-gray-200 bg-white px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2 flex-shrink-0 safe-area-bottom">
+        <div className="relative flex-1 max-w-full">
+          <input
+            type="text"
+            placeholder="Введите сообщение..."
+            value={newMessage}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              handleTypingStart();
+            }}
+            onKeyDown={handleKeyPress}
+            className="w-full py-3 pl-4 pr-14 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-gray-50 min-h-[48px] text-base"
+            autoComplete="off"
+          />
+          <button
+            onClick={handleSendMessage}
+            disabled={!newMessage.trim()}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] hover:text-white disabled:opacity-40 disabled:hover:bg-[#96C3D6] disabled:hover:text-black transition-colors flex items-center justify-center active:scale-95"
+            aria-label="Отправить сообщение"
+          >
+            <Send className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
       {isCalendarModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-8">
-          <div className="w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b bg-gray-50">
-              <h2 className="text-xl font-bold text-gray-800">
-                Календарь событий с {interlocutorName}
+        <div className="fixed inset-0 bg-black/50 flex items-stretch md:items-center justify-center z-50 p-0 md:p-8">
+          <div className="w-full md:max-w-6xl h-full md:h-auto md:max-h-[90vh] bg-white md:rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b bg-gray-50 flex-shrink-0 safe-area-top">
+              <h2 className="text-base sm:text-xl font-bold text-gray-800 truncate pr-2">
+                Календарь · {interlocutorName}
               </h2>
               <button
                 onClick={() => setIsCalendarModalVisible(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-200 transition-colors"
+                aria-label="Закрыть"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-4 flex-grow overflow-auto">
+            <div className="p-3 sm:p-4 flex-grow overflow-auto">
               <CalendarView
                 events={calendarEvents}
                 teacherEmail={myRole === Role.TEACHER ? myEmail : email}

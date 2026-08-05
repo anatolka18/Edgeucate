@@ -84,11 +84,11 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50 px-4 py-8 safe-area-top safe-area-bottom">
           <div className="max-w-md w-full text-center">
             <div className="mb-6">
               <svg
-                className="mx-auto h-16 w-16 text-red-400"
+                className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-red-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -101,32 +101,32 @@ class ErrorBoundary extends Component<Props, State> {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               Что-то пошло не так
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-6">
               Произошла ошибка. Попробуйте обновить страницу или вернуться на главную.
             </p>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-2 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors"
+                className="w-full sm:w-auto px-6 py-3 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors min-h-[44px] font-medium"
               >
                 Обновить
               </button>
               <button
                 onClick={this.handleReset}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors min-h-[44px] font-medium"
               >
                 На главную
               </button>
             </div>
             {this.state.error && (
               <details className="mt-6 text-left bg-gray-100 p-4 rounded-lg">
-                <summary className="text-sm text-gray-600 cursor-pointer">
+                <summary className="text-sm text-gray-600 cursor-pointer min-h-[44px] flex items-center">
                   Детали ошибки
                 </summary>
-                <pre className="mt-2 text-xs text-red-600 whitespace-pre-wrap break-words">
+                <pre className="mt-2 text-xs text-red-600 whitespace-pre-wrap break-words overflow-x-auto">
                   {this.state.error.message}
                 </pre>
               </details>

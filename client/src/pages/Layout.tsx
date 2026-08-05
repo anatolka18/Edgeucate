@@ -5,9 +5,9 @@ import Footer from "../components/Footer";
 
 const Layout: FC = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-[100dvh] bg-gray-50">
       <Header />
-      <main className="flex-grow pt-4 pb-8">
+      <main className="flex-grow">
         <Outlet />
       </main>
       <Footer />

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { instance } from "../api/axios.api";
 import { toast } from "react-toastify";
 import { IResponseUser } from "../types/user";
+import { MessageCircle, Shield, ShieldOff } from "lucide-react";
 
 const AllUsersPage: React.FC = () => {
   const [users, setUsers] = useState<IResponseUser[]>([]);
@@ -65,47 +66,49 @@ const AllUsersPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen p-4">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3D5B82]"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Список пользователей</h1>
+        <h1 className="text-xl sm:text-2xl font-bold mb-6">Список пользователей</h1>
         
         {blockModalOpen && selectedUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Блокировка пользователя</h2>
-              <p className="mb-4">Вы собираетесь заблокировать пользователя <span className="font-semibold">{selectedUser.username}</span> ({selectedUser.email})</p>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md mx-4 safe-area-top safe-area-bottom">
+              <h2 className="text-lg sm:text-xl font-bold mb-4">Блокировка пользователя</h2>
+              <p className="mb-4 text-sm sm:text-base break-words">
+                Вы собираетесь заблокировать пользователя <span className="font-semibold">{selectedUser.username}</span> ({selectedUser.email})
+              </p>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Причина блокировки</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Причина блокировки</label>
                 <textarea
                   value={blockReason}
                   onChange={(e) => setBlockReason(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg"
+                  className="w-full p-3 border border-gray-300 rounded-lg min-h-[100px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] resize-none"
                   placeholder="Укажите причину блокировки"
                   rows={3}
                 />
               </div>
               
-              <div className="flex justify-end space-x-3">
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <button
                   onClick={() => {
                     setBlockModalOpen(false);
                     setBlockReason("");
                   }}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                  className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 min-h-[44px] font-medium transition-colors"
                 >
                   Отмена
                 </button>
                 <button
                   onClick={handleBlockUser}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                  className="px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 min-h-[44px] font-medium transition-colors"
                 >
                   Заблокировать
                 </button>
@@ -114,82 +117,144 @@ const AllUsersPage: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Имя пользователя</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {users.length > 0 ? (
-                users.map((user, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.username}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${user.role === 'Teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                        {user.role === 'Teacher' ? 'Преподаватель' : 'Ученик'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.isBlocked ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                          Заблокирован
+        <div className="md:hidden space-y-3">
+          {users.length > 0 ? (
+            users.map((user) => (
+              <div key={user.email} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">{user.username}</p>
+                    <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                  </div>
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${
+                    user.isBlocked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                  }`}>
+                    {user.isBlocked ? 'Заблокирован' : 'Активен'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    user.role === 'Teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {user.role === 'Teacher' ? 'Преподаватель' : 'Ученик'}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleSendMessage(user.email)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm bg-blue-50 text-[#3D5B82] rounded-lg hover:bg-blue-100 transition-colors min-h-[44px] font-medium"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Написать
+                  </button>
+                  {user.isBlocked ? (
+                    <button
+                      onClick={() => handleUnblockUser(user.email)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors min-h-[44px] font-medium"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Разблокировать
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setBlockModalOpen(true);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors min-h-[44px] font-medium"
+                    >
+                      <ShieldOff className="w-4 h-4" />
+                      Заблокировать
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 bg-white rounded-xl border border-gray-200">
+              <p className="text-gray-500">Пользователи не найдены</p>
+            </div>
+          )}
+        </div>
+
+        <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Имя пользователя</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {users.length > 0 ? (
+                  users.map((user, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.username}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${user.role === 'Teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                          {user.role === 'Teacher' ? 'Преподаватель' : 'Ученик'}
                         </span>
-                      ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Активен
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-4">
-                        <button
-                          onClick={() => handleSendMessage(user.email)}
-                          className="text-[#3D5B82] hover:text-[#96C3D6] px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                          title="Написать сообщение"
-                        >
-                          Написать
-                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {user.isBlocked ? (
-                          <button
-                            onClick={() => handleUnblockUser(user.email)}
-                            className="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50 transition-colors"
-                            title="Разблокировать пользователя"
-                          >
-                            Разблокировать
-                          </button>
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Заблокирован
+                          </span>
                         ) : (
-                          <button
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setBlockModalOpen(true);
-                            }}
-                            className="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                            title="Заблокировать пользователя"
-                          >
-                            Заблокировать
-                          </button>
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Активен
+                          </span>
                         )}
-                      </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-4">
+                          <button
+                            onClick={() => handleSendMessage(user.email)}
+                            className="text-[#3D5B82] hover:text-[#96C3D6] px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors min-h-[40px] font-medium"
+                            title="Написать сообщение"
+                          >
+                            Написать
+                          </button>
+                          {user.isBlocked ? (
+                            <button
+                              onClick={() => handleUnblockUser(user.email)}
+                              className="text-green-600 hover:text-green-900 px-3 py-2 rounded-lg hover:bg-green-50 transition-colors min-h-[40px] font-medium"
+                              title="Разблокировать пользователя"
+                            >
+                              Разблокировать
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setBlockModalOpen(true);
+                              }}
+                              className="text-red-600 hover:text-red-900 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors min-h-[40px] font-medium"
+                              title="Заблокировать пользователя"
+                            >
+                              Заблокировать
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                      Пользователи не найдены
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                    Пользователи не найдены
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

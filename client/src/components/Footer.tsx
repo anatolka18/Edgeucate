@@ -5,15 +5,14 @@ import FullLogo from "../assets/FullLogo.png";
 
 const Footer: FC = () => {
   return (
-    <footer className="bg-white border-t border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="bg-white border-t border-gray-200 safe-area-bottom">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              {/* Логотип */}
-                <Link to="/" className="flex items-center gap-3">
-                    <img src={FullLogo} alt="Edgeucate" className="h-10" />
-                </Link>
+              <Link to="/" className="flex items-center gap-3 min-w-[44px] min-h-[44px]">
+                <img src={FullLogo} alt="Edgeucate" className="h-10" />
+              </Link>
             </div>
             <p className="text-gray-500 text-sm leading-relaxed">
               Платформа для поиска репетиторов и онлайн-обучения.
@@ -22,26 +21,42 @@ const Footer: FC = () => {
 
           <div>
             <h3 className="text-gray-900 font-semibold mb-4">Навигация</h3>
-            <ul className="space-y-2">
-              <li><Link to="/" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">Главная</Link></li>
-              <li><Link to="/search" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">Поиск репетитора</Link></li>
-              <li><Link to="/auth" className="text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">Регистрация</Link></li>
+            <ul className="space-y-1">
+              <li>
+                <Link to="/" className="block py-2 min-h-[44px] flex items-center text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">
+                  Главная
+                </Link>
+              </li>
+              <li>
+                <Link to="/search" className="block py-2 min-h-[44px] flex items-center text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">
+                  Поиск репетитора
+                </Link>
+              </li>
+              <li>
+                <Link to="/auth" className="block py-2 min-h-[44px] flex items-center text-gray-500 hover:text-[#3D5B82] transition-colors text-sm">
+                  Регистрация
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-gray-900 font-semibold mb-4">Контакты</h3>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-2 text-sm text-gray-500">
-                <Mail className="w-4 h-4 text-[#3D5B82]" />
-                <span>support@edgeucate.ru</span>
+            <ul className="space-y-1">
+              <li>
+                <a href="mailto:support@edgeucate.ru" className="flex items-center gap-2 py-2 min-h-[44px] text-sm text-gray-500 hover:text-[#3D5B82] transition-colors">
+                  <Mail className="w-4 h-4 text-[#3D5B82] flex-shrink-0" />
+                  <span>support@edgeucate.ru</span>
+                </a>
               </li>
-              <li className="flex items-center gap-2 text-sm text-gray-500">
-                <Phone className="w-4 h-4 text-[#3D5B82]" />
-                <span>+7 (999) 123-45-67</span>
+              <li>
+                <a href="tel:+79991234567" className="flex items-center gap-2 py-2 min-h-[44px] text-sm text-gray-500 hover:text-[#3D5B82] transition-colors">
+                  <Phone className="w-4 h-4 text-[#3D5B82] flex-shrink-0" />
+                  <span>+7 (666) 666-66-66</span>
+                </a>
               </li>
-              <li className="flex items-center gap-2 text-sm text-gray-500">
-                <MapPin className="w-4 h-4 text-[#3D5B82]" />
+              <li className="flex items-center gap-2 py-2 min-h-[44px] text-sm text-gray-500">
+                <MapPin className="w-4 h-4 text-[#3D5B82] flex-shrink-0" />
                 <span>Россия, онлайн</span>
               </li>
             </ul>
@@ -54,7 +69,8 @@ const Footer: FC = () => {
                 href="https://github.com/anatolka18/Edgeucate"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-[#3D5B82] hover:text-white transition-all text-gray-600"
+                className="min-w-[44px] min-h-[44px] w-11 h-11 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-[#3D5B82] hover:text-white transition-all text-gray-600"
+                aria-label="GitHub"
               >
                 <ExternalLink className="w-5 h-5" />
               </a>

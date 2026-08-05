@@ -33,7 +33,7 @@ export default function VerifyEmailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3D5B82] mx-auto"></div>
           <p className="mt-4 text-gray-600">Подтверждение email...</p>
@@ -43,8 +43,8 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+    <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg max-w-md w-full mx-4 text-center">
         {status === 'success' ? (
           <>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Email подтверждён!</h2>
@@ -57,7 +57,7 @@ export default function VerifyEmailPage() {
             <p className="text-gray-600">Ссылка недействительна или истекла.</p>
             <button
               onClick={() => navigate('/auth')}
-              className="mt-4 px-6 py-2 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors"
+              className="mt-4 w-full sm:w-auto px-6 py-3 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors font-medium"
             >
               На страницу входа
             </button>

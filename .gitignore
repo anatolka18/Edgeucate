@@ -2,5 +2,7 @@
 .env.prod
 myDockerComand.md
 ROADMAP.md
+DEPLOY.md
+REINSTALL.md
 
 docker-compose.override.yml

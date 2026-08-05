@@ -63,9 +63,9 @@ const SearchPage: React.FC = () => {
     };
 
     return (
-        <div className="p-8">
+        <div className="p-4 md:p-8">
             <div className="max-w-[800px] mx-auto mb-6">
-                <div className="flex items-center gap-4 mb-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
@@ -74,12 +74,12 @@ const SearchPage: React.FC = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3D5B82]"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3D5B82]"
                         />
                     </div>
                     <button
                         onClick={handleSearch}
-                        className="px-6 py-2 bg-[#3D5B82] hover:bg-[#2D4B6E] text-white rounded-lg transition-colors"
+                        className="px-6 py-3 bg-[#3D5B82] hover:bg-[#2D4B6E] text-white rounded-lg transition-colors font-medium min-h-[44px]"
                         disabled={isLoading}
                     >
                         {isLoading ? "Поиск..." : "Найти"}
@@ -93,7 +93,7 @@ const SearchPage: React.FC = () => {
                             onClick={() =>
                                 setOpenCategory(openCategory === category.name ? null : category.name)
                             }
-                            className={`px-4 py-1.5 rounded-full text-sm transition-colors ${
+                            className={`px-4 py-2 rounded-full text-sm transition-colors min-h-[44px] ${
                                 openCategory === category.name
                                     ? "bg-[#3D5B82] text-white"
                                     : "bg-gray-100 hover:bg-gray-200 text-gray-700"
@@ -117,7 +117,7 @@ const SearchPage: React.FC = () => {
                                             setOpenCategory(null);
                                             fetchAdvertisements(searchTerm, subject);
                                         }}
-                                        className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                                        className={`px-3 py-2 text-sm rounded-full transition-colors min-h-[44px] ${
                                             selectedSubject === subject
                                                 ? "bg-[#3D5B82] text-white"
                                                 : "bg-gray-50 hover:bg-gray-100 text-gray-700"
@@ -131,13 +131,13 @@ const SearchPage: React.FC = () => {
                 )}
 
                 {selectedSubject && (
-                    <div className="mt-3 flex items-center gap-2">
-                        <span className="text-sm bg-[#F16E4B]/10 text-[#F16E4B] px-3 py-1 rounded-full">
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <span className="text-sm bg-[#F16E4B]/10 text-[#F16E4B] px-3 py-2 rounded-full min-h-[44px] flex items-center">
                             {selectedSubject}
                         </span>
                         <button
                             onClick={handleClearFilter}
-                            className="text-sm text-gray-500 hover:text-red-500"
+                            className="text-sm text-gray-500 hover:text-red-500 px-3 py-2 min-h-[44px]"
                         >
                             Сбросить
                         </button>
@@ -166,19 +166,19 @@ const SearchPage: React.FC = () => {
                             {currentAdvertisements.map((advertisement) => (
                                 <div
                                     key={advertisement.advertisementId}
-                                    className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                                    className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow"
                                 >
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
                                             <span className="text-white font-bold text-xl">
                                                 {advertisement.creator?.[0]?.toUpperCase() || "?"}
                                             </span>
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 text-center sm:text-left">
                                             <h3 className="text-lg font-bold">{advertisement.creator}</h3>
                                             <p className="text-gray-600">{advertisement.title}</p>
                                             <p className="text-sm text-gray-400">{advertisement.subject}</p>
-                                            <div className="flex items-center gap-1 mt-2">
+                                            <div className="flex items-center justify-center sm:justify-start gap-1 mt-2">
                                                 <span className="text-yellow-500">★</span>
                                                 <span className="font-medium">
                                                     {advertisement.stars?.toFixed(1) ?? '0'}
@@ -187,21 +187,21 @@ const SearchPage: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2 mt-4">
+                                    <div className="flex flex-col sm:flex-row gap-2 mt-4">
                                         <NavLink
                                             to={
                                                 isAuth
                                                     ? `/advertisement/${advertisement.advertisementId}`
                                                     : "/auth"
                                             }
-                                            className="flex-1 text-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                            className="flex-1 text-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium min-h-[44px] flex items-center justify-center"
                                         >
                                             Подробнее
                                         </NavLink>
                                         {isAuth && (
                                             <NavLink
                                                 to={`/chat/${advertisement.email}`}
-                                                className="flex-1 text-center px-4 py-2 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] transition-colors"
+                                                className="flex-1 text-center px-4 py-3 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] hover:text-white transition-colors font-medium min-h-[44px] flex items-center justify-center"
                                             >
                                                 Написать
                                             </NavLink>
@@ -216,7 +216,7 @@ const SearchPage: React.FC = () => {
                                 <button
                                     onClick={() => handlePageChange(currentPage - 1)}
                                     disabled={currentPage === 1}
-                                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                                    className="p-3 rounded-lg hover:bg-gray-100 disabled:opacity-30 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
@@ -226,7 +226,7 @@ const SearchPage: React.FC = () => {
                                 <button
                                     onClick={() => handlePageChange(currentPage + 1)}
                                     disabled={currentPage === totalPages}
-                                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                                    className="p-3 rounded-lg hover:bg-gray-100 disabled:opacity-30 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                 >
                                     <ChevronRight className="w-5 h-5" />
                                 </button>

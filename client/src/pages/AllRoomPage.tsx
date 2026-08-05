@@ -4,6 +4,7 @@ import { MySocket } from '../store/auth-state';
 import { ACTIONS } from '../hooks/actions';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'react-toastify';
+import { Video, Plus, LogIn, Copy } from 'lucide-react';
 
 interface Room {
   roomID: string;
@@ -60,20 +61,34 @@ export default function AllRoomPage() {
     setNewRoomID('');
   };
 
+  const handleCopyRoomId = () => {
+    if (newRoomID) {
+      navigator.clipboard.writeText(newRoomID).then(() => {
+        toast.success('Код скопирован');
+      }).catch(() => {
+        toast.error('Не удалось скопировать');
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg">
-        <h1 className="text-2xl font-semibold text-center mb-6">Видеочаты</h1>
+      <div className="bg-white p-5 sm:p-8 rounded-xl shadow-lg w-full max-w-lg">
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <Video className="w-7 h-7 text-[#3D5B82]" />
+          <h1 className="text-xl sm:text-2xl font-semibold text-center">Видеочаты</h1>
+        </div>
 
         {rooms.length > 0 && (
-          <ul className="space-y-4 mb-6">
+          <ul className="space-y-3 mb-6">
             {rooms.map(({ roomID }) => (
-              <li key={roomID} className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                <span className="text-sm font-medium truncate">{roomID}</span>
+              <li key={roomID} className="bg-gray-50 p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+                <span className="text-sm font-medium truncate text-center sm:text-left">{roomID}</span>
                 <button
                   onClick={() => navigate(`/room/${roomID}`)}
-                  className="px-4 py-2 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] hover:text-white transition-colors min-h-[44px] font-medium flex-shrink-0"
                 >
+                  <LogIn className="w-4 h-4" />
                   Войти
                 </button>
               </li>
@@ -83,17 +98,30 @@ export default function AllRoomPage() {
 
         <button
           onClick={handleCreateRoom}
-          className="w-full mb-6 bg-[#96C3D6] hover:bg-[#3D5B82] text-black py-2 rounded-lg transition-colors"
+          className="w-full mb-6 flex items-center justify-center gap-2 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black py-3 rounded-lg transition-colors min-h-[48px] font-medium"
         >
+          <Plus className="w-5 h-5" />
           Создать комнату
         </button>
 
         {newRoomID && (
-          <div className="mb-4 text-center text-sm">
-            <p>Код для входа: <strong>{newRoomID}</strong></p>
+          <div className="mb-6 text-center">
+            <p className="text-sm text-gray-600 mb-2">Код для входа:</p>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <code className="bg-gray-100 px-4 py-2 rounded-lg text-lg font-mono font-bold text-[#3D5B82] select-all break-all">
+                {newRoomID}
+              </code>
+              <button
+                onClick={handleCopyRoomId}
+                className="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Скопировать код"
+              >
+                <Copy className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
             <button
               onClick={handleEnterCreatedRoom}
-              className="mt-2 px-4 py-2 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors"
+              className="w-full sm:w-auto px-6 py-3 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors min-h-[44px] font-medium"
             >
               Войти в комнату
             </button>
@@ -101,18 +129,20 @@ export default function AllRoomPage() {
         )}
 
         {!newRoomID && (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-stretch gap-3">
             <input
               type="text"
               placeholder="Введите ID комнаты"
               value={roomIDInput}
               onChange={(e) => setRoomIDInput(e.target.value)}
-              className="w-full p-2 mb-4 border border-gray-300 rounded-lg"
+              onKeyDown={(e) => e.key === 'Enter' && handleJoinRoom()}
+              className="w-full p-3 border border-gray-300 rounded-lg min-h-[48px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] text-base"
             />
             <button
               onClick={handleJoinRoom}
-              className="bg-[#96C3D6] hover:bg-[#3D5B82] text-black py-2 px-4 rounded-lg transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black py-3 px-4 rounded-lg transition-colors min-h-[48px] font-medium"
             >
+              <LogIn className="w-5 h-5" />
               Присоединиться
             </button>
           </div>
