@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { ICalendarEvent, IMessage, Role } from "../types/user";
 import { MySocket } from "../store/auth-state";
 import { useMyProfile } from "../hooks/useMyProfile";
+import { useKeyboardHeight } from "../hooks/useKeyboardHeight";
 import CalendarView from "../components/CalendarView";
 import moment from "moment";
 import { authReadyPromise, accessToken } from '../store/auth-state';
@@ -19,19 +20,15 @@ function normalizeId(raw: any): string {
   if (typeof raw === 'string') return raw;
   if (typeof raw === 'object' && raw !== null) {
     if (typeof raw.$oid === 'string') return raw.$oid;
-
     if (raw.buffer && raw.buffer.data && Array.isArray(raw.buffer.data)) {
       return raw.buffer.data.map((b: number) => b.toString(16).padStart(2, '0')).join('');
     }
-
     if (raw.data && Array.isArray(raw.data) && raw.type === 'Buffer') {
       return raw.data.map((b: number) => b.toString(16).padStart(2, '0')).join('');
     }
-
     if (typeof raw.toHexString === 'function') {
       return raw.toHexString();
     }
-
     if (typeof raw.toString === 'function') {
       const str = raw.toString();
       if (str !== '[object Object]') return str;
@@ -100,6 +97,9 @@ const ChatPage: React.FC = () => {
     hasMore: boolean;
   };
 
+  const { viewportHeight } = useKeyboardHeight();
+  const prevViewportHeightRef = useRef(viewportHeight);
+
   const [messages, setMessages] = useState<IMessage[]>(initialMessages);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -128,6 +128,19 @@ const ChatPage: React.FC = () => {
   const [activeMessageMenu, setActiveMessageMenu] = useState<string | null>(null);
 
   const isInterlocutorAdmin = email === 'admin@yandex.ru';
+
+  useEffect(() => {
+    const heightDiff = prevViewportHeightRef.current - viewportHeight;
+    prevViewportHeightRef.current = viewportHeight;
+
+    if (heightDiff > 100 && chatContainerRef.current) {
+      setTimeout(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      }, 150);
+    }
+  }, [viewportHeight]);
 
   const fetchCalendarEvents = async () => {
     try {
@@ -513,8 +526,17 @@ const ChatPage: React.FC = () => {
 
   let lastDateSeparator = '';
 
+  const isDesktop = window.innerWidth >= 768;
+  const containerHeight = isDesktop ? 'calc(100vh - 6rem)' : `${viewportHeight}px`;
+
   return (
-    <div className="h-[calc(100dvh-4rem)] md:h-[calc(100vh-6rem)] flex flex-col bg-white md:my-4 md:mx-4 md:rounded-xl md:shadow-sm md:border md:border-gray-200 overflow-hidden">
+    <div 
+      className="flex flex-col bg-white md:my-4 md:mx-4 md:rounded-xl md:shadow-sm md:border md:border-gray-200 overflow-hidden"
+      style={{ 
+        height: containerHeight,
+        transition: 'height 0.2s ease-out'
+      }}
+    >
       <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <NavLink

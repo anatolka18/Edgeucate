@@ -8,7 +8,7 @@ import Logo from "../assets/Logo.png";
 import { ensureSocket } from '../App';
 import { accessToken } from '../store/auth-state';
 import { instance } from '../api/axios.api';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, GraduationCap, BookOpen } from 'lucide-react';
 import PasswordStrength from '../components/PasswordStrength';
 
 const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -258,28 +258,34 @@ const AuthPage: FC = () => {
                     )}
 
                     {!isLogin && (
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                            <label className="flex items-center p-2">
-                                <input
-                                    type="radio"
-                                    value="Student"
-                                    checked={role === 'Student'}
-                                    onChange={() => setRole('Student')}
-                                    className="mr-2 w-5 h-5"
-                                    required
-                                />
-                                <span>Студент</span>
-                            </label>
-                            <label className="flex items-center p-2">
-                                <input
-                                    type="radio"
-                                    value="Teacher"
-                                    checked={role === 'Teacher'}
-                                    onChange={() => setRole('Teacher')}
-                                    className="mr-2 w-5 h-5"
-                                />
-                                <span>Репетитор</span>
-                            </label>
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-600 mb-2 font-medium">Кто вы?</p>
+                            <div className="flex rounded-lg overflow-hidden border-2 border-gray-300">
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('Student')}
+                                    className={`flex-1 py-3 px-4 text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 min-h-[48px] ${
+                                        role === 'Student'
+                                            ? 'bg-[#3D5B82] text-white shadow-inner'
+                                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <GraduationCap className="w-4 h-4" />
+                                    Студент
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('Teacher')}
+                                    className={`flex-1 py-3 px-4 text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 min-h-[48px] border-l-2 border-gray-300 ${
+                                        role === 'Teacher'
+                                            ? 'bg-[#3D5B82] text-white shadow-inner'
+                                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <BookOpen className="w-4 h-4" />
+                                    Репетитор
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -311,4 +317,4 @@ const AuthPage: FC = () => {
     )
 }
 
-export default AuthPage
+export default AuthPage;
