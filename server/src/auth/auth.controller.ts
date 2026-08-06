@@ -96,7 +96,6 @@ export class AuthController {
 
   @Post('/verify-email')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @UseGuards(CsrfGuard)
   async verifyEmail(@Body('token') token: string) {
     if (!token) {
       throw new BadRequestException('Токен обязателен');
@@ -105,7 +104,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  @UseGuards(CsrfGuard)
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   async forgotPassword(@Body('email') email: string) {
     if (!email || !email.includes('@')) {
       throw new BadRequestException('Некорректный email');
@@ -125,7 +124,6 @@ export class AuthController {
 
   @Post('/reset-password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @UseGuards(CsrfGuard)
   async resetPassword(@Body() body: ResetPasswordDto) {
     await this.authService.resetPassword(body.token, body.password);
     return { success: true, message: 'Пароль успешно обновлён' };
