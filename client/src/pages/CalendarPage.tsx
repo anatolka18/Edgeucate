@@ -10,16 +10,51 @@ const CalendarPage: React.FC = () => {
   const [events, setEvents] = useState<ICalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const normalizeId = (raw: any): string => {
+    if (!raw) return '';
+    if (typeof raw === 'string') return raw;
+    if (typeof raw === 'object' && raw !== null) {
+      if (typeof raw.$oid === 'string') return raw.$oid;
+      if (raw.buffer && raw.buffer.data && Array.isArray(raw.buffer.data)) {
+        return raw.buffer.data.map((b: number) => b.toString(16).padStart(2, '0')).join('');
+      }
+      if (raw.data && Array.isArray(raw.data) && raw.type === 'Buffer') {
+        return raw.data.map((b: number) => b.toString(16).padStart(2, '0')).join('');
+      }
+      if (typeof raw.toHexString === 'function') return raw.toHexString();
+      if (typeof raw.toString === 'function') {
+        const str = raw.toString();
+        if (str !== '[object Object]') return str;
+      }
+    }
+    return '';
+  };
+
   const fetchEvents = async () => {
     try {
       if (!myProfile) return;
       const endpoint = myProfile.role === Role.TEACHER ? '/calendar/teacher' : '/calendar/student';
-      const { data } = await instance.get<ICalendarEvent[]>(endpoint);
-      setEvents(data.map(event => ({
-        ...event,
-        start: new Date(event.date),
-        end: new Date(new Date(event.date).getTime() + 60 * 60 * 1000),
-      })));
+      const { data } = await instance.get<any[]>(endpoint);
+
+      const mapped = data.map(rawEvent => {
+        const event = rawEvent._doc || rawEvent;
+        const startDate = new Date(event.date);
+        return {
+          _id: normalizeId(event._id),
+          title: event.title,
+          teacher_email: event.teacher_email,
+          student_email: event.student_email,
+          teacher_username: event.teacher_username,
+          student_username: event.student_username,
+          date: event.date,
+          time: event.time,
+          cost: event.cost,
+          start: startDate,
+          end: new Date(startDate.getTime() + 60 * 60 * 1000),
+        };
+      });
+
+      setEvents(mapped as ICalendarEvent[]);
     } catch (error) {
       toast.error('Не удалось загрузить события');
     } finally {

@@ -8,7 +8,7 @@ import { useMyProfile } from "../hooks/useMyProfile";
 import CalendarView from "../components/CalendarView";
 import moment from "moment";
 import { authReadyPromise, accessToken } from '../store/auth-state';
-import { Pencil, Trash2, Send, ArrowLeft, X } from 'lucide-react';
+import { Pencil, Trash2, Send, ArrowLeft, X, Copy } from 'lucide-react';
 
 interface IStudentStatus {
   isStudent: boolean;
@@ -107,12 +107,14 @@ const ChatPage: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const messageMenuRef = useRef<HTMLDivElement>(null);
   const oldestMessageRef = useRef<string | null>(
     initialMessages[0]?.date
       ? new Date(initialMessages[0].date).toISOString()
       : null
   );
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isStudent, setIsStudent] = useState<boolean>(false);
   const [checkingStatus, setCheckingStatus] = useState<boolean>(true);
@@ -132,14 +134,28 @@ const ChatPage: React.FC = () => {
       if (!email || !myEmail) return;
       const teacherEmail = myRole === Role.TEACHER ? myEmail : email;
       const studentEmail = myRole === Role.TEACHER ? email : myEmail;
-      const response = await instance.get<ICalendarEvent[]>('/calendar/teacherstudent', {
+      const response = await instance.get<any[]>('/calendar/teacherstudent', {
         params: { teacherEmail, studentEmail }
       });
-      const formattedEvents = response.data.map(event => ({
-        ...event,
-        start: new Date(event.date),
-        end: moment(event.date).add(1, 'hour').toDate()
-      }));
+      
+      const formattedEvents = response.data.map(rawEvent => {
+        const event = rawEvent._doc || rawEvent;
+        const startDate = new Date(event.date);
+        return {
+          _id: normalizeId(event._id),
+          title: event.title,
+          teacher_email: event.teacher_email,
+          student_email: event.student_email,
+          teacher_username: event.teacher_username,
+          student_username: event.student_username,
+          date: event.date,
+          time: event.time,
+          cost: event.cost,
+          start: startDate,
+          end: new Date(startDate.getTime() + 60 * 60 * 1000),
+        };
+      });
+      
       setCalendarEvents(formattedEvents);
     } catch (error) {
       toast.error('Не удалось загрузить события календаря');
@@ -151,6 +167,27 @@ const ChatPage: React.FC = () => {
       fetchCalendarEvents();
     }
   }, [isCalendarModalVisible, myEmail, email]);
+
+  useEffect(() => {
+    if (!activeMessageMenu) return;
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (messageMenuRef.current && !messageMenuRef.current.contains(e.target as Node)) {
+        setActiveMessageMenu(null);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }, 10);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [activeMessageMenu]);
 
   useEffect(() => {
     const checkStudentStatus = async () => {
@@ -300,6 +337,17 @@ const ChatPage: React.FC = () => {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [hasMore, isLoadingMore, loadMoreMessages]);
 
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      return false;
+    };
+    container.addEventListener("contextmenu", handleContextMenu);
+    return () => container.removeEventListener("contextmenu", handleContextMenu);
+  }, []);
+
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -377,6 +425,28 @@ const ChatPage: React.FC = () => {
     setActiveMessageMenu(null);
   };
 
+  const handleCopyMessage = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Скопировано в буфер обмена');
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        toast.success('Скопировано в буфер обмена');
+      } catch {
+        toast.error('Не удалось скопировать');
+      }
+      document.body.removeChild(textarea);
+    }
+    setActiveMessageMenu(null);
+  };
+
   const handleCancelEdit = () => {
     setEditingMessageId(null);
     setEditText('');
@@ -415,8 +485,30 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const toggleMessageMenu = (messageKey: string) => {
-    setActiveMessageMenu(activeMessageMenu === messageKey ? null : messageKey);
+  const handleContextMenu = (e: React.MouseEvent, messageKey: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveMessageMenu(messageKey);
+  };
+
+  const handleLongPressStart = (messageKey: string) => {
+    longPressTimeoutRef.current = setTimeout(() => {
+      setActiveMessageMenu(messageKey);
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 500);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+  };
+
+  const handleLongPressCancel = () => {
+    handleLongPressEnd();
   };
 
   let lastDateSeparator = '';
@@ -458,7 +550,11 @@ const ChatPage: React.FC = () => {
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden">
-        <div ref={chatContainerRef} className="h-full overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 space-y-1">
+        <div
+          ref={chatContainerRef}
+          className="h-full overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 space-y-1 select-none"
+          onContextMenu={(e) => e.preventDefault()}
+        >
           {isLoadingMore && (
             <div className="text-center text-gray-400 py-2">
               <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#3D5B82] mx-auto"></div>
@@ -504,7 +600,7 @@ const ChatPage: React.FC = () => {
                           if (e.key === 'Enter') handleSaveEdit();
                           if (e.key === 'Escape') handleCancelEdit();
                         }}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6] mb-2 min-h-[44px]"
+                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6] mb-2 min-h-[44px] select-text"
                         autoFocus
                       />
                       <div className="flex justify-end gap-2">
@@ -529,12 +625,24 @@ const ChatPage: React.FC = () => {
                           isOwn
                             ? 'bg-[#3D5B82] text-white rounded-br-md'
                             : 'bg-gray-100 text-gray-900 rounded-bl-md'
-                        }`}
+                        } ${isMenuOpen ? 'scale-95 opacity-90' : ''} transition-all`}
                         onDoubleClick={() => {
                           if (isOwn && !message.deleted && messageKey) {
                             handleEditMessage(messageKey, message.message);
                           }
                         }}
+                        onContextMenu={(e) => {
+                          if (!message.deleted && messageKey) {
+                            handleContextMenu(e, messageKey);
+                          }
+                        }}
+                        onTouchStart={() => {
+                          if (!message.deleted && messageKey) {
+                            handleLongPressStart(messageKey);
+                          }
+                        }}
+                        onTouchEnd={handleLongPressEnd}
+                        onTouchMove={handleLongPressCancel}
                       >
                         {message.deleted ? (
                           <p className="italic opacity-70 break-words">Сообщение удалено</p>
@@ -545,45 +653,53 @@ const ChatPage: React.FC = () => {
                           <span className="text-xs whitespace-nowrap">{formatMessageDate(message.date)}</span>
                           {message.edited && <span className="text-xs opacity-70">изменено</span>}
                         </div>
-                        {isOwn && !message.deleted && messageKey && (
-                          <>
+                        {!message.deleted && messageKey && isMenuOpen && (
+                          <div
+                            ref={messageMenuRef}
+                            className="absolute -top-2 left-0 bg-white border border-gray-200 rounded-full px-1 py-0.5 shadow-lg -translate-y-1/2 -translate-x-1/3 flex items-center z-50"
+                            onClick={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                          >
                             <button
-                              onClick={() => toggleMessageMenu(messageKey)}
-                              className="md:hidden absolute -top-2 right-0 bg-white border border-gray-200 rounded-full w-7 h-7 flex items-center justify-center shadow-sm -translate-y-1/2 translate-x-1/3 text-gray-500 active:scale-95 transition-transform z-10"
-                              aria-label="Действия с сообщением"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyMessage(message.message);
+                              }}
+                              className="p-2 text-gray-500 hover:text-[#3D5B82] transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                              title="Копировать"
+                              aria-label="Копировать"
                             >
-                              <span className="text-xs">⋯</span>
+                              <Copy className="w-4 h-4" />
                             </button>
-                            <div className={`absolute -top-2 right-0 bg-white border border-gray-200 rounded-full px-1 py-0.5 shadow-sm -translate-y-1/2 translate-x-1/3 flex items-center transition-opacity z-10 ${
-                              isMenuOpen ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'
-                            }`}>
-                              <button
-                                onClick={() => handleEditMessage(messageKey, message.message)}
-                                className="p-1.5 text-gray-500 hover:text-[#3D5B82] transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center"
-                                title="Редактировать"
-                                aria-label="Редактировать"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteMessage(messageKey)}
-                                className="p-1.5 text-gray-500 hover:text-red-500 transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center"
-                                title="Удалить"
-                                aria-label="Удалить"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </>
+                            {isOwn && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditMessage(messageKey, message.message);
+                                  }}
+                                  className="p-2 text-gray-500 hover:text-[#3D5B82] transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                  title="Редактировать"
+                                  aria-label="Редактировать"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteMessage(messageKey);
+                                  }}
+                                  className="p-2 text-gray-500 hover:text-red-500 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                  title="Удалить"
+                                  aria-label="Удалить"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         )}
                       </div>
-                      {isMenuOpen && isOwn && !message.deleted && (
-                        <div
-                          className="fixed inset-0 z-[5]"
-                          onClick={() => setActiveMessageMenu(null)}
-                          aria-hidden="true"
-                        />
-                      )}
                     </div>
                   )}
                 </div>
@@ -605,7 +721,7 @@ const ChatPage: React.FC = () => {
               handleTypingStart();
             }}
             onKeyDown={handleKeyPress}
-            className="w-full py-3 pl-4 pr-14 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-gray-50 min-h-[48px] text-base"
+            className="w-full py-3 pl-4 pr-14 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-gray-50 min-h-[48px] text-base select-text"
             autoComplete="off"
           />
           <button
@@ -621,7 +737,7 @@ const ChatPage: React.FC = () => {
 
       {isCalendarModalVisible && (
         <div className="fixed inset-0 bg-black/50 flex items-stretch md:items-center justify-center z-50 p-0 md:p-8">
-          <div className="w-full md:max-w-6xl h-full md:h-auto md:max-h-[90vh] bg-white md:rounded-xl shadow-2xl overflow-hidden flex flex-col">
+          <div className="w-full md:max-w-6xl h-full md:h-auto md:max-h-[90vh] bg-white md:rounded-xl shadow-2xl flex flex-col">
             <div className="flex justify-between items-center p-4 border-b bg-gray-50 flex-shrink-0 safe-area-top">
               <h2 className="text-base sm:text-xl font-bold text-gray-800 truncate pr-2">
                 Календарь · {interlocutorName}
@@ -634,7 +750,7 @@ const ChatPage: React.FC = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-3 sm:p-4 flex-grow overflow-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 safe-area-bottom">
               <CalendarView
                 events={calendarEvents}
                 teacherEmail={myRole === Role.TEACHER ? myEmail : email}
@@ -645,6 +761,7 @@ const ChatPage: React.FC = () => {
                 onEventCreated={fetchCalendarEvents}
                 onEventDeleted={fetchCalendarEvents}
               />
+              <div className="h-8 md:hidden" />
             </div>
           </div>
         </div>

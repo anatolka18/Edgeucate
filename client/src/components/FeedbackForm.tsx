@@ -22,6 +22,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
+  const [justSubmitted, setJustSubmitted] = useState(false);
   const myProfile = useMyProfile();
 
   useEffect(() => {
@@ -74,6 +75,9 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
       
       setText("");
       setStars(5);
+      setJustSubmitted(true);
+      setCanLeaveFeedback(false);
+      setReason("Вы уже оставили отзыв. Спасибо за обратную связь!");
       toast.success("Отзыв успешно добавлен");
       onFeedbackAdded();
     } catch (error) {
@@ -93,8 +97,25 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
 
   if (!canLeaveFeedback) {
     return (
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-gray-500 text-sm sm:text-base">{reason || "Вы уже оставили отзыв или не являетесь учеником этого преподавателя"}</p>
+      <div className={`mt-6 p-4 rounded-lg border ${
+        justSubmitted 
+          ? 'bg-green-50 border-green-200' 
+          : 'bg-gray-50 border-gray-200'
+      }`}>
+        <div className="flex items-start gap-3">
+          {justSubmitted && (
+            <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          )}
+          <p className={`text-sm sm:text-base ${
+            justSubmitted ? 'text-green-800' : 'text-gray-500'
+          }`}>
+            {reason || "Вы уже оставили отзыв или не являетесь учеником этого преподавателя"}
+          </p>
+        </div>
       </div>
     );
   }

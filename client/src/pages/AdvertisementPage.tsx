@@ -6,7 +6,7 @@ import { IAdvertisement } from "../types/advertisement";
 import { IFeedback } from "../types/user";
 import { useMyProfile } from "../hooks/useMyProfile";
 import FeedbackForm from "../components/FeedbackForm";
-import { Star, User } from "lucide-react";
+import { Star, User, Send } from "lucide-react";
 
 interface IAdvertisementResponse {
   advertisement: IAdvertisement;
@@ -99,8 +99,9 @@ const AdvertisementPage: React.FC = () => {
                 {myProfile && myProfile.email !== advertisement.email && (
                   <NavLink
                     to={`/chat/${advertisement.email}`}
-                    className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium min-h-[44px] flex items-center justify-center"
+                    className="px-4 py-3 bg-[#96C3D6] hover:bg-[#3D5B82] text-white rounded-lg transition-colors font-medium min-h-[44px] flex items-center justify-center gap-2"
                   >
+                    <Send className="w-4 h-4" />
                     Написать сообщение
                   </NavLink>
                 )}

@@ -168,13 +168,13 @@ const SearchPage: React.FC = () => {
                                     key={advertisement.advertisementId}
                                     className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow"
                                 >
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
+                                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0">
                                             <span className="text-white font-bold text-xl">
                                                 {advertisement.creator?.[0]?.toUpperCase() || "?"}
                                             </span>
                                         </div>
-                                        <div className="flex-1 text-center sm:text-left">
+                                        <div className="flex-1 w-full text-center sm:text-left">
                                             <h3 className="text-lg font-bold">{advertisement.creator}</h3>
                                             <p className="text-gray-600">{advertisement.title}</p>
                                             <p className="text-sm text-gray-400">{advertisement.subject}</p>

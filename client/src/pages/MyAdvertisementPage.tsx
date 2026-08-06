@@ -131,20 +131,20 @@ const MyAdvertisementPage: FC = () => {
                     myAdvertisements.map((ad) => (
                         <div
                             key={ad.advertisementId}
-                            className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-start sm:items-center border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow gap-4"
+                            className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center sm:items-start border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow gap-4"
                         >
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                                 <span className="text-xl sm:text-2xl font-bold text-gray-400">
                                     {ad.creator?.[0]?.toUpperCase() || '?'}
                                 </span>
                             </div>
-                            <div className="flex-1 text-center sm:text-left min-w-0">
+                            <div className="flex-1 w-full text-center sm:text-left">
                                 <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-                                    <h3 className="text-lg font-bold truncate">{ad.creator}</h3>
+                                    <h3 className="text-lg font-bold">{ad.creator}</h3>
                                     <span className="text-sm text-yellow-500 font-semibold flex-shrink-0">{ad.stars}★</span>
                                 </div>
-                                <p className="text-sm text-gray-600 truncate">{ad.title}</p>
-                                <p className="text-sm text-gray-600 truncate">{ad.subject}</p>
+                                <p className="text-sm text-gray-600">{ad.title}</p>
+                                <p className="text-sm text-gray-600">{ad.subject}</p>
                                 <p className="text-lg font-semibold mt-2">{ad.price} ₽/час</p>
                                 <div className="flex flex-col sm:flex-row gap-2 mt-3">
                                     <button

@@ -481,12 +481,12 @@ const HomePage: FC = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-6 auto-rows-[180px] md:auto-rows-[220px]">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-6 md:auto-rows-[220px]">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="md:col-span-4 md:row-span-2 relative bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-3xl p-8 md:p-10 overflow-hidden group"
+              className="md:col-span-4 md:row-span-2 relative bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-3xl p-6 sm:p-8 md:p-10 overflow-hidden group min-h-[280px] md:min-h-0"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700" />
               <div className="relative z-10 h-full flex flex-col justify-between">
@@ -494,15 +494,15 @@ const HomePage: FC = () => {
                   <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6">
                     <Video className="w-7 h-7 text-white" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-3">
                     Встроенные видеозвонки
                   </h3>
-                  <p className="text-white/80 max-w-md leading-relaxed">
+                  <p className="text-white/80 max-w-md leading-relaxed text-sm sm:text-base">
                     Занимайтесь прямо в браузере. Никаких Zoom, Skype и других программ.
                     Демонстрация экрана, чат и запись занятий.
                   </p>
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap mt-4">
                   <span className="px-3 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs rounded-full">
                     HD качество
                   </span>
@@ -521,7 +521,7 @@ const HomePage: FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="md:col-span-2 relative bg-gradient-to-br from-orange-50 to-orange-100 rounded-3xl p-6 overflow-hidden group"
+              className="md:col-span-2 relative bg-gradient-to-br from-orange-50 to-orange-100 rounded-3xl p-6 overflow-hidden group min-h-[180px]"
             >
               <Calendar className="w-8 h-8 text-[#F16E4B] mb-3" />
               <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Умный календарь</h3>
@@ -535,7 +535,7 @@ const HomePage: FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="md:col-span-2 relative bg-gradient-to-br from-purple-50 to-purple-100 rounded-3xl p-6 overflow-hidden group"
+              className="md:col-span-2 relative bg-gradient-to-br from-purple-50 to-purple-100 rounded-3xl p-6 overflow-hidden group min-h-[180px]"
             >
               <MessageCircle className="w-8 h-8 text-purple-600 mb-3" />
               <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Мгновенные сообщения</h3>
@@ -549,7 +549,7 @@ const HomePage: FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="md:col-span-3 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-3xl p-6 md:p-8 overflow-hidden"
+              className="md:col-span-3 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-3xl p-6 md:p-8 overflow-hidden min-h-[180px]"
             >
               <div className="flex items-center gap-2 mb-4">
                 <Star className="w-6 h-6 text-yellow-500 fill-current" />
@@ -571,14 +571,14 @@ const HomePage: FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="md:col-span-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-6 md:p-8 overflow-hidden"
+              className="md:col-span-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-6 md:p-8 overflow-hidden min-h-[180px]"
             >
               <Shield className="w-6 h-6 text-green-600 mb-4" />
               <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Безопасность данных</h3>
               <p className="text-gray-600 text-sm md:text-base leading-relaxed">
                 Шифрование, защита от атак и модерация всех преподавателей. Ваши данные под надёжной защитой.
               </p>
-              <div className="flex gap-2 mt-4">
+              <div className="flex gap-2 mt-4 flex-wrap">
                 <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">HTTPS</span>
                 <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">CSRF</span>
                 <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">JWT</span>
