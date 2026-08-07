@@ -143,12 +143,12 @@ const ChatPage: React.FC = () => {
     const heightDiff = prevViewportHeightRef.current - viewportHeight;
     prevViewportHeightRef.current = viewportHeight;
 
-    if (heightDiff > 100 && chatContainerRef.current) {
-      setTimeout(() => {
+    if (heightDiff > 0 && chatContainerRef.current) {
+      requestAnimationFrame(() => {
         if (chatContainerRef.current) {
           chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-      }, 150);
+      });
     }
   }, [viewportHeight]);
 
@@ -553,6 +553,17 @@ const ChatPage: React.FC = () => {
     handleLongPressEnd();
   };
 
+  const handleInputFocus = () => {
+    if (!chatContainerRef.current) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      });
+    });
+  };
+
   let lastDateSeparator = '';
 
   const chatStyle: React.CSSProperties = isMobile
@@ -785,6 +796,7 @@ const ChatPage: React.FC = () => {
                 setNewMessage(e.target.value);
                 handleTypingStart();
               }}
+              onFocus={handleInputFocus}
               onKeyDown={handleKeyPress}
               className="w-full py-3 pl-4 pr-14 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-gray-50 min-h-[48px] text-base select-text"
               autoComplete="off"

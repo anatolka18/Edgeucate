@@ -1,11 +1,47 @@
-name: CD - Deploy to VPS
+name: Pipeline
 
 on:
   push:
     branches: [dev]
+  pull_request:
+    branches: [dev]
   workflow_dispatch:
 
 jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build server image
+        run: docker compose -f docker-compose.prod.yml build server
+
+      - name: Build client image
+        run: docker compose -f docker-compose.prod.yml build client
+
+      - name: Scan server image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'edgeucate-server:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan client image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'edgeucate-client:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
   deploy:
     runs-on: ubuntu-latest
     steps:
