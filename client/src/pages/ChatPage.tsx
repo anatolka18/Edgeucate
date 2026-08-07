@@ -144,11 +144,11 @@ const ChatPage: React.FC = () => {
     prevViewportHeightRef.current = viewportHeight;
 
     if (heightDiff > 0 && chatContainerRef.current) {
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         if (chatContainerRef.current) {
           chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-      });
+      }, 50);
     }
   }, [viewportHeight]);
 
@@ -555,13 +555,11 @@ const ChatPage: React.FC = () => {
 
   const handleInputFocus = () => {
     if (!chatContainerRef.current) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (chatContainerRef.current) {
-          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-      });
-    });
+    setTimeout(() => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
+    }, 100);
   };
 
   let lastDateSeparator = '';
