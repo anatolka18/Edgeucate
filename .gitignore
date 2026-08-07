@@ -4,5 +4,6 @@ myDockerComand.md
 ROADMAP.md
 DEPLOY.md
 REINSTALL.md
+CICD.md
 
 docker-compose.override.yml

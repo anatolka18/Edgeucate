@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, useParams } from "react-router-dom";
 import Layout from "../pages/Layout";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Role } from "../types/user";
@@ -14,6 +14,7 @@ export { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
 export { advertisementDetailLoader } from "../pages/AdvertisementPage";
 export { chatListLoader } from "../pages/ChatListPage";
 export { chatLoader } from "../pages/ChatPage";
+
 const HomePage = lazy(() => import("../pages/HomePage"));
 const AuthPage = lazy(() => import("../pages/AuthPage"));
 const MyProfilePage = lazy(() => import("../pages/myProfilePage"));
@@ -28,6 +29,11 @@ const CalendarPage = lazy(() => import("../pages/CalendarPage"));
 const AllUsersPage = lazy(() => import("../pages/AllUsersPage"));
 const VerifyEmailPage = lazy(() => import("../pages/VerifyEmailPage"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
+
+const ChatPageWrapper = () => {
+  const { email } = useParams();
+  return <ChatPage key={email} />;
+};
 
 const PageLoader = () => (
   <div className="flex justify-center items-center min-h-[50vh]">
@@ -74,7 +80,7 @@ export const router = createBrowserRouter([
       {
         path: "chat/:email",
         loader: chatLoader,
-        element: <ProtectedRoute><Lazy><ChatPage /></Lazy></ProtectedRoute>,
+        element: <ProtectedRoute><Lazy><ChatPageWrapper /></Lazy></ProtectedRoute>,
       },
       {
         path: 'rooms',
