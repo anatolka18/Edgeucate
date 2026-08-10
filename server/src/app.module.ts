@@ -14,6 +14,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { MailModule } from './mail/mail.module';
 import { ClientErrorsController } from './common/controllers/client-errors.controller';
 import { QueueModule } from './queue/queue.module';
+import { TurnModule } from './turn/turn.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { QueueModule } from './queue/queue.module';
     MessageModule,
     MailModule,
     QueueModule,
+    TurnModule,
   ],
   controllers: [AppController, ClientErrorsController],
   providers: [

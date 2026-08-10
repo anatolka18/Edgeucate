@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { MySocket } from '../store/auth-state';
 import { ACTIONS } from './actions';
 import { toast } from 'react-toastify';
+import { instance } from '../api/axios.api';
 import useStateWithCallback from './useStateWithCallback';
 
 export const LOCAL_VIDEO = 'LOCAL_VIDEO';
@@ -18,35 +19,33 @@ interface Client {
   email: string;
 }
 
-const buildIceServers = (): RTCIceServer[] => {
-  const servers: RTCIceServer[] = [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:3478" },
-    { urls: "stun:stun4.l.google.com:19302" },
-  ];
+interface TurnCredentials {
+  urls: string[];
+  username: string;
+  credential: string;
+}
 
-  const turnUrl = import.meta.env.VITE_TURN_URL;
-  const turnUsername = import.meta.env.VITE_TURN_USERNAME;
-  const turnPassword = import.meta.env.VITE_TURN_PASSWORD;
+const FALLBACK_STUN_SERVERS: RTCIceServer[] = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:3478" },
+  { urls: "stun:stun4.l.google.com:19302" },
+];
 
-  if (turnUrl && turnUsername && turnPassword) {
+const buildIceServers = (turn?: TurnCredentials | null): RTCIceServer[] => {
+  const servers: RTCIceServer[] = [...FALLBACK_STUN_SERVERS];
+
+  if (turn && turn.urls && turn.username && turn.credential) {
     servers.push({
-      urls: [
-        `turn:${turnUrl}:80`,
-        `turn:${turnUrl}:80?transport=tcp`,
-        `turn:${turnUrl}:443?transport=tcp`,
-      ],
-      username: turnUsername,
-      credential: turnPassword,
+      urls: turn.urls,
+      username: turn.username,
+      credential: turn.credential,
     });
   }
 
   return servers;
 };
-
-const ICE_SERVERS = buildIceServers();
 
 export default function useWebRTC(roomID: string) {
   const [clients, updateClients] = useStateWithCallback<Client[]>([]);
@@ -60,6 +59,7 @@ export default function useWebRTC(roomID: string) {
   const screenStream = useRef<MediaStream | null>(null);
   const audioTrackRef = useRef<MediaStreamTrack | null>(null);
   const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
+  const iceServersRef = useRef<RTCIceServer[]>(FALLBACK_STUN_SERVERS);
 
   const addNewClient = useCallback((newClient: string, cb?: () => void) => {
     updateClients((list) => {
@@ -79,7 +79,7 @@ export default function useWebRTC(roomID: string) {
       const peerEmail = email || peerID;
 
       peerConnections.current[peerID] = new RTCPeerConnection({
-        iceServers: ICE_SERVERS,
+        iceServers: iceServersRef.current,
       });
 
       peerConnections.current[peerID].onicecandidate = (event) => {
@@ -201,11 +201,22 @@ export default function useWebRTC(roomID: string) {
         delete peerMediaElements.current[key];
       }
     });
-    updateClients([
-      { email: LOCAL_VIDEO }
-    ]);
+    updateClients([{ email: LOCAL_VIDEO }]);
+
+    async function fetchTurnCredentials(): Promise<TurnCredentials | null> {
+      try {
+        const { data } = await instance.get<TurnCredentials>('/turn/config');
+        return data;
+      } catch (error) {
+        console.warn('[WEBRTC] Failed to fetch TURN credentials, using STUN only:', error);
+        return null;
+      }
+    }
 
     async function startCapture() {
+      const turnCredentials = await fetchTurnCredentials();
+      iceServersRef.current = buildIceServers(turnCredentials);
+
       try {
         localMediaStream.current = await navigator.mediaDevices.getUserMedia({
           audio: true,
@@ -252,14 +263,14 @@ export default function useWebRTC(roomID: string) {
       localMediaStream.current = null;
       audioTrackRef.current = null;
       cameraVideoTrackRef.current = null;
-      
+
       Object.values(peerConnections.current).forEach((pc) => {
         try {
           pc.close();
         } catch (e) {}
       });
       peerConnections.current = {};
-      
+
       Object.keys(peerMediaElements.current).forEach((key) => {
         if (key !== LOCAL_VIDEO) {
           const videoEl = peerMediaElements.current[key];
@@ -359,8 +370,6 @@ export default function useWebRTC(roomID: string) {
         if (peerMediaElements.current[LOCAL_VIDEO]) {
           peerMediaElements.current[LOCAL_VIDEO]!.srcObject = localMediaStream.current;
         }
-
-        setIsVideoEnabled(audioTrackRef.current?.enabled !== false);
       }).catch((e) => {
         console.error('[WEBRTC] Error restoring video stream:', e);
       });
