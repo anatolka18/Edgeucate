@@ -27,6 +27,8 @@ export default function AllRoomPage() {
 
     MySocket.socket.on(ACTIONS.SHARE_ROOMS, handleShareRooms);
 
+    MySocket.socket.emit(ACTIONS.SHARE_ROOMS, {});
+
     return () => {
       MySocket.socket?.off(ACTIONS.SHARE_ROOMS, handleShareRooms);
     };
@@ -38,6 +40,7 @@ export default function AllRoomPage() {
       const roomIDWithPrefix = `Room_${newRoomID}`;
       MySocket.socket?.emit(ACTIONS.CREATE_ROOM, { roomID: roomIDWithPrefix });
       setNewRoomID(newRoomID);
+      setRooms(prev => [...prev, { roomID: roomIDWithPrefix }]);
       toast.success('Комната создана');
     } catch (error) {
       toast.error('Не удалось создать комнату');

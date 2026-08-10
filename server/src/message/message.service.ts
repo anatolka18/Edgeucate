@@ -136,7 +136,7 @@ export class MessageService {
               $cond: [
                 {
                   $and: [
-                    { $eq: ['$sender', '$_id'] },
+                    { $ne: ['$sender', email] },
                     { $eq: ['$checked', false] },
                   ],
                 },

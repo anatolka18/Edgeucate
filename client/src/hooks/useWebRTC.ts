@@ -18,18 +18,35 @@ interface Client {
   email: string;
 }
 
-const ICE_SERVERS: RTCIceServer[] = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun.l.google.com:5349" },
-  { urls: "stun:stun1.l.google.com:3478" },
-  { urls: "stun:stun1.l.google.com:5349" },
-  { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:5349" },
-  { urls: "stun:stun3.l.google.com:3478" },
-  { urls: "stun:stun3.l.google.com:5349" },
-  { urls: "stun:stun4.l.google.com:19302" },
-  { urls: "stun:stun4.l.google.com:5349" },
-];
+const buildIceServers = (): RTCIceServer[] => {
+  const servers: RTCIceServer[] = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:3478" },
+    { urls: "stun:stun4.l.google.com:19302" },
+  ];
+
+  const turnUrl = import.meta.env.VITE_TURN_URL;
+  const turnUsername = import.meta.env.VITE_TURN_USERNAME;
+  const turnPassword = import.meta.env.VITE_TURN_PASSWORD;
+
+  if (turnUrl && turnUsername && turnPassword) {
+    servers.push({
+      urls: [
+        `turn:${turnUrl}:80`,
+        `turn:${turnUrl}:80?transport=tcp`,
+        `turn:${turnUrl}:443?transport=tcp`,
+      ],
+      username: turnUsername,
+      credential: turnPassword,
+    });
+  }
+
+  return servers;
+};
+
+const ICE_SERVERS = buildIceServers();
 
 export default function useWebRTC(roomID: string) {
   const [clients, updateClients] = useStateWithCallback<Client[]>([]);
@@ -41,6 +58,8 @@ export default function useWebRTC(roomID: string) {
   const localMediaStream = useRef<MediaStream | null>(null);
   const peerMediaElements = useRef<MediaElements>({ [LOCAL_VIDEO]: null });
   const screenStream = useRef<MediaStream | null>(null);
+  const audioTrackRef = useRef<MediaStreamTrack | null>(null);
+  const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
 
   const addNewClient = useCallback((newClient: string, cb?: () => void) => {
     updateClients((list) => {
@@ -149,9 +168,18 @@ export default function useWebRTC(roomID: string) {
   useEffect(() => {
     const handleRemovePeer = ({ peerID }: { peerID: string }) => {
       if (peerConnections.current[peerID]) {
-        peerConnections.current[peerID].close();
+        try {
+          peerConnections.current[peerID].close();
+        } catch (e) {}
+        delete peerConnections.current[peerID];
       }
-      delete peerConnections.current[peerID];
+      if (peerMediaElements.current[peerID]) {
+        const videoEl = peerMediaElements.current[peerID];
+        if (videoEl) {
+          videoEl.srcObject = null;
+        }
+        delete peerMediaElements.current[peerID];
+      }
       updateClients((list) => list.filter((c) => c.email !== peerID));
     };
 
@@ -162,6 +190,21 @@ export default function useWebRTC(roomID: string) {
   }, []);
 
   useEffect(() => {
+    Object.values(peerConnections.current).forEach((pc) => {
+      try {
+        pc.close();
+      } catch (e) {}
+    });
+    peerConnections.current = {};
+    Object.keys(peerMediaElements.current).forEach((key) => {
+      if (key !== LOCAL_VIDEO) {
+        delete peerMediaElements.current[key];
+      }
+    });
+    updateClients([
+      { email: LOCAL_VIDEO }
+    ]);
+
     async function startCapture() {
       try {
         localMediaStream.current = await navigator.mediaDevices.getUserMedia({
@@ -188,15 +231,16 @@ export default function useWebRTC(roomID: string) {
       }
 
       const audioTrack = localMediaStream.current.getAudioTracks()[0];
+      const videoTrack = localMediaStream.current.getVideoTracks()[0];
+      audioTrackRef.current = audioTrack;
+      cameraVideoTrackRef.current = videoTrack;
       setIsAudioEnabled(audioTrack?.enabled ?? false);
 
-      addNewClient(LOCAL_VIDEO, () => {
-        const localVideoElement = peerMediaElements.current[LOCAL_VIDEO];
-        if (localVideoElement) {
-          localVideoElement.volume = 0;
-          localVideoElement.srcObject = localMediaStream.current;
-        }
-      });
+      const localVideoElement = peerMediaElements.current[LOCAL_VIDEO];
+      if (localVideoElement) {
+        localVideoElement.volume = 0;
+        localVideoElement.srcObject = localMediaStream.current;
+      }
 
       MySocket.socket?.emit(ACTIONS.JOIN, { room: roomID });
     }
@@ -205,6 +249,33 @@ export default function useWebRTC(roomID: string) {
 
     return () => {
       localMediaStream.current?.getTracks().forEach((track) => track.stop());
+      localMediaStream.current = null;
+      audioTrackRef.current = null;
+      cameraVideoTrackRef.current = null;
+      
+      Object.values(peerConnections.current).forEach((pc) => {
+        try {
+          pc.close();
+        } catch (e) {}
+      });
+      peerConnections.current = {};
+      
+      Object.keys(peerMediaElements.current).forEach((key) => {
+        if (key !== LOCAL_VIDEO) {
+          const videoEl = peerMediaElements.current[key];
+          if (videoEl) {
+            videoEl.srcObject = null;
+          }
+          delete peerMediaElements.current[key];
+        }
+      });
+
+      if (screenStream.current) {
+        screenStream.current.getTracks().forEach((track) => track.stop());
+        screenStream.current = null;
+        setIsScreenSharing(false);
+      }
+
       MySocket.socket?.emit(ACTIONS.LEAVE);
     };
   }, [roomID]);
@@ -214,22 +285,17 @@ export default function useWebRTC(roomID: string) {
   }, []);
 
   const toggleAudio = () => {
-    if (localMediaStream.current) {
-      const audioTrack = localMediaStream.current.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsAudioEnabled(audioTrack.enabled);
-      }
+    if (audioTrackRef.current) {
+      audioTrackRef.current.enabled = !audioTrackRef.current.enabled;
+      setIsAudioEnabled(audioTrackRef.current.enabled);
     }
   };
 
   const toggleVideo = () => {
-    if (localMediaStream.current) {
-      const videoTrack = localMediaStream.current.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoEnabled(videoTrack.enabled);
-      }
+    const currentVideoTrack = cameraVideoTrackRef.current;
+    if (currentVideoTrack && !isScreenSharing) {
+      currentVideoTrack.enabled = !currentVideoTrack.enabled;
+      setIsVideoEnabled(currentVideoTrack.enabled);
     }
   };
 
@@ -238,28 +304,26 @@ export default function useWebRTC(roomID: string) {
       screenStream.current = await navigator.mediaDevices.getDisplayMedia({ video: true });
       setIsScreenSharing(true);
 
-      localMediaStream.current?.getVideoTracks().forEach((track) => track.stop());
+      const newVideoTrack = screenStream.current.getVideoTracks()[0];
 
-      screenStream.current.getTracks().forEach((track) => {
-        if (track.kind === 'video') {
-          Object.values(peerConnections.current).forEach((peerConnection) => {
-            peerConnection.getSenders().forEach((sender) => {
-              if (sender.track?.kind === 'video') {
-                sender.replaceTrack(track);
-              }
-            });
-          });
-        }
+      Object.values(peerConnections.current).forEach((peerConnection) => {
+        peerConnection.getSenders().forEach((sender) => {
+          if (sender.track?.kind === 'video') {
+            sender.replaceTrack(newVideoTrack);
+          }
+        });
       });
 
-      localMediaStream.current = screenStream.current;
-
-      if (peerMediaElements.current[LOCAL_VIDEO]) {
-        peerMediaElements.current[LOCAL_VIDEO]!.srcObject = screenStream.current;
+      if (audioTrackRef.current && newVideoTrack) {
+        localMediaStream.current = new MediaStream([
+          audioTrackRef.current,
+          newVideoTrack,
+        ]);
       }
 
-      const audioTrack = localMediaStream.current.getAudioTracks()[0];
-      setIsAudioEnabled(audioTrack?.enabled ?? true);
+      if (peerMediaElements.current[LOCAL_VIDEO]) {
+        peerMediaElements.current[LOCAL_VIDEO]!.srcObject = localMediaStream.current;
+      }
     } catch (e) {
       toast.error('Не удалось начать демонстрацию экрана');
     }
@@ -273,28 +337,30 @@ export default function useWebRTC(roomID: string) {
 
       navigator.mediaDevices.getUserMedia({
         video: { width: 1280, height: 720 },
-        audio: true,
-      }).then((newLocalStream) => {
-        localMediaStream.current = newLocalStream;
+      }).then((cameraStream) => {
+        const newVideoTrack = cameraStream.getVideoTracks()[0];
+        cameraVideoTrackRef.current = newVideoTrack;
 
-        newLocalStream.getTracks().forEach((track) => {
-          if (track.kind === 'video') {
-            Object.values(peerConnections.current).forEach((peerConnection) => {
-              peerConnection.getSenders().forEach((sender) => {
-                if (sender.track?.kind === 'video') {
-                  sender.replaceTrack(track);
-                }
-              });
-            });
-          }
+        Object.values(peerConnections.current).forEach((peerConnection) => {
+          peerConnection.getSenders().forEach((sender) => {
+            if (sender.track?.kind === 'video') {
+              sender.replaceTrack(newVideoTrack);
+            }
+          });
         });
 
-        if (peerMediaElements.current[LOCAL_VIDEO]) {
-          peerMediaElements.current[LOCAL_VIDEO]!.srcObject = newLocalStream;
+        if (audioTrackRef.current && newVideoTrack) {
+          localMediaStream.current = new MediaStream([
+            audioTrackRef.current,
+            newVideoTrack,
+          ]);
         }
 
-        const audioTrack = newLocalStream.getAudioTracks()[0];
-        setIsAudioEnabled(audioTrack?.enabled ?? true);
+        if (peerMediaElements.current[LOCAL_VIDEO]) {
+          peerMediaElements.current[LOCAL_VIDEO]!.srcObject = localMediaStream.current;
+        }
+
+        setIsVideoEnabled(audioTrackRef.current?.enabled !== false);
       }).catch((e) => {
         console.error('[WEBRTC] Error restoring video stream:', e);
       });

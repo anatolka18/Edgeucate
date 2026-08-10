@@ -96,6 +96,29 @@ services:
     labels:
       - "com.edgeucate.service=frontend"
 
+  coturn:
+    image: coturn/coturn:4.6.2
+    container_name: edgeucate-coturn-prod
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./coturn/turnserver.conf:/etc/turnserver.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    environment:
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD}
+    command: ["-c", "/etc/turnserver.conf", "--user=${TURN_USERNAME}:${TURN_PASSWORD}"]
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          memory: 64M
+    labels:
+      - "com.edgeucate.service=coturn"
+
 volumes:
   redis_data:
 

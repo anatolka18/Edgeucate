@@ -30,6 +30,9 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   private eventCounts = new Map<string, { count: number; resetAt: number }>();
   private readonly MAX_EVENTS_PER_SECOND = 20;
 
+  private userSockets = new Map<string, Set<string>>();
+  private socketRooms = new Map<string, Set<string>>();
+
   constructor(
     private userService: UserService,
     private presenceService: PresenceService,
@@ -66,6 +69,13 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       const email = payload.email;
 
       client.data.user = payload;
+
+      if (!this.userSockets.has(email)) {
+        this.userSockets.set(email, new Set());
+      }
+      this.userSockets.get(email).add(client.id);
+      this.socketRooms.set(client.id, new Set());
+
       await this.presenceService.online(email);
       client.join(email);
 
@@ -85,12 +95,47 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     if (record && record.count > 0) {
       record.count--;
     }
+
+    this.cleanupClientFromRooms(client);
     
     if (email) {
-      await this.presenceService.offline(email);
-      await this.notifyOnlineStatus(email, false);
+      const sockets = this.userSockets.get(email);
+      if (sockets) {
+        sockets.delete(client.id);
+        if (sockets.size === 0) {
+          this.userSockets.delete(email);
+          await this.presenceService.offline(email);
+          await this.notifyOnlineStatus(email, false);
+        }
+      }
+
       this.clearTypingStatus(email);
     }
+
+    this.socketRooms.delete(client.id);
+  }
+
+  private cleanupClientFromRooms(client: AuthenticatedSocket) {
+    const rooms = this.socketRooms.get(client.id);
+    if (!rooms) return;
+
+    rooms.forEach(roomID => {
+      const clientsInRoom = Array.from(this.server.adapter.rooms.get(roomID) || []);
+      
+      clientsInRoom.forEach(otherClientID => {
+        if (otherClientID !== client.id) {
+          this.server.to(otherClientID).emit(ACTIONS.REMOVE_PEER, {
+            peerID: client.id,
+          });
+        }
+      });
+
+      try {
+        client.leave(roomID);
+      } catch (e) {}
+    });
+
+    rooms.clear();
   }
 
   private checkRateLimit(key: string, maxCount: number, windowMs: number): boolean {
@@ -224,11 +269,10 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   }
 
   @SubscribeMessage(ACTIONS.JOIN)
-  joinRoom(@ConnectedSocket() client: Socket, @MessageBody() config: { room: string }) {
+  joinRoom(@ConnectedSocket() client: AuthenticatedSocket, @MessageBody() config: { room: string }) {
     const { room } = config;
 
-    const authClient = client as AuthenticatedSocket;
-    if (!authClient.data?.user) {
+    if (!client.data?.user) {
       return client.emit('error', { message: 'Необходима авторизация' });
     }
 
@@ -236,15 +280,48 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       return client.emit('error', { message: 'Слишком много запросов' });
     }
 
-    const { rooms: joinedRooms } = client;
-    if (Array.from(joinedRooms).includes(room)) {
+    const userEmail = client.data.user.email;
+
+    const oldSockets = this.userSockets.get(userEmail);
+    if (oldSockets) {
+      oldSockets.forEach(oldSocketID => {
+        if (oldSocketID !== client.id) {
+          const oldSocket = this.server.sockets.get(oldSocketID);
+          if (oldSocket) {
+            const oldRooms = this.socketRooms.get(oldSocketID);
+            if (oldRooms && oldRooms.has(room)) {
+              this.server.to(client.id).emit(ACTIONS.REMOVE_PEER, {
+                peerID: oldSocketID,
+              });
+
+              const clientsInRoom = Array.from(this.server.adapter.rooms.get(room) || []);
+              clientsInRoom.forEach(otherID => {
+                if (otherID !== oldSocketID && otherID !== client.id) {
+                  this.server.to(otherID).emit(ACTIONS.REMOVE_PEER, {
+                    peerID: oldSocketID,
+                  });
+                }
+              });
+
+              try {
+                oldSocket.leave(room);
+              } catch (e) {}
+              oldRooms.delete(room);
+            }
+          }
+        }
+      });
+    }
+
+    const rooms = this.socketRooms.get(client.id);
+    if (rooms && rooms.has(room)) {
       return;
     }
 
-    const userEmail = authClient.data.user.email;
     const clients = Array.from(this.server.adapter.rooms.get(room) || []);
 
     clients.forEach(clientID => {
+      if (clientID === client.id) return;
       this.server.to(clientID).emit(ACTIONS.ADD_PEER, {
         peerID: client.id,
         email: userEmail,
@@ -259,30 +336,36 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     });
 
     client.join(room);
+    if (rooms) {
+      rooms.add(room);
+    }
     this.shareRoomsInfo();
   }
 
   @SubscribeMessage(ACTIONS.LEAVE)
-  leaveRoom(@ConnectedSocket() client: Socket) {
-    const { rooms } = client;
+  leaveRoom(@ConnectedSocket() client: AuthenticatedSocket) {
+    const rooms = this.socketRooms.get(client.id);
+    if (!rooms) return;
 
-    Array.from(rooms)
-      .filter(roomID => roomID !== client.id)
-      .forEach(roomID => {
-        const clients = Array.from(this.server.adapter.rooms.get(roomID) || []);
+    const roomsToLeave = Array.from(rooms);
 
-        clients.forEach(clientID => {
-          this.server.to(clientID).emit(ACTIONS.REMOVE_PEER, {
+    roomsToLeave.forEach(roomID => {
+      const clientsInRoom = Array.from(this.server.adapter.rooms.get(roomID) || []);
+
+      clientsInRoom.forEach(otherClientID => {
+        if (otherClientID !== client.id) {
+          this.server.to(otherClientID).emit(ACTIONS.REMOVE_PEER, {
             peerID: client.id,
           });
-          client.emit(ACTIONS.REMOVE_PEER, {
-            peerID: clientID,
-          });
-        });
-
-        client.leave(roomID);
+        }
       });
 
+      try {
+        client.leave(roomID);
+      } catch (e) {}
+    });
+
+    rooms.clear();
     this.shareRoomsInfo();
   }
 
