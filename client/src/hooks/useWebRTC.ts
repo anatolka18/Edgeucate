@@ -17,6 +17,7 @@ interface MediaElements {
 
 interface Client {
   email: string;
+  username?: string;
 }
 
 interface TurnCredentials {
@@ -32,6 +33,8 @@ const FALLBACK_STUN_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun3.l.google.com:3478" },
   { urls: "stun:stun4.l.google.com:19302" },
 ];
+
+const TURN_FETCH_TIMEOUT_MS = 5000;
 
 const buildIceServers = (turn?: TurnCredentials | null): RTCIceServer[] => {
   const servers: RTCIceServer[] = [...FALLBACK_STUN_SERVERS];
@@ -52,6 +55,7 @@ export default function useWebRTC(roomID: string) {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [mutedVideoPeers, setMutedVideoPeers] = useState<Set<string>>(new Set());
 
   const peerConnections = useRef<PeerConnections>({});
   const localMediaStream = useRef<MediaStream | null>(null);
@@ -60,65 +64,124 @@ export default function useWebRTC(roomID: string) {
   const audioTrackRef = useRef<MediaStreamTrack | null>(null);
   const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const iceServersRef = useRef<RTCIceServer[]>(FALLBACK_STUN_SERVERS);
+  const isStoppingScreen = useRef(false);
 
-  const addNewClient = useCallback((newClient: string, cb?: () => void) => {
+  const addNewClient = useCallback((newClient: string, cb?: () => void, username?: string) => {
     updateClients((list) => {
       if (!list.find((client) => client.email === newClient)) {
-        return [...list, { email: newClient }];
+        return [...list, { email: newClient, username }];
       }
       return list;
     }, cb);
   }, [updateClients]);
 
-  useEffect(() => {
-    async function handleNewPeer({ peerID, email, createOffer = false }: { peerID: string; email?: string; createOffer?: boolean }) {
-      if (peerID in peerConnections.current) {
-        return;
+  const setupPeerConnection = useCallback((peerID: string, username?: string) => {
+    const pc = peerConnections.current[peerID];
+    if (!pc) return;
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        MySocket.socket?.emit(ACTIONS.RELAY_ICE, {
+          peerID,
+          iceCandidate: event.candidate,
+        });
       }
+    };
 
-      const peerEmail = email || peerID;
+    pc.ontrack = ({ streams: [remoteStream], track }) => {
+      addNewClient(peerID, () => {
+        const videoEl = peerMediaElements.current[peerID];
+        if (videoEl) {
+          videoEl.srcObject = remoteStream;
+        } else {
+          let settled = false;
+          const interval = setInterval(() => {
+            if (peerMediaElements.current[peerID]) {
+              peerMediaElements.current[peerID]!.srcObject = remoteStream;
+              settled = true;
+            }
+            if (settled) clearInterval(interval);
+          }, 1000);
+        }
+      }, username);
 
-      peerConnections.current[peerID] = new RTCPeerConnection({
-        iceServers: iceServersRef.current,
-      });
-
-      peerConnections.current[peerID].onicecandidate = (event) => {
-        if (event.candidate) {
-          MySocket.socket?.emit(ACTIONS.RELAY_ICE, {
-            peerID,
-            iceCandidate: event.candidate,
+      track.onmute = () => {
+        if (track.kind === 'video') {
+          setMutedVideoPeers((prev) => {
+            const next = new Set(prev);
+            next.add(peerID);
+            return next;
           });
+        }
+        const videoEl = peerMediaElements.current[peerID];
+        if (videoEl) {
+          videoEl.style.opacity = '0';
         }
       };
 
-      peerConnections.current[peerID].ontrack = ({ streams: [remoteStream] }) => {
-        addNewClient(peerEmail, () => {
-          if (peerMediaElements.current[peerEmail]) {
-            peerMediaElements.current[peerEmail]!.srcObject = remoteStream;
-          } else {
-            let settled = false;
-            const interval = setInterval(() => {
-              if (peerMediaElements.current[peerEmail]) {
-                peerMediaElements.current[peerEmail]!.srcObject = remoteStream;
-                settled = true;
-              }
-              if (settled) clearInterval(interval);
-            }, 1000);
-          }
-        });
+      track.onunmute = () => {
+        if (track.kind === 'video') {
+          setMutedVideoPeers((prev) => {
+            const next = new Set(prev);
+            next.delete(peerID);
+            return next;
+          });
+        }
+        const videoEl = peerMediaElements.current[peerID];
+        if (videoEl) {
+          videoEl.style.opacity = '1';
+        }
       };
+    };
 
-      localMediaStream.current?.getTracks().forEach((track) => {
-        peerConnections.current[peerID].addTrack(track, localMediaStream.current!);
-      });
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+        console.warn(`[WEBRTC] Connection ${peerID} state: ${pc.connectionState}`);
+      }
+    };
 
-      if (createOffer) {
-        const offer = await peerConnections.current[peerID].createOffer();
-        await peerConnections.current[peerID].setLocalDescription(offer);
-        MySocket.socket?.emit(ACTIONS.RELAY_SDP, {
-          peerID,
-          sessionDescription: offer,
+    localMediaStream.current?.getTracks().forEach((track) => {
+      pc.addTrack(track, localMediaStream.current!);
+    });
+  }, [addNewClient]);
+
+  useEffect(() => {
+    async function handleNewPeer({
+      peerID,
+      email,
+      username,
+      createOffer = false,
+    }: {
+      peerID: string;
+      email?: string;
+      username?: string;
+      createOffer?: boolean;
+    }) {
+      const id = email || peerID;
+
+      if (!(id in peerConnections.current)) {
+        peerConnections.current[id] = new RTCPeerConnection({
+          iceServers: iceServersRef.current,
         });
+        setupPeerConnection(id, username);
+      }
+
+      const pc = peerConnections.current[id];
+      if (!pc) return;
+
+      if (createOffer && pc.signalingState === 'stable') {
+        try {
+          const offer = await pc.createOffer();
+          if (pc.signalingState === 'stable') {
+            await pc.setLocalDescription(offer);
+            MySocket.socket?.emit(ACTIONS.RELAY_SDP, {
+              peerID: id,
+              sessionDescription: offer,
+            });
+          }
+        } catch (e) {
+          console.error('[WEBRTC] Error creating offer:', e);
+        }
       }
     }
 
@@ -126,7 +189,30 @@ export default function useWebRTC(roomID: string) {
     return () => {
       MySocket.socket?.off(ACTIONS.ADD_PEER);
     };
-  }, []);
+  }, [setupPeerConnection]);
+
+  useEffect(() => {
+    const handleAllPeers = ({
+      peers,
+    }: {
+      peers: Array<{ peerID: string; email?: string; username?: string }>;
+    }) => {
+      peers.forEach(({ peerID, email, username }) => {
+        const id = email || peerID;
+        if (!(id in peerConnections.current)) {
+          peerConnections.current[id] = new RTCPeerConnection({
+            iceServers: iceServersRef.current,
+          });
+          setupPeerConnection(id, username);
+        }
+      });
+    };
+
+    MySocket.socket?.on(ACTIONS.ALL_PEERS, handleAllPeers);
+    return () => {
+      MySocket.socket?.off(ACTIONS.ALL_PEERS);
+    };
+  }, [setupPeerConnection]);
 
   useEffect(() => {
     async function setRemoteMedia({
@@ -136,16 +222,29 @@ export default function useWebRTC(roomID: string) {
       peerID: string;
       sessionDescription: RTCSessionDescriptionInit;
     }) {
-      await peerConnections.current[peerID]?.setRemoteDescription(
-        new RTCSessionDescription(remoteDescription)
-      );
-      if (remoteDescription.type === 'offer') {
-        const answer = await peerConnections.current[peerID]!.createAnswer();
-        await peerConnections.current[peerID]!.setLocalDescription(answer);
-        MySocket.socket?.emit(ACTIONS.RELAY_SDP, {
-          peerID,
-          sessionDescription: answer,
+      if (!peerConnections.current[peerID]) {
+        peerConnections.current[peerID] = new RTCPeerConnection({
+          iceServers: iceServersRef.current,
         });
+        setupPeerConnection(peerID);
+      }
+
+      const pc = peerConnections.current[peerID];
+      if (!pc || pc.signalingState === 'closed') return;
+
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(remoteDescription));
+
+        if (remoteDescription.type === 'offer' && pc.signalingState === 'have-remote-offer') {
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          MySocket.socket?.emit(ACTIONS.RELAY_SDP, {
+            peerID,
+            sessionDescription: answer,
+          });
+        }
+      } catch (e) {
+        console.error('[WEBRTC] Error setting remote description:', e);
       }
     }
 
@@ -153,11 +252,14 @@ export default function useWebRTC(roomID: string) {
     return () => {
       MySocket.socket?.off(ACTIONS.SESSION_DESCRIPTION);
     };
-  }, []);
+  }, [setupPeerConnection]);
 
   useEffect(() => {
     const handler = ({ peerID, iceCandidate }: { peerID: string; iceCandidate: RTCIceCandidateInit }) => {
-      peerConnections.current[peerID]?.addIceCandidate(new RTCIceCandidate(iceCandidate));
+      const pc = peerConnections.current[peerID];
+      if (pc && pc.signalingState !== 'closed') {
+        pc.addIceCandidate(new RTCIceCandidate(iceCandidate)).catch(() => {});
+      }
     };
     MySocket.socket?.on(ACTIONS.ICE_CANDIDATE, handler);
     return () => {
@@ -180,6 +282,11 @@ export default function useWebRTC(roomID: string) {
         }
         delete peerMediaElements.current[peerID];
       }
+      setMutedVideoPeers((prev) => {
+        const next = new Set(prev);
+        next.delete(peerID);
+        return next;
+      });
       updateClients((list) => list.filter((c) => c.email !== peerID));
     };
 
@@ -187,7 +294,7 @@ export default function useWebRTC(roomID: string) {
     return () => {
       MySocket.socket?.off(ACTIONS.REMOVE_PEER);
     };
-  }, []);
+  }, [updateClients]);
 
   useEffect(() => {
     Object.values(peerConnections.current).forEach((pc) => {
@@ -202,13 +309,24 @@ export default function useWebRTC(roomID: string) {
       }
     });
     updateClients([{ email: LOCAL_VIDEO }]);
+    setMutedVideoPeers(new Set());
 
     async function fetchTurnCredentials(): Promise<TurnCredentials | null> {
       try {
-        const { data } = await instance.get<TurnCredentials>('/turn/config');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TURN_FETCH_TIMEOUT_MS);
+
+        const { data } = await instance.get<TurnCredentials>('/turn/config', {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
         return data;
-      } catch (error) {
-        console.warn('[WEBRTC] Failed to fetch TURN credentials, using STUN only:', error);
+      } catch (error: any) {
+        if (error?.name === 'AbortError') {
+          console.warn('[WEBRTC] TURN fetch timeout, using STUN only');
+        } else {
+          console.warn('[WEBRTC] Failed to fetch TURN credentials, using STUN only:', error);
+        }
         return null;
       }
     }
@@ -310,17 +428,20 @@ export default function useWebRTC(roomID: string) {
     }
   };
 
-  const startScreenShare = async () => {
+  const restoreCamera = async () => {
     try {
-      screenStream.current = await navigator.mediaDevices.getDisplayMedia({ video: true });
-      setIsScreenSharing(true);
+      const cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+      });
+      const newVideoTrack = cameraStream.getVideoTracks()[0];
+      if (!newVideoTrack) return false;
 
-      const newVideoTrack = screenStream.current.getVideoTracks()[0];
+      cameraVideoTrackRef.current = newVideoTrack;
 
       Object.values(peerConnections.current).forEach((peerConnection) => {
         peerConnection.getSenders().forEach((sender) => {
           if (sender.track?.kind === 'video') {
-            sender.replaceTrack(newVideoTrack);
+            sender.replaceTrack(newVideoTrack).catch(() => {});
           }
         });
       });
@@ -335,45 +456,76 @@ export default function useWebRTC(roomID: string) {
       if (peerMediaElements.current[LOCAL_VIDEO]) {
         peerMediaElements.current[LOCAL_VIDEO]!.srcObject = localMediaStream.current;
       }
+
+      return true;
     } catch (e) {
+      console.error('[WEBRTC] Error restoring video stream:', e);
+      return false;
+    }
+  };
+
+  const startScreenShare = async () => {
+    try {
+      screenStream.current = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      setIsScreenSharing(true);
+
+      const newVideoTrack = screenStream.current.getVideoTracks()[0];
+      if (!newVideoTrack) {
+        screenStream.current = null;
+        setIsScreenSharing(false);
+        toast.error('Не удалось получить видео трек');
+        return;
+      }
+
+      newVideoTrack.onended = () => {
+        if (!isStoppingScreen.current) {
+          stopScreenShare();
+        }
+      };
+
+      Object.values(peerConnections.current).forEach((peerConnection) => {
+        peerConnection.getSenders().forEach((sender) => {
+          if (sender.track?.kind === 'video') {
+            sender.replaceTrack(newVideoTrack).catch(() => {});
+          }
+        });
+      });
+
+      if (audioTrackRef.current) {
+        localMediaStream.current = new MediaStream([
+          audioTrackRef.current,
+          newVideoTrack,
+        ]);
+      }
+
+      if (peerMediaElements.current[LOCAL_VIDEO]) {
+        peerMediaElements.current[LOCAL_VIDEO]!.srcObject = localMediaStream.current;
+      }
+    } catch (e) {
+      setIsScreenSharing(false);
       toast.error('Не удалось начать демонстрацию экрана');
     }
   };
 
-  const stopScreenShare = () => {
-    if (screenStream.current) {
-      screenStream.current.getTracks().forEach((track) => track.stop());
-      screenStream.current = null;
-      setIsScreenSharing(false);
+  const stopScreenShare = async () => {
+    if (!screenStream.current) return;
 
-      navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720 },
-      }).then((cameraStream) => {
-        const newVideoTrack = cameraStream.getVideoTracks()[0];
-        cameraVideoTrackRef.current = newVideoTrack;
+    isStoppingScreen.current = true;
 
-        Object.values(peerConnections.current).forEach((peerConnection) => {
-          peerConnection.getSenders().forEach((sender) => {
-            if (sender.track?.kind === 'video') {
-              sender.replaceTrack(newVideoTrack);
-            }
-          });
-        });
+    screenStream.current.getTracks().forEach((track) => {
+      track.onended = null;
+      track.stop();
+    });
+    screenStream.current = null;
+    setIsScreenSharing(false);
 
-        if (audioTrackRef.current && newVideoTrack) {
-          localMediaStream.current = new MediaStream([
-            audioTrackRef.current,
-            newVideoTrack,
-          ]);
-        }
+    const restored = await restoreCamera();
 
-        if (peerMediaElements.current[LOCAL_VIDEO]) {
-          peerMediaElements.current[LOCAL_VIDEO]!.srcObject = localMediaStream.current;
-        }
-      }).catch((e) => {
-        console.error('[WEBRTC] Error restoring video stream:', e);
-      });
+    if (!restored && cameraVideoTrackRef.current) {
+      cameraVideoTrackRef.current.enabled = true;
     }
+
+    isStoppingScreen.current = false;
   };
 
   return {
@@ -386,5 +538,6 @@ export default function useWebRTC(roomID: string) {
     isAudioEnabled,
     isVideoEnabled,
     isScreenSharing,
+    mutedVideoPeers,
   };
 }

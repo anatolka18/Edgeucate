@@ -14,8 +14,9 @@ interface RoomParams {
   [key: string]: string | undefined;
 }
 
-function getUserName(email: string): string {
+function getUserName(email: string, username?: string): string {
   if (email === LOCAL_VIDEO) return 'Вы';
+  if (username && username.trim()) return username;
   return email.split('@')[0] || email;
 }
 
@@ -42,6 +43,7 @@ export default function RoomPage() {
     isAudioEnabled,
     isVideoEnabled,
     isScreenSharing,
+    mutedVideoPeers,
   } = useWebRTC(roomID);
 
   const getGridLayout = () => {
@@ -59,57 +61,28 @@ export default function RoomPage() {
         <div className={`grid gap-2 sm:gap-4 auto-rows-fr h-full ${getGridLayout()}`}>
           {clients.map((client) => {
             const email = client.email;
+            if (!email) return null;
+
             const isLocal = email === LOCAL_VIDEO;
             const displayName = isLocal
-              ? profile?.username || 'Вы'
-              : getUserName(email);
+              ? profile?.username || getUserName(email)
+              : getUserName(email, (client as any).username);
 
             const videoActive = isLocal ? isVideoEnabled : true;
             const audioActive = isLocal ? isAudioEnabled : true;
+            const isMuted = !isLocal && mutedVideoPeers.has(email);
 
             return (
-              <div
+              <VideoTile
                 key={email}
-                className="relative flex items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl bg-gray-900 border border-gray-800 shadow-lg min-h-0"
-              >
-                <div className="absolute inset-0">
-                  <video
-                    ref={(node) => provideMediaRef(email, node)}
-                    autoPlay
-                    playsInline
-                    muted={isLocal}
-                    className={`h-full w-full object-cover ${
-                      videoActive ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  />
-                </div>
-
-                {!videoActive && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
-                    <div className="flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-blue-600 text-lg sm:text-2xl font-bold uppercase">
-                      {displayName.charAt(0)}
-                    </div>
-                  </div>
-                )}
-
-                <div className="absolute bottom-2 left-2 right-2 z-10 flex items-center justify-between rounded-lg bg-black/60 px-2 py-1.5 sm:px-3 sm:py-2 backdrop-blur-md text-xs sm:text-sm">
-                  <span className="truncate max-w-[75%] font-medium">
-                    {displayName} {isLocal && '(Вы)'}
-                  </span>
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    {!audioActive && (
-                      <span className="text-red-400">
-                        <FaMicrophoneSlash size={12} />
-                      </span>
-                    )}
-                    {!videoActive && (
-                      <span className="text-red-400">
-                        <FaVideoSlash size={12} />
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+                email={email}
+                displayName={displayName}
+                isLocal={isLocal}
+                videoActive={videoActive}
+                audioActive={audioActive}
+                isMuted={isMuted}
+                provideMediaRef={provideMediaRef}
+              />
             );
           })}
         </div>
@@ -165,6 +138,69 @@ export default function RoomPage() {
         >
           <FaSignOutAlt />
         </button>
+      </div>
+    </div>
+  );
+}
+
+function VideoTile({
+  email,
+  displayName,
+  isLocal,
+  videoActive,
+  audioActive,
+  isMuted,
+  provideMediaRef,
+}: {
+  email: string;
+  displayName: string;
+  isLocal: boolean;
+  videoActive: boolean;
+  audioActive: boolean;
+  isMuted: boolean;
+  provideMediaRef: (id: string, node: HTMLVideoElement | null) => void;
+}) {
+  const showVideo = videoActive && !isMuted;
+  const initial = displayName.charAt(0).toUpperCase();
+
+  return (
+    <div className="relative flex items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl bg-gray-900 border border-gray-800 shadow-lg min-h-0">
+      <div className="absolute inset-0">
+        <video
+          ref={(node) => provideMediaRef(email, node)}
+          autoPlay
+          playsInline
+          muted={isLocal}
+          className={`h-full w-full object-cover transition-opacity duration-200 ${
+            showVideo ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      </div>
+
+      {!showVideo && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
+          <div className="flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-blue-600 text-lg sm:text-2xl font-bold uppercase">
+            {initial}
+          </div>
+        </div>
+      )}
+
+      <div className="absolute bottom-2 left-2 right-2 z-10 flex items-center justify-between rounded-lg bg-black/60 px-2 py-1.5 sm:px-3 sm:py-2 backdrop-blur-md text-xs sm:text-sm">
+        <span className="truncate max-w-[75%] font-medium">
+          {displayName} {isLocal && '(Вы)'}
+        </span>
+        <div className="flex items-center gap-1 sm:gap-2">
+          {!audioActive && (
+            <span className="text-red-400">
+              <FaMicrophoneSlash size={12} />
+            </span>
+          )}
+          {!showVideo && (
+            <span className="text-red-400">
+              <FaVideoSlash size={12} />
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

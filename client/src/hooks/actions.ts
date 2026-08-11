@@ -8,5 +8,7 @@ export const ACTIONS = {
   RELAY_ICE: 'relay-ice',
   ICE_CANDIDATE: 'ice-candidate',
   SESSION_DESCRIPTION: 'session-description',
-  CREATE_ROOM: 'create-room'
+  CREATE_ROOM: 'create-room',
+  ALL_PEERS: 'all-peers',
+  ROOM_DELETED: 'room-deleted',
 };
