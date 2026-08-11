@@ -11,4 +11,5 @@ export const ACTIONS = {
   CREATE_ROOM: 'create-room',
   ALL_PEERS: 'all-peers',
   ROOM_DELETED: 'room-deleted',
+  PEER_STATUS_UPDATE: 'peer-status-update',
 };

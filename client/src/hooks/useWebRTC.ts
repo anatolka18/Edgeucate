@@ -26,6 +26,18 @@ interface TurnCredentials {
   credential: string;
 }
 
+export interface PeerStatus {
+  video: boolean;
+  audio: boolean;
+  screenShare: boolean;
+}
+
+const DEFAULT_PEER_STATUS: PeerStatus = {
+  video: true,
+  audio: true,
+  screenShare: false,
+};
+
 const FALLBACK_STUN_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
@@ -55,7 +67,7 @@ export default function useWebRTC(roomID: string) {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [mutedVideoPeers, setMutedVideoPeers] = useState<Set<string>>(new Set());
+  const [peerStatuses, setPeerStatuses] = useState<Map<string, PeerStatus>>(new Map());
 
   const peerConnections = useRef<PeerConnections>({});
   const localMediaStream = useRef<MediaStream | null>(null);
@@ -74,6 +86,14 @@ export default function useWebRTC(roomID: string) {
       return list;
     }, cb);
   }, [updateClients]);
+
+  const emitPeerStatus = useCallback((status: Partial<PeerStatus>) => {
+    if (!MySocket.socket?.connected) return;
+    MySocket.socket.emit(ACTIONS.PEER_STATUS_UPDATE, {
+      room: roomID,
+      status,
+    });
+  }, [roomID]);
 
   const setupPeerConnection = useCallback((peerID: string, username?: string) => {
     const pc = peerConnections.current[peerID];
@@ -106,13 +126,6 @@ export default function useWebRTC(roomID: string) {
       }, username);
 
       track.onmute = () => {
-        if (track.kind === 'video') {
-          setMutedVideoPeers((prev) => {
-            const next = new Set(prev);
-            next.add(peerID);
-            return next;
-          });
-        }
         const videoEl = peerMediaElements.current[peerID];
         if (videoEl) {
           videoEl.style.opacity = '0';
@@ -120,13 +133,6 @@ export default function useWebRTC(roomID: string) {
       };
 
       track.onunmute = () => {
-        if (track.kind === 'video') {
-          setMutedVideoPeers((prev) => {
-            const next = new Set(prev);
-            next.delete(peerID);
-            return next;
-          });
-        }
         const videoEl = peerMediaElements.current[peerID];
         if (videoEl) {
           videoEl.style.opacity = '1';
@@ -144,6 +150,28 @@ export default function useWebRTC(roomID: string) {
       pc.addTrack(track, localMediaStream.current!);
     });
   }, [addNewClient]);
+
+  useEffect(() => {
+    const handlePeerStatusUpdate = ({
+      peerID,
+      status,
+    }: {
+      peerID: string;
+      status: Partial<PeerStatus>;
+    }) => {
+      setPeerStatuses((prev) => {
+        const next = new Map(prev);
+        const current = next.get(peerID) || { ...DEFAULT_PEER_STATUS };
+        next.set(peerID, { ...current, ...status });
+        return next;
+      });
+    };
+
+    MySocket.socket?.on(ACTIONS.PEER_STATUS_UPDATE, handlePeerStatusUpdate);
+    return () => {
+      MySocket.socket?.off(ACTIONS.PEER_STATUS_UPDATE);
+    };
+  }, []);
 
   useEffect(() => {
     async function handleNewPeer({
@@ -282,8 +310,8 @@ export default function useWebRTC(roomID: string) {
         }
         delete peerMediaElements.current[peerID];
       }
-      setMutedVideoPeers((prev) => {
-        const next = new Set(prev);
+      setPeerStatuses((prev) => {
+        const next = new Map(prev);
         next.delete(peerID);
         return next;
       });
@@ -309,7 +337,7 @@ export default function useWebRTC(roomID: string) {
       }
     });
     updateClients([{ email: LOCAL_VIDEO }]);
-    setMutedVideoPeers(new Set());
+    setPeerStatuses(new Map());
 
     async function fetchTurnCredentials(): Promise<TurnCredentials | null> {
       try {
@@ -372,6 +400,16 @@ export default function useWebRTC(roomID: string) {
       }
 
       MySocket.socket?.emit(ACTIONS.JOIN, { room: roomID });
+
+      setTimeout(() => {
+        if (MySocket.socket?.connected) {
+          emitPeerStatus({
+            video: videoTrack?.enabled ?? true,
+            audio: audioTrack?.enabled ?? true,
+            screenShare: false,
+          });
+        }
+      }, 1000);
     }
 
     startCapture().catch((e) => console.error('[WEBRTC] startCapture error:', e));
@@ -407,7 +445,7 @@ export default function useWebRTC(roomID: string) {
 
       MySocket.socket?.emit(ACTIONS.LEAVE);
     };
-  }, [roomID]);
+  }, [roomID, emitPeerStatus]);
 
   const provideMediaRef = useCallback((id: string, node: HTMLVideoElement | null) => {
     peerMediaElements.current[id] = node;
@@ -417,6 +455,7 @@ export default function useWebRTC(roomID: string) {
     if (audioTrackRef.current) {
       audioTrackRef.current.enabled = !audioTrackRef.current.enabled;
       setIsAudioEnabled(audioTrackRef.current.enabled);
+      emitPeerStatus({ audio: audioTrackRef.current.enabled });
     }
   };
 
@@ -425,6 +464,7 @@ export default function useWebRTC(roomID: string) {
     if (currentVideoTrack && !isScreenSharing) {
       currentVideoTrack.enabled = !currentVideoTrack.enabled;
       setIsVideoEnabled(currentVideoTrack.enabled);
+      emitPeerStatus({ video: currentVideoTrack.enabled });
     }
   };
 
@@ -501,6 +541,8 @@ export default function useWebRTC(roomID: string) {
       if (peerMediaElements.current[LOCAL_VIDEO]) {
         peerMediaElements.current[LOCAL_VIDEO]!.srcObject = localMediaStream.current;
       }
+
+      emitPeerStatus({ screenShare: true, video: true });
     } catch (e) {
       setIsScreenSharing(false);
       toast.error('Не удалось начать демонстрацию экрана');
@@ -525,6 +567,8 @@ export default function useWebRTC(roomID: string) {
       cameraVideoTrackRef.current.enabled = true;
     }
 
+    emitPeerStatus({ screenShare: false, video: cameraVideoTrackRef.current?.enabled ?? true });
+
     isStoppingScreen.current = false;
   };
 
@@ -538,6 +582,6 @@ export default function useWebRTC(roomID: string) {
     isAudioEnabled,
     isVideoEnabled,
     isScreenSharing,
-    mutedVideoPeers,
+    peerStatuses,
   };
 }

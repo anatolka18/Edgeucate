@@ -42,8 +42,6 @@ export default function AllRoomPage() {
         MySocket.socket?.off(ACTIONS.SHARE_ROOMS, handleShareRooms);
         MySocket.socket?.off(ACTIONS.ROOM_DELETED, handleRoomDeleted);
       });
-
-      MySocket.socket.emit(ACTIONS.SHARE_ROOMS, {});
     };
 
     const trySetup = () => {

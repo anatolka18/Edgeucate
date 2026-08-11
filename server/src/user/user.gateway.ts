@@ -37,7 +37,6 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
   private readonly CONNECTION_WINDOW_MS = 60000;
 
   private eventCounts = new Map<string, { count: number; resetAt: number }>();
-  private readonly MAX_EVENTS_PER_SECOND = 20;
 
   private userSockets = new Map<string, Set<string>>();
   private socketRooms = new Map<string, Set<string>>();
@@ -117,6 +116,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
       const payload = this.jwtService.verify(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
+        algorithms: ['HS256'],
       });
       const email = payload.email;
 
@@ -148,6 +148,8 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       await this.notifyOnlineStatus(email, true);
       await this.sendOnlineStatusesToUser(email);
       await this.sendUnreadNotifications(email);
+
+      this.shareRoomsInfoToClient(client);
 
       this.logger.debug(`[CONNECT] ${email} (${client.id})`);
     } catch (error) {
@@ -276,6 +278,17 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       && room.startsWith('Room_');
   }
 
+  private hasCommonRoom(senderSocketId: string, targetSocketId: string): boolean {
+    const senderRooms = this.socketRooms.get(senderSocketId);
+    const targetRooms = this.socketRooms.get(targetSocketId);
+    if (!senderRooms || !targetRooms) return false;
+
+    for (const room of senderRooms) {
+      if (targetRooms.has(room)) return true;
+    }
+    return false;
+  }
+
   @SubscribeMessage('send_message')
   async sendMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
@@ -291,6 +304,10 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
       if (sender === data.recipient) {
         return client.emit('error', { message: 'Нельзя отправить себе' });
+      }
+
+      if (!this.checkRateLimit(`send_message:${sender}`, 10, 1000)) {
+        return client.emit('error', { message: 'Слишком много запросов' });
       }
 
       const now = Date.now();
@@ -424,16 +441,12 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       return client.emit('error', { message: 'Неверный ID комнаты' });
     }
 
-    if (!this.checkRateLimit(`webrtc:${client.id}`, 10, 1000)) {
+    const userEmail = client.data.user.email;
+    if (!this.checkRateLimit(`webrtc:${userEmail}`, 10, 1000)) {
       return client.emit('error', { message: 'Слишком много запросов' });
     }
 
-    const userEmail = client.data.user.email;
     const userInfo = this.socketUsers.get(client.id) || { email: userEmail };
-
-    if (!this.roomCreators.has(room)) {
-      this.roomCreators.set(room, userEmail);
-    }
 
     if (this.roomDeletionTimers.has(room)) {
       clearTimeout(this.roomDeletionTimers.get(room)!);
@@ -520,7 +533,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     if (rooms) {
       rooms.add(room);
     }
-    this.shareRoomsInfo();
+    this.shareRoomsInfoToClient(client);
 
     this.logger.debug(`[JOIN] ${userEmail} joined ${room} (peers: ${existingPeers.length})`);
   }
@@ -557,7 +570,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     });
 
     rooms.clear();
-    this.shareRoomsInfo();
+    this.shareRoomsInfoToClient(client);
 
     this.logger.debug(`[LEAVE] ${userEmail} left ${roomsToLeave.length} rooms`);
   }
@@ -578,6 +591,10 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       return;
     }
 
+    if (!this.checkRateLimit(`relay:${client.id}`, 50, 1000)) {
+      return;
+    }
+
     const senderEmail = senderInfo.email;
 
     const targetSockets = this.userSockets.get(peerID);
@@ -587,10 +604,12 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     }
 
     targetSockets.forEach(socketID => {
-      this.server.to(socketID).emit(ACTIONS.SESSION_DESCRIPTION, {
-        peerID: senderEmail,
-        sessionDescription,
-      });
+      if (this.hasCommonRoom(client.id, socketID)) {
+        this.server.to(socketID).emit(ACTIONS.SESSION_DESCRIPTION, {
+          peerID: senderEmail,
+          sessionDescription,
+        });
+      }
     });
   }
 
@@ -610,6 +629,10 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       return;
     }
 
+    if (!this.checkRateLimit(`relay:${client.id}`, 50, 1000)) {
+      return;
+    }
+
     const senderEmail = senderInfo.email;
 
     const targetSockets = this.userSockets.get(peerID);
@@ -619,10 +642,12 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     }
 
     targetSockets.forEach(socketID => {
-      this.server.to(socketID).emit(ACTIONS.ICE_CANDIDATE, {
-        peerID: senderEmail,
-        iceCandidate,
-      });
+      if (this.hasCommonRoom(client.id, socketID)) {
+        this.server.to(socketID).emit(ACTIONS.ICE_CANDIDATE, {
+          peerID: senderEmail,
+          iceCandidate,
+        });
+      }
     });
   }
 
@@ -648,19 +673,51 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       rooms.add(roomID);
     }
 
-    this.shareRoomsInfo();
+    this.shareRoomsInfoToClient(client);
     this.logger.debug(`[CREATE_ROOM] ${userInfo?.email} created ${roomID}`);
   }
 
-  private shareRoomsInfo() {
-    const rooms = this.getClientRooms();
-    this.server.emit(ACTIONS.SHARE_ROOMS, { rooms });
+  @SubscribeMessage(ACTIONS.PEER_STATUS_UPDATE)
+  relayPeerStatus(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() { room, status }: {
+      room: string;
+      status: Partial<{ video: boolean; audio: boolean; screenShare: boolean }>;
+    }
+  ) {
+    if (!client.data?.user) return;
+    if (!this.isValidRoom(room)) return;
+    
+    const userEmail = client.data.user.email;
+    if (!this.checkRateLimit(`status:${userEmail}`, 20, 1000)) return;
+
+    const senderInfo = this.socketUsers.get(client.id);
+    if (!senderInfo) return;
+
+    client.to(room).emit(ACTIONS.PEER_STATUS_UPDATE, {
+      peerID: senderInfo.email,
+      status,
+    });
   }
 
-  private getClientRooms() {
+  private shareRoomsInfoToClient(client: Socket) {
+    const rooms = this.getClientRoomsForUser(client.id);
+    client.emit(ACTIONS.SHARE_ROOMS, { rooms });
+  }
+
+  private getClientRoomsForUser(socketId: string): string[] {
+    const userInfo = this.socketUsers.get(socketId);
+    if (!userInfo) return [];
+
+    const userEmail = userInfo.email;
     const allRooms = Array.from(this.server.adapter.rooms.keys());
+
     return allRooms.filter(roomID => {
-      return roomID && typeof roomID === 'string' && roomID.startsWith('Room_');
+      if (!roomID || typeof roomID !== 'string' || !roomID.startsWith('Room_')) {
+        return false;
+      }
+      const creatorEmail = this.roomCreators.get(roomID);
+      return creatorEmail === userEmail;
     });
   }
 
