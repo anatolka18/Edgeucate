@@ -102,8 +102,8 @@ jobs:
           script: |
             sudo mkdir -p /opt/edgeucate-secrets
             sudo mv /tmp/.env.prod /opt/edgeucate-secrets/.env.prod
+            sudo chown deploy:deploy /opt/edgeucate-secrets/.env.prod
             sudo chmod 600 /opt/edgeucate-secrets/.env.prod
-            sudo chown root:root /opt/edgeucate-secrets/.env.prod
             
             echo "Secrets deployed to /opt/edgeucate-secrets/"
             
