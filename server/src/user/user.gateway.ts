@@ -651,7 +651,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     });
   }
 
-  @SubscribeMessage(ACTIONS.CREATE_ROOM)
+    @SubscribeMessage(ACTIONS.CREATE_ROOM)
   createRoom(@ConnectedSocket() client: Socket, @MessageBody() { roomID }: { roomID: string }) {
     if (!client.data?.user) {
       return client.emit('error', { message: 'Необходима авторизация' });
@@ -661,7 +661,13 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       return client.emit('error', { message: 'Неверный ID комнаты' });
     }
 
+    const userEmail = client.data.user.email;
+    if (!this.checkRateLimit(`create_room:${userEmail}`, 5, 60000)) {
+      return client.emit('error', { message: 'Слишком много комнат создаётся. Подождите минуту.' });
+    }
+
     const userInfo = this.socketUsers.get(client.id);
+    
     if (userInfo) {
       this.roomCreators.set(roomID, userInfo.email);
     }

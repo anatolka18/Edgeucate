@@ -76,7 +76,6 @@ export default function AllRoomPage() {
       const roomIDWithPrefix = `Room_${id}`;
       MySocket.socket?.emit(ACTIONS.CREATE_ROOM, { roomID: roomIDWithPrefix });
       setNewRoomID(id);
-      setRooms((prev) => [...prev, { roomID: roomIDWithPrefix }]);
       toast.success('Комната создана');
     } catch (error) {
       toast.error('Не удалось создать комнату');

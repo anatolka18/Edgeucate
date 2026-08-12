@@ -77,6 +77,8 @@ export default function useWebRTC(roomID: string) {
   const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const iceServersRef = useRef<RTCIceServer[]>(FALLBACK_STUN_SERVERS);
   const isStoppingScreen = useRef(false);
+  const trackIntervals = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+  const lastStatusEmit = useRef(0);
 
   const addNewClient = useCallback((newClient: string, cb?: () => void, username?: string) => {
     updateClients((list) => {
@@ -88,6 +90,9 @@ export default function useWebRTC(roomID: string) {
   }, [updateClients]);
 
   const emitPeerStatus = useCallback((status: Partial<PeerStatus>) => {
+    const now = Date.now();
+    if (now - lastStatusEmit.current < 200) return;
+    lastStatusEmit.current = now;
     if (!MySocket.socket?.connected) return;
     MySocket.socket.emit(ACTIONS.PEER_STATUS_UPDATE, {
       room: roomID,
@@ -113,17 +118,25 @@ export default function useWebRTC(roomID: string) {
         const videoEl = peerMediaElements.current[peerID];
         if (videoEl) {
           videoEl.srcObject = remoteStream;
-        } else {
-          let settled = false;
-          const interval = setInterval(() => {
-            if (peerMediaElements.current[peerID]) {
-              peerMediaElements.current[peerID]!.srcObject = remoteStream;
-              settled = true;
-            }
-            if (settled) clearInterval(interval);
-          }, 1000);
         }
       }, username);
+
+      const interval = setInterval(() => {
+        const videoEl = peerMediaElements.current[peerID];
+        if (videoEl && !videoEl.srcObject) {
+          videoEl.srcObject = remoteStream;
+          trackIntervals.current.delete(peerID);
+          clearInterval(interval);
+        }
+      }, 500);
+      trackIntervals.current.set(peerID, interval);
+
+      setTimeout(() => {
+        if (trackIntervals.current.has(peerID)) {
+          clearInterval(trackIntervals.current.get(peerID)!);
+          trackIntervals.current.delete(peerID);
+        }
+      }, 5000);
 
       track.onmute = () => {
         const videoEl = peerMediaElements.current[peerID];
@@ -310,6 +323,10 @@ export default function useWebRTC(roomID: string) {
         }
         delete peerMediaElements.current[peerID];
       }
+      if (trackIntervals.current.has(peerID)) {
+        clearInterval(trackIntervals.current.get(peerID)!);
+        trackIntervals.current.delete(peerID);
+      }
       setPeerStatuses((prev) => {
         const next = new Map(prev);
         next.delete(peerID);
@@ -419,6 +436,9 @@ export default function useWebRTC(roomID: string) {
       localMediaStream.current = null;
       audioTrackRef.current = null;
       cameraVideoTrackRef.current = null;
+
+      trackIntervals.current.forEach(interval => clearInterval(interval));
+      trackIntervals.current.clear();
 
       Object.values(peerConnections.current).forEach((pc) => {
         try {
