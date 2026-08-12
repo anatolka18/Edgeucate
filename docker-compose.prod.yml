@@ -33,7 +33,7 @@ services:
     container_name: edgeucate-server-prod
     restart: unless-stopped
     env_file:
-      - /
+      - /opt/edgeucate-secrets/.env.prod
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -102,7 +102,7 @@ services:
     restart: unless-stopped
     network_mode: host
     env_file:
-      - /
+      - /opt/edgeucate-secrets/.env.prod
     volumes:
       - ./coturn/turnserver.conf:/etc/turnserver.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
