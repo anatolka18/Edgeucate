@@ -6,5 +6,6 @@ DEPLOY.md
 REINSTALL.md
 CICD.md
 zmd
+backup/logs/
 
 docker-compose.override.yml
