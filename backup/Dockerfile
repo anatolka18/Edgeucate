@@ -1,4 +1,4 @@
-﻿FROM mongo:7.0
+FROM mongo:7.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -19,18 +19,18 @@ COPY backup.sh /usr/local/bin/backup.sh
 COPY test-restore.sh /usr/local/bin/test-restore.sh
 COPY init-minio.sh /usr/local/bin/init-minio.sh
 
-RUN printf "# MongoDB Backup Schedule\n" > /etc/cron.d/backup && \
-    printf "0 3 * * * root /usr/local/bin/backup.sh daily >> /var/log/backup.log 2>&1\n" >> /etc/cron.d/backup && \
-    printf "0 4 * * 0 root /usr/local/bin/backup.sh weekly >> /var/log/backup.log 2>&1\n" >> /etc/cron.d/backup && \
-    printf "0 5 1 * * root /usr/local/bin/backup.sh monthly >> /var/log/backup.log 2>&1\n" >> /etc/cron.d/backup && \
-    printf "\n" >> /etc/cron.d/backup
+RUN printf "# MongoDB Backup Schedule\n" > /tmp/crontab && \
+    printf "0 3 * * * /usr/local/bin/backup.sh daily >> /var/log/backup.log 2>&1\n" >> /tmp/crontab && \
+    printf "0 4 * * 0 /usr/local/bin/backup.sh weekly >> /var/log/backup.log 2>&1\n" >> /tmp/crontab && \
+    printf "0 5 1 * * /usr/local/bin/backup.sh monthly >> /var/log/backup.log 2>&1\n" >> /tmp/crontab && \
+    printf "\n" >> /tmp/crontab && \
+    crontab /tmp/crontab && \
+    rm /tmp/crontab
 
 RUN chmod +x /usr/local/bin/backup.sh && \
     chmod +x /usr/local/bin/test-restore.sh && \
     chmod +x /usr/local/bin/init-minio.sh && \
-    chmod 0644 /etc/cron.d/backup && \
     touch /var/log/backup.log && \
-    touch /var/log/cron.log && \
-    crontab /etc/cron.d/backup
+    touch /var/log/cron.log
 
 CMD ["cron", "-f"]

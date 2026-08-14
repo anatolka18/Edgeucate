@@ -1,4 +1,13 @@
 #!/bin/bash
+
+if [ -f /proc/1/environ ]; then
+    set -a
+    while IFS='=' read -r -d '' name value; do
+        export "$name"="$value"
+    done < /proc/1/environ
+    set +a
+fi
+
 set -euo pipefail
 
 BACKUP_TYPE="${1:-daily}"
