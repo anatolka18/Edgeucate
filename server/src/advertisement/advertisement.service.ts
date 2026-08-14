@@ -1,14 +1,10 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as mongoose from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Advertisement } from './schemas/advertisement.schema';
-import { MFile, IUploadedFile } from './dto/mfile-class';
-import { join } from 'path';
-import { access, mkdir, writeFile } from 'fs/promises';
 import { CreateAdvertisementDto } from './dto/createAdvertisement.dto';
 import { User } from '../user/schemas/user.schema';
 import { UpdateAdvertisementDto } from './dto/updateAdvertisement.dto';
-import { APP_CONFIG } from '../common/config/app.config';
 
 @Injectable()
 export class AdvertisementService {
@@ -19,15 +15,37 @@ export class AdvertisementService {
     private userModel: mongoose.Model<User>,
   ) { }
 
+  private async enrichWithAvatar(ads: any[]): Promise<any[]> {
+    if (ads.length === 0) return [];
+
+    const emails = [...new Set(ads.map(ad => ad.email).filter(Boolean))];
+    if (emails.length === 0) return ads;
+
+    const users = await this.userModel.find(
+      { email: { $in: emails } },
+      { email: 1, avatar: 1, username: 1, description: 1 },
+    ).lean().exec();
+
+    const userMap = new Map(users.map(u => [u.email, u]));
+
+    return ads.map(ad => {
+      const user = userMap.get(ad.email);
+      return {
+        ...ad,
+        _id: ad._id?.toString?.() ?? ad._id,
+        avatar: user?.avatar || ad.avatar || 'default.png',
+        creator: user?.username || ad.creator,
+        aboutTeacher: user?.description || ad.aboutTeacher,
+      };
+    });
+  }
+
   async findMyAdvertisements(email: string): Promise<any[]> {
     if (!email || email.trim() === '') {
       throw new BadRequestException('Email не может быть пустым');
     }
     const ads = await this.advertisementModel.find({ email }).lean().exec();
-    return ads.map(ad => ({
-      ...ad,
-      _id: ad._id.toString(),
-    }));
+    return this.enrichWithAvatar(ads);
   }
 
   async findAll(page = 1, limit = 20): Promise<{ data: any[]; total: number; page: number; totalPages: number }> {
@@ -36,12 +54,9 @@ export class AdvertisementService {
       this.advertisementModel.find().skip(skip).limit(limit).lean().exec(),
       this.advertisementModel.countDocuments(),
     ]);
-    
-    const serialized = data.map(ad => ({
-      ...ad,
-      _id: ad._id.toString(),
-    }));
-    
+
+    const serialized = await this.enrichWithAvatar(data);
+
     return {
       data: serialized,
       total,
@@ -50,7 +65,7 @@ export class AdvertisementService {
     };
   }
 
-  async search(query: string, subject: string): Promise<Advertisement[]> {
+  async search(query: string, subject: string): Promise<any[]> {
     const filter: any = {};
 
     if (query) {
@@ -66,7 +81,8 @@ export class AdvertisementService {
       filter.subject = subject;
     }
 
-    return this.advertisementModel.find(filter).exec();
+    const ads = await this.advertisementModel.find(filter).lean().exec();
+    return this.enrichWithAvatar(ads);
   }
 
   async createAdvertisement(createAdvertisementDto: CreateAdvertisementDto): Promise<Advertisement> {
@@ -112,19 +128,22 @@ export class AdvertisementService {
 
   async findByAdvertisementId(advertisementId: string): Promise<{ advertisement: any; feedbacks: any[] }> {
     if (!advertisementId?.trim()) throw new BadRequestException('ID объявления не может быть пустым');
-    
+
     const advertisement = await this.advertisementModel.findOne({ advertisementId }).lean().exec();
     if (!advertisement) throw new NotFoundException('Объявление не найдено');
-    
+
     const user = await this.userModel.findOne({ email: advertisement.email }).lean().exec();
     if (!user) throw new NotFoundException('Пользователь не найден');
-    
+
     const feedbacks = (user.feedback || []).filter(f => f.advertisementId === advertisementId);
-    
+
     return {
       advertisement: {
         ...advertisement,
         _id: advertisement._id.toString(),
+        avatar: user.avatar || advertisement.avatar || 'default.png',
+        creator: user.username || advertisement.creator,
+        aboutTeacher: user.description || advertisement.aboutTeacher,
       },
       feedbacks,
     };
@@ -149,27 +168,6 @@ export class AdvertisementService {
     const advertisement = await this.advertisementModel.findOne({ advertisementId });
     if (!advertisement) throw new NotFoundException('Объявление не найдено');
     return this.advertisementModel.findOneAndDelete({ advertisementId });
-  }
-
-  async updateAvatar(name: string, file: IUploadedFile): Promise<Advertisement> {
-    if (!name?.trim()) throw new BadRequestException('Имя не может быть пустым');
-    if (!file) throw new BadRequestException('Файл не предоставлен');
-
-    const mimetype = file.mimetype;
-    const type = mimetype.split('/')[1];
-    if (!mimetype.includes('image')) throw new BadRequestException('Файл должен быть изображением');
-    if (!APP_CONFIG.FILE_UPLOAD.ALLOWED_TYPES.includes(type as "svg+xml" | "png" | "jpeg" | "jpg")) {throw new BadRequestException('Поддерживаются только форматы SVG, PNG и JPEG/JPG');}
-    if (file.size > APP_CONFIG.FILE_UPLOAD.MAX_SIZE_BYTES) throw new BadRequestException('Размер файла не должен превышать 5 МБ');
-
-    const advertisement = await this.advertisementModel.findOne({ name });
-    if (!advertisement) throw new NotFoundException('Объявление не найдено');
-
-    const newFile = new MFile({ buffer: file.buffer, originalname: `${name}.${type}`, mimetype });
-    const uploadFolder = join(__dirname, '..', '..', 'assets', 'advertisements_avatars');
-    try { await access(uploadFolder); } catch { await mkdir(uploadFolder, { recursive: true }); }
-    try { await writeFile(join(uploadFolder, newFile.originalname), newFile.buffer); } catch { throw new InternalServerErrorException('Ошибка при записи файла'); }
-
-    return this.advertisementModel.findOneAndUpdate({ name }, { avatar: newFile.originalname }, { new: true, runValidators: true });
   }
 
   async deleteById(id: string) {

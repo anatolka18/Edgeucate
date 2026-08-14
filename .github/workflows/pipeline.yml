@@ -93,28 +93,66 @@ jobs:
           source: ".env.prod"
           target: "/tmp/"
 
-      - name: Deploy via SSH
+      - name: Deploy secrets
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 2m
           script: |
             sudo mkdir -p /opt/edgeucate-secrets
             sudo mv /tmp/.env.prod /opt/edgeucate-secrets/.env.prod
             sudo chown deploy:deploy /opt/edgeucate-secrets/.env.prod
             sudo chmod 600 /opt/edgeucate-secrets/.env.prod
-            
-            echo "Secrets deployed to /opt/edgeucate-secrets/"
-            
+            echo "Secrets deployed"
+
+      - name: Pull latest code
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 5m
+          script: |
             cd ~/Edgeucate
-            git stash || true
-            git pull origin dev
-            git stash pop || true
-            git checkout --ours docker-compose.prod.yml server/Dockerfile.prod || true
-            git add . || true
-            git stash drop || true
-            docker compose -f docker-compose.prod.yml --env-file /opt/edgeucate-secrets/.env.prod up -d --build
+            git fetch origin dev
+            git reset --hard origin/dev
+            echo "Code updated: $(git rev-parse --short HEAD)"
+
+      - name: Build images on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
+          script: |
+            cd ~/Edgeucate
+            docker compose -f docker-compose.prod.yml --env-file /opt/edgeucate-secrets/.env.prod build --parallel
+
+      - name: Start services
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 10m
+          script: |
+            cd ~/Edgeucate
+            docker compose -f docker-compose.prod.yml --env-file /opt/edgeucate-secrets/.env.prod up -d
+            sleep 20
+            docker compose -f docker-compose.prod.yml --env-file /opt/edgeucate-secrets/.env.prod ps
+
+      - name: Init MinIO buckets
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 2m
+          script: |
+            docker exec edgeucate-mongo-backup-prod /usr/local/bin/init-minio.sh || echo "MinIO init skipped"
 
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
@@ -122,6 +160,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 2m
           script: |
-            sleep 15
+            sleep 10
             curl -sf http://localhost:80/api/ > /dev/null && echo "Deploy successful" || exit 1

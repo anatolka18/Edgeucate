@@ -44,12 +44,12 @@ export class MessageService {
 
     await this.userModel.findOneAndUpdate(
       { email: sender },
-      { $addToSet: { chat: { interlocutor: recipient, avatar: recipientUser.avatar } } },
+      { $addToSet: { chat: { interlocutor: recipient } } },
     );
 
     await this.userModel.findOneAndUpdate(
       { email: recipient },
-      { $addToSet: { chat: { interlocutor: sender, avatar: senderUser.avatar } } },
+      { $addToSet: { chat: { interlocutor: sender } } },
     );
 
     return newMessage;
@@ -156,7 +156,7 @@ export class MessageService {
       const interlocutor = interlocutorMap.get(chat.interlocutor);
       return {
         interlocutor: chat.interlocutor,
-        avatar: chat.avatar,
+        avatar: interlocutor?.avatar || 'default.png',
         online: interlocutor?.online || false,
         username: interlocutor?.username || 'Unknown User',
         unreadCount: stats.unreadCount || 0,

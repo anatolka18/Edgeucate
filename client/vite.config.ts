@@ -38,6 +38,11 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      '/avatars': {
+          target: 'http://minio:9000/edgeucate-avatars',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/avatars/, ''),
+      },
     },
     watch: {
       usePolling: true,

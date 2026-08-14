@@ -12,6 +12,13 @@ export const advertisementLoader = async () => {
   return data.data;
 };
 
+const getAvatarUrl = (avatar?: string): string | null => {
+    if (!avatar || avatar === 'default.png') return null;
+    if (avatar.startsWith('http')) return avatar;
+    if (avatar.startsWith('/avatars/')) return avatar;
+    return null;
+};
+
 const SearchPage: React.FC = () => {
     const isAuth = useAuth();
     const initialAdvertisements = useLoaderData() as IAdvertisement[];
@@ -163,52 +170,63 @@ const SearchPage: React.FC = () => {
                             Найдено {advertisements.length} репетиторов
                         </p>
                         <div className="flex flex-col items-center gap-4">
-                            {currentAdvertisements.map((advertisement) => (
-                                <div
-                                    key={advertisement.advertisementId}
-                                    className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow"
-                                >
-                                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0">
-                                            <span className="text-white font-bold text-xl">
-                                                {advertisement.creator?.[0]?.toUpperCase() || "?"}
-                                            </span>
-                                        </div>
-                                        <div className="flex-1 w-full text-center sm:text-left">
-                                            <h3 className="text-lg font-bold">{advertisement.creator}</h3>
-                                            <p className="text-gray-600">{advertisement.title}</p>
-                                            <p className="text-sm text-gray-400">{advertisement.subject}</p>
-                                            <div className="flex items-center justify-center sm:justify-start gap-1 mt-2">
-                                                <span className="text-yellow-500">★</span>
-                                                <span className="font-medium">
-                                                    {advertisement.stars?.toFixed(1) ?? '0'}
-                                                </span>
-                                                <span className="text-gray-400 ml-2">{advertisement.price} ₽/час</span>
+                            {currentAdvertisements.map((advertisement) => {
+                                const avatarUrl = getAvatarUrl((advertisement as any).avatar);
+                                return (
+                                    <div
+                                        key={advertisement.advertisementId}
+                                        className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow"
+                                    >
+                                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                                            {avatarUrl ? (
+                                                <img
+                                                    src={avatarUrl}
+                                                    alt={advertisement.creator}
+                                                    className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                                                />
+                                            ) : (
+                                                <div className="w-16 h-16 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-xl flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-white font-bold text-xl">
+                                                        {advertisement.creator?.[0]?.toUpperCase() || "?"}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="flex-1 w-full text-center sm:text-left">
+                                                <h3 className="text-lg font-bold">{advertisement.creator}</h3>
+                                                <p className="text-gray-600">{advertisement.title}</p>
+                                                <p className="text-sm text-gray-400">{advertisement.subject}</p>
+                                                <div className="flex items-center justify-center sm:justify-start gap-1 mt-2">
+                                                    <span className="text-yellow-500">★</span>
+                                                    <span className="font-medium">
+                                                        {advertisement.stars?.toFixed(1) ?? '0'}
+                                                    </span>
+                                                    <span className="text-gray-400 ml-2">{advertisement.price} ₽/час</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                                        <NavLink
-                                            to={
-                                                isAuth
-                                                    ? `/advertisement/${advertisement.advertisementId}`
-                                                    : "/auth"
-                                            }
-                                            className="flex-1 text-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium min-h-[44px] flex items-center justify-center"
-                                        >
-                                            Подробнее
-                                        </NavLink>
-                                        {isAuth && (
+                                        <div className="flex flex-col sm:flex-row gap-2 mt-4">
                                             <NavLink
-                                                to={`/chat/${advertisement.email}`}
-                                                className="flex-1 text-center px-4 py-3 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] hover:text-white transition-colors font-medium min-h-[44px] flex items-center justify-center"
+                                                to={
+                                                    isAuth
+                                                        ? `/advertisement/${advertisement.advertisementId}`
+                                                        : "/auth"
+                                                }
+                                                className="flex-1 text-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium min-h-[44px] flex items-center justify-center"
                                             >
-                                                Написать
+                                                Подробнее
                                             </NavLink>
-                                        )}
+                                            {isAuth && (
+                                                <NavLink
+                                                    to={`/chat/${advertisement.email}`}
+                                                    className="flex-1 text-center px-4 py-3 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] hover:text-white transition-colors font-medium min-h-[44px] flex items-center justify-center"
+                                                >
+                                                    Написать
+                                                </NavLink>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {totalPages > 1 && (

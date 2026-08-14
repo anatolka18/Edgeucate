@@ -20,6 +20,13 @@ export const myAdvertisementLoader = async () => {
   }
 };
 
+const getAvatarUrl = (avatar?: string): string | null => {
+    if (!avatar || avatar === 'default.png') return null;
+    if (avatar.startsWith('http')) return avatar;
+    if (avatar.startsWith('/avatars/')) return avatar;
+    return null;
+};
+
 const MyAdvertisementPage: FC = () => {
     const profile = useMyProfile();
     const [myAdvertisements, setMyAdvertisements] = useState<IAdvertisement[]>(
@@ -33,6 +40,8 @@ const MyAdvertisementPage: FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [currentId, setCurrentId] = useState("");
+
+    const avatarUrl = getAvatarUrl(profile?.avatar);
 
     const handleCreate = () => {
         setTitle("");
@@ -133,11 +142,19 @@ const MyAdvertisementPage: FC = () => {
                             key={ad.advertisementId}
                             className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center sm:items-start border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow gap-4"
                         >
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <span className="text-xl sm:text-2xl font-bold text-gray-400">
-                                    {ad.creator?.[0]?.toUpperCase() || '?'}
-                                </span>
-                            </div>
+                            {avatarUrl ? (
+                                <img
+                                    src={avatarUrl}
+                                    alt={ad.creator}
+                                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0"
+                                />
+                            ) : (
+                                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xl sm:text-2xl font-bold text-white">
+                                        {ad.creator?.[0]?.toUpperCase() || '?'}
+                                    </span>
+                                </div>
+                            )}
                             <div className="flex-1 w-full text-center sm:text-left">
                                 <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                                     <h3 className="text-lg font-bold">{ad.creator}</h3>

@@ -15,7 +15,7 @@ import { APP_CONFIG } from '../common/config/app.config';
 
 interface AuthenticatedSocket extends Socket {
   data: {
-    user?: { id: string; email: string; role: string; username?: string };
+    user?: { id: string; email: string; role: string; username?: string; avatar?: string };
   };
 }
 
@@ -23,6 +23,7 @@ interface PeerInfo {
   peerID: string;
   email: string;
   username?: string;
+  avatar?: string;
 }
 
 @WebSocketGateway({ namespace: 'users' })
@@ -40,7 +41,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
 
   private userSockets = new Map<string, Set<string>>();
   private socketRooms = new Map<string, Set<string>>();
-  private socketUsers = new Map<string, { email: string; username?: string }>();
+  private socketUsers = new Map<string, { email: string; username?: string; avatar?: string }>();
   private roomDeletionTimers = new Map<string, NodeJS.Timeout>();
   private roomCreators = new Map<string, string>();
 
@@ -127,14 +128,16 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
       client.data.user = payload;
 
       let username: string | undefined;
+      let avatar: string | undefined;
       try {
         const user = await this.userService.findByEmail(email);
         username = user?.username;
+        avatar = user?.avatar;
       } catch (e) {
-        this.logger.warn(`[CONNECT] Failed to fetch username for ${email}`);
+        this.logger.warn(`[CONNECT] Failed to fetch user data for ${email}`);
       }
 
-      this.socketUsers.set(client.id, { email, username });
+      this.socketUsers.set(client.id, { email, username, avatar });
 
       if (!this.userSockets.has(email)) {
         this.userSockets.set(email, new Set());
@@ -505,6 +508,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
           peerID: peerInfo.email,
           email: peerInfo.email,
           username: peerInfo.username,
+          avatar: peerInfo.avatar,
         });
       }
     });
@@ -517,6 +521,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
         peerID: userEmail,
         email: userEmail,
         username: userInfo.username,
+        avatar: userInfo.avatar,
         createOffer: false,
       });
 
@@ -525,6 +530,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
         peerID: peerInfo?.email || clientID,
         email: peerInfo?.email || clientID,
         username: peerInfo?.username,
+        avatar: peerInfo?.avatar,
         createOffer: true,
       });
     });
@@ -651,7 +657,7 @@ export class UserSocketService implements OnGatewayConnection, OnGatewayDisconne
     });
   }
 
-    @SubscribeMessage(ACTIONS.CREATE_ROOM)
+  @SubscribeMessage(ACTIONS.CREATE_ROOM)
   createRoom(@ConnectedSocket() client: Socket, @MessageBody() { roomID }: { roomID: string }) {
     if (!client.data?.user) {
       return client.emit('error', { message: 'Необходима авторизация' });

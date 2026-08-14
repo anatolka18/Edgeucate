@@ -1,5 +1,3 @@
-version: '3.8'
-
 x-logging: &default-logging
   driver: "json-file"
   options:
@@ -35,6 +33,8 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - CHOKIDAR_INTERVAL=1000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     volumes:
       - ./server:/app
       - /app/node_modules
@@ -93,8 +93,32 @@ services:
       - frontend
       - backend
 
+  minio:
+    image: minio/minio:latest
+    container_name: edgeucate-minio-dev
+    restart: unless-stopped
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_dev_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging: *default-logging
+
 volumes:
   redis_data:
+  minio_dev_data:
 
 networks:
   frontend:

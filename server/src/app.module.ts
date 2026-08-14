@@ -15,6 +15,7 @@ import { MailModule } from './mail/mail.module';
 import { ClientErrorsController } from './common/controllers/client-errors.controller';
 import { QueueModule } from './queue/queue.module';
 import { TurnModule } from './turn/turn.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { TurnModule } from './turn/turn.module';
     MailModule,
     QueueModule,
     TurnModule,
+    StorageModule,
   ],
   controllers: [AppController, ClientErrorsController],
   providers: [

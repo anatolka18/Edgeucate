@@ -25,3 +25,11 @@ mc ilm rule add local/edgeucate-backups --prefix "monthly/" --expire-days 365
 
 echo "Lifecycle rules configured:"
 mc ilm rule ls local/edgeucate-backups
+
+if ! mc ls local/edgeucate-avatars > /dev/null 2>&1; then
+    mc mb local/edgeucate-avatars
+    mc anonymous set download local/edgeucate-avatars
+    echo "Bucket created: edgeucate-avatars (public read)"
+else
+    echo "Bucket exists: edgeucate-avatars"
+fi

@@ -10,6 +10,7 @@ import { instance } from '../api/axios.api';
 import { IUser } from '../types/user';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import PasswordStrength from '../components/PasswordStrength';
+import AvatarUpload from '../components/AvatarUpload';
 
 const MyProfilePage: FC = () => {
     const profile = useMyProfile();
@@ -19,6 +20,7 @@ const MyProfilePage: FC = () => {
     const [isModalOpen, setModalOpen] = useState(false);
     const [description, setDescription] = useState(profile?.description || '');
     const [isSaving, setIsSaving] = useState(false);
+    const [currentAvatar, setCurrentAvatar] = useState(profile?.avatar || 'default.png');
 
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [oldPassword, setOldPassword] = useState('');
@@ -97,11 +99,11 @@ const MyProfilePage: FC = () => {
                     <div className="p-4 sm:p-6 md:p-8 border-b border-gray-100">
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                                    <span className="text-3xl sm:text-4xl font-bold text-white">
-                                        {profile?.username?.[0]?.toUpperCase() || '?'}
-                                    </span>
-                                </div>
+                                <AvatarUpload
+                                    currentAvatar={currentAvatar}
+                                    username={profile?.username}
+                                    onAvatarChange={setCurrentAvatar}
+                                />
                                 <div className="text-center sm:text-left flex-1 min-w-0">
                                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{profile?.username}</h1>
                                     <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
