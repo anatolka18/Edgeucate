@@ -41,8 +41,6 @@ const MyAdvertisementPage: FC = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [currentId, setCurrentId] = useState("");
 
-    const avatarUrl = getAvatarUrl(profile?.avatar);
-
     const handleCreate = () => {
         setTitle("");
         setSubject("");
@@ -137,49 +135,52 @@ const MyAdvertisementPage: FC = () => {
                         <p className="text-gray-400 text-sm mt-2">Нажмите "Добавить объявление" чтобы создать первое</p>
                     </div>
                 ) : (
-                    myAdvertisements.map((ad) => (
-                        <div
-                            key={ad.advertisementId}
-                            className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center sm:items-start border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow gap-4"
-                        >
-                            {avatarUrl ? (
-                                <img
-                                    src={avatarUrl}
-                                    alt={ad.creator}
-                                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0"
-                                />
-                            ) : (
-                                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xl sm:text-2xl font-bold text-white">
-                                        {ad.creator?.[0]?.toUpperCase() || '?'}
-                                    </span>
-                                </div>
-                            )}
-                            <div className="flex-1 w-full text-center sm:text-left">
-                                <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-                                    <h3 className="text-lg font-bold">{ad.creator}</h3>
-                                    <span className="text-sm text-yellow-500 font-semibold flex-shrink-0">{ad.stars}★</span>
-                                </div>
-                                <p className="text-sm text-gray-600">{ad.title}</p>
-                                <p className="text-sm text-gray-600">{ad.subject}</p>
-                                <p className="text-lg font-semibold mt-2">{ad.price} ₽/час</p>
-                                <div className="flex flex-col sm:flex-row gap-2 mt-3">
-                                    <button
-                                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 min-h-[44px] font-medium transition-colors"
-                                        onClick={() => handleEdit(ad.advertisementId)}
-                                    >
-                                        Редактировать
-                                    </button>
-                                    <button
-                                        className="flex-1 px-4 py-3 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white min-h-[44px] font-medium transition-colors"
-                                        onClick={() => handleDelete(ad.advertisementId)}
-                                    >
-                                        Удалить
-                                    </button>
+                    myAdvertisements.map((ad) => {
+                        const avatarUrl = getAvatarUrl(ad.avatar);
+                        return (
+                            <div
+                                key={ad.advertisementId}
+                                className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center sm:items-start border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow gap-4"
+                            >
+                                {avatarUrl ? (
+                                    <img
+                                        src={avatarUrl}
+                                        alt={ad.creator}
+                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0"
+                                    />
+                                ) : (
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <span className="text-xl sm:text-2xl font-bold text-white">
+                                            {ad.creator?.[0]?.toUpperCase() || '?'}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="flex-1 w-full text-center sm:text-left">
+                                    <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                                        <h3 className="text-lg font-bold">{ad.creator}</h3>
+                                        <span className="text-sm text-yellow-500 font-semibold flex-shrink-0">{ad.stars}★</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600">{ad.title}</p>
+                                    <p className="text-sm text-gray-600">{ad.subject}</p>
+                                    <p className="text-lg font-semibold mt-2">{ad.price} ₽/час</p>
+                                    <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                                        <button
+                                            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 min-h-[44px] font-medium transition-colors"
+                                            onClick={() => handleEdit(ad.advertisementId)}
+                                        >
+                                            Редактировать
+                                        </button>
+                                        <button
+                                            className="flex-1 px-4 py-3 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white min-h-[44px] font-medium transition-colors"
+                                            onClick={() => handleDelete(ad.advertisementId)}
+                                        >
+                                            Удалить
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 

@@ -85,7 +85,7 @@ export class AdvertisementService {
     return this.enrichWithAvatar(ads);
   }
 
-  async createAdvertisement(createAdvertisementDto: CreateAdvertisementDto): Promise<Advertisement> {
+  async createAdvertisement(createAdvertisementDto: CreateAdvertisementDto): Promise<any> {
     const user = await this.userModel.findOne({ email: createAdvertisementDto.email });
     if (!user) throw new NotFoundException('Пользователь не найден');
     if (user.role !== 'Teacher') throw new BadRequestException('Только преподаватели могут создавать объявления');
@@ -107,7 +107,7 @@ export class AdvertisementService {
     if (cstars !== 0) stars /= cstars;
 
     const advertisementId = this.generateUniqueId();
-    return this.advertisementModel.create({
+    const created = await this.advertisementModel.create({
       advertisementId,
       title: createAdvertisementDto.title.trim(),
       creator: user.username,
@@ -120,6 +120,9 @@ export class AdvertisementService {
       stars,
       date: new Date()
     });
+
+    const enriched = await this.enrichWithAvatar([created.toObject()]);
+    return enriched[0];
   }
 
   private generateUniqueId(): string {
@@ -149,10 +152,11 @@ export class AdvertisementService {
     };
   }
 
-  async updateAdvertisement(updateAdvertisementDto: UpdateAdvertisementDto): Promise<Advertisement> {
+  async updateAdvertisement(updateAdvertisementDto: UpdateAdvertisementDto): Promise<any> {
     const advertisement = await this.advertisementModel.findOne({ advertisementId: updateAdvertisementDto.advertisementId });
     if (!advertisement) throw new NotFoundException('Объявление не найдено');
-    return this.advertisementModel.findOneAndUpdate(
+
+    const updated = await this.advertisementModel.findOneAndUpdate(
       { advertisementId: updateAdvertisementDto.advertisementId },
       {
         title: updateAdvertisementDto.title.trim(),
@@ -161,6 +165,9 @@ export class AdvertisementService {
       },
       { new: true }
     );
+
+    const enriched = await this.enrichWithAvatar([updated.toObject()]);
+    return enriched[0];
   }
 
   async deleteAdvertisement(advertisementId: string) {

@@ -1,5 +1,5 @@
-import { FC, useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { FC, useState, useEffect } from "react";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import FullLogo from "../assets/FullLogo.png";
 import { useAuth } from "../hooks/useAuth";
 import { useMyProfile } from "../hooks/useMyProfile";
@@ -23,6 +23,32 @@ const Header: FC = () => {
   const isTeacher = profile?.role === Role.TEACHER;
   const isAdmin = profile?.role === Role.ADMIN;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 min-h-[44px] ${

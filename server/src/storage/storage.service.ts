@@ -61,7 +61,7 @@ export class StorageService {
     const fileKey = `${sanitizedEmail}.webp`;
 
     if (user.avatar && user.avatar !== 'default.png' && !user.avatar.startsWith('http')) {
-      const oldKey = user.avatar.replace('/avatars/', '');
+      const oldKey = user.avatar.replace('/avatars/', '').split('?')[0];
       await this.deleteFromS3(oldKey);
     }
 
@@ -79,7 +79,7 @@ export class StorageService {
       throw new BadRequestException('Ошибка загрузки файла');
     }
 
-    const avatarUrl = `/avatars/${fileKey}`;
+    const avatarUrl = `/avatars/${fileKey}?v=${Date.now()}`;
     await this.userModel.findOneAndUpdate({ email }, { avatar: avatarUrl });
 
     this.logger.log(`Avatar uploaded for ${email}: ${avatarUrl}`);
@@ -91,7 +91,7 @@ export class StorageService {
     if (!user) throw new NotFoundException('Пользователь не найден');
 
     if (user.avatar && user.avatar !== 'default.png' && !user.avatar.startsWith('http')) {
-      const fileKey = user.avatar.replace('/avatars/', '');
+      const fileKey = user.avatar.replace('/avatars/', '').split('?')[0];
       await this.deleteFromS3(fileKey);
     }
 
