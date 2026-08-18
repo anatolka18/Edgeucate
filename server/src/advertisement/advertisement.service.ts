@@ -5,6 +5,7 @@ import { Advertisement } from './schemas/advertisement.schema';
 import { CreateAdvertisementDto } from './dto/createAdvertisement.dto';
 import { User } from '../user/schemas/user.schema';
 import { UpdateAdvertisementDto } from './dto/updateAdvertisement.dto';
+import { PrometheusService } from '../prometheus/prometheus.service';
 
 @Injectable()
 export class AdvertisementService {
@@ -13,6 +14,7 @@ export class AdvertisementService {
     private advertisementModel: mongoose.Model<Advertisement>,
     @InjectModel(User.name)
     private userModel: mongoose.Model<User>,
+    private prometheusService: PrometheusService,
   ) { }
 
   private async enrichWithAvatar(ads: any[]): Promise<any[]> {
@@ -79,6 +81,7 @@ export class AdvertisementService {
 
     if (subject) {
       filter.subject = subject;
+      this.prometheusService.incrementSearchQuery(subject);
     }
 
     const ads = await this.advertisementModel.find(filter).lean().exec();
@@ -120,6 +123,8 @@ export class AdvertisementService {
       stars,
       date: new Date()
     });
+
+    this.prometheusService.incrementAdvertisementCreated(createAdvertisementDto.subject.trim());
 
     const enriched = await this.enrichWithAvatar([created.toObject()]);
     return enriched[0];

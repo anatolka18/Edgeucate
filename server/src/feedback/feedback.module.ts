@@ -6,6 +6,7 @@ import { UserModule } from '../user/user.module';
 import { AdvertisementModule } from '../advertisement/advertisement.module';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { Advertisement, AdvertisementSchema } from '../advertisement/schemas/advertisement.schema';
+import { PrometheusModule } from '../prometheus/prometheus.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { Advertisement, AdvertisementSchema } from '../advertisement/schemas/adv
     ]),
     forwardRef(() => UserModule),
     forwardRef(() => AdvertisementModule),
+    PrometheusModule,
   ],
   controllers: [FeedbackController],
   providers: [FeedbackService],

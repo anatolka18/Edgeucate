@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -10,12 +11,13 @@ import { MessageModule } from './message/message.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
 import { MailModule } from './mail/mail.module';
 import { ClientErrorsController } from './common/controllers/client-errors.controller';
 import { QueueModule } from './queue/queue.module';
 import { TurnModule } from './turn/turn.module';
 import { StorageModule } from './storage/storage.module';
+import { PrometheusModule } from './prometheus/prometheus.module';
+import { HttpMetricsInterceptor } from './common/interceptors/http-metrics.interceptor';
 
 @Module({
   imports: [
@@ -42,6 +44,7 @@ import { StorageModule } from './storage/storage.module';
     QueueModule,
     TurnModule,
     StorageModule,
+    PrometheusModule,
   ],
   controllers: [AppController, ClientErrorsController],
   providers: [
@@ -49,6 +52,10 @@ import { StorageModule } from './storage/storage.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpMetricsInterceptor,
     },
   ],
 })

@@ -4,6 +4,7 @@ import * as mongoose from 'mongoose';
 import { User, Feedback } from '../user/schemas/user.schema';
 import { Advertisement } from '../advertisement/schemas/advertisement.schema';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
+import { PrometheusService } from '../prometheus/prometheus.service';
 
 @Injectable()
 export class FeedbackService {
@@ -14,6 +15,7 @@ export class FeedbackService {
     private advertisementModel: mongoose.Model<Advertisement>,
     @InjectConnection()
     private connection: mongoose.Connection,
+    private prometheusService: PrometheusService,
   ) {}
 
   async createFeedback(createFeedbackDto: CreateFeedbackDto): Promise<Feedback> {
@@ -81,6 +83,9 @@ export class FeedbackService {
       );
 
       await session.commitTransaction();
+
+      this.prometheusService.incrementReviewSubmitted(stars.toString());
+
       return newFeedback;
     } catch (error) {
       await session.abortTransaction();

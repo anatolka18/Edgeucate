@@ -4,12 +4,14 @@ import * as mongoose from 'mongoose';
 import { CalendarEvent } from './schemas/calendar-event.schema';
 import { APP_CONFIG } from '../common/config/app.config';
 import { CreateCalendarEventDto } from './dto/create-calendar-event.dto';
+import { PrometheusService } from '../prometheus/prometheus.service';
 
 @Injectable()
 export class CalendarService {
   constructor(
     @InjectModel(CalendarEvent.name)
     private calendarEventModel: mongoose.Model<CalendarEvent>,
+    private prometheusService: PrometheusService,
   ) {}
 
   async create(createDto: CreateCalendarEventDto, currentUserEmail: string): Promise<CalendarEvent> {
@@ -32,17 +34,21 @@ export class CalendarService {
       const [existingHours, existingMinutes] = event.time.split(':').map(Number);
       const existingStart = new Date(parsedDate);
       existingStart.setHours(existingHours, existingMinutes, 0, 0);
-      const existingEnd = new Date(existingStart.getTime() + APP_CONFIG.CALENDAR.EVENT_DURATION_MS);;
+      const existingEnd = new Date(existingStart.getTime() + APP_CONFIG.CALENDAR.EVENT_DURATION_MS);
 
       if (eventStart < existingEnd && eventEnd > existingStart) {
         throw new BadRequestException('Выбранное время уже занято');
       }
     }
 
-    return this.calendarEventModel.create({
+    const created = await this.calendarEventModel.create({
       ...createDto,
       date: parsedDate,
     });
+
+    this.prometheusService.incrementCalendarEventCreated();
+
+    return created;
   }
 
   async findAllByTeacher(teacherEmail: string): Promise<CalendarEvent[]> {

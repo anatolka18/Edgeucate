@@ -3,6 +3,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } fr
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../user/schemas/user.schema';
+import { PrometheusService } from '../prometheus/prometheus.service';
 
 const sharp = require('sharp');
 
@@ -11,10 +12,11 @@ export class StorageService {
   private readonly logger = new Logger(StorageService.name);
   private s3Client: S3Client;
   private readonly bucketName = 'edgeucate-avatars';
-  private readonly maxFileSize = 5 * 1024 * 1024; 
+  private readonly maxFileSize = 5 * 1024 * 1024;
 
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    private prometheusService: PrometheusService,
   ) {
     this.s3Client = new S3Client({
       endpoint: process.env.MINIO_ENDPOINT || 'http://minio:9000',
@@ -81,6 +83,8 @@ export class StorageService {
 
     const avatarUrl = `/avatars/${fileKey}?v=${Date.now()}`;
     await this.userModel.findOneAndUpdate({ email }, { avatar: avatarUrl });
+
+    this.prometheusService.incrementAvatarUploads();
 
     this.logger.log(`Avatar uploaded for ${email}: ${avatarUrl}`);
     return avatarUrl;

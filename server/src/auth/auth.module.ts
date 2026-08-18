@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from '../mail/mail.module';
 import { QueueModule } from '../queue/queue.module';
+import { PrometheusModule } from '../prometheus/prometheus.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { QueueModule } from '../queue/queue.module';
     ]),
     MailModule,
     QueueModule,
+    PrometheusModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

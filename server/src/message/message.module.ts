@@ -5,6 +5,7 @@ import { MessageController } from './message.controller';
 import { Message, MessageSchema } from './schemas/message.schema';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
+import { PrometheusModule } from '../prometheus/prometheus.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: User.name, schema: UserSchema },
     ]),
     AuthModule,
+    PrometheusModule,
   ],
   controllers: [MessageController],
   providers: [MessageService],

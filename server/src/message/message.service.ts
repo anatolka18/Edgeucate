@@ -4,12 +4,14 @@ import * as mongoose from 'mongoose';
 import { Message } from './schemas/message.schema';
 import { SendMessageDto } from '../user/dto/sendMessage.dto';
 import { User } from '../user/schemas/user.schema';
+import { PrometheusService } from '../prometheus/prometheus.service';
 
 @Injectable()
 export class MessageService {
   constructor(
     @InjectModel(Message.name) private messageModel: mongoose.Model<Message>,
     @InjectModel(User.name) private userModel: mongoose.Model<User>,
+    private prometheusService: PrometheusService,
   ) {}
 
   async sendMessage(dto: SendMessageDto): Promise<Message> {
@@ -51,6 +53,8 @@ export class MessageService {
       { email: recipient },
       { $addToSet: { chat: { interlocutor: sender } } },
     );
+
+    this.prometheusService.incrementChatMessageSent('private');
 
     return newMessage;
   }

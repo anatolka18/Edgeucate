@@ -11,6 +11,7 @@ import { UserSocketService } from './user.gateway';
 import { MessageModule } from '../message/message.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { PrometheusModule } from '../prometheus/prometheus.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ConfigService } from '@nestjs/config';
       }),
     }),
     MessageModule,
+    PrometheusModule,
   ],
   controllers: [UserController],
   providers: [UserService, StudentService, PresenceService, UserSocketService],
