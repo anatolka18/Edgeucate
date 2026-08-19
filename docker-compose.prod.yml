@@ -190,9 +190,12 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=https://grafana.edgeucate.space
       - GF_SERVER_DOMAIN=grafana.edgeucate.space
+      - GF_PATHS_CONFIG=/etc/grafana/custom.ini           
+      - GF_INSTALL_PLUGINS
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/custom.ini:/etc/grafana/custom.ini:ro  
     depends_on:
       - prometheus
     logging: *default-logging
@@ -202,9 +205,9 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 256M
+          memory: 512M
         reservations:
-          memory: 128M
+          memory: 256M
     labels:
       - "com.edgeucate.service=monitoring"
 
