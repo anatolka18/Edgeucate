@@ -25,8 +25,13 @@ jobs:
 
       - name: Install age
         run: |
-          sudo apt-get update
-          sudo apt-get install -y age
+          AGE_VERSION="1.2.1"
+          curl -L "https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz" -o /tmp/age.tar.gz
+          tar -xzf /tmp/age.tar.gz -C /tmp
+          sudo mv /tmp/age/age /usr/local/bin/
+          sudo mv /tmp/age/age-keygen /usr/local/bin/
+          sudo chmod +x /usr/local/bin/age /usr/local/bin/age-keygen
+          age --version
 
       - name: Decrypt secrets
         env:
