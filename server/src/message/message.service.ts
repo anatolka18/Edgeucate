@@ -44,14 +44,14 @@ export class MessageService {
       date: new Date(),
     });
 
-    await this.userModel.findOneAndUpdate(
-      { email: sender },
-      { $addToSet: { chat: { interlocutor: recipient } } },
+    await this.userModel.updateOne(
+      { email: sender, 'chat.interlocutor': { $ne: recipient } },
+      { $push: { chat: { interlocutor: recipient } } },
     );
 
-    await this.userModel.findOneAndUpdate(
-      { email: recipient },
-      { $addToSet: { chat: { interlocutor: sender } } },
+    await this.userModel.updateOne(
+      { email: recipient, 'chat.interlocutor': { $ne: sender } },
+      { $push: { chat: { interlocutor: sender } } },
     );
 
     this.prometheusService.incrementChatMessageSent('private');
