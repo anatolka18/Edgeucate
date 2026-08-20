@@ -1,9 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-montserrat: 'Montserrat', sans-serif;
 }
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   html {
@@ -11,14 +13,16 @@
     overflow-x: hidden;
   }
 
+  * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
+    touch-action: manipulation;
+  }
+
   body {
     font-family: var(--font-montserrat);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  * {
-    touch-action: manipulation;
+    @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100;
   }
 
   button, a, input, select, textarea, [role="button"] {

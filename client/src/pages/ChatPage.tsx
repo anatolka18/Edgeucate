@@ -295,7 +295,7 @@ const ChatPage: React.FC = () => {
     return (
       <div className="flex items-center">
         {checkingStatus ? (
-          <div className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg flex items-center min-h-[40px] text-sm">
+          <div className="px-3 sm:px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg flex items-center min-h-[40px] text-sm">
             <svg className="animate-spin h-4 w-4 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -306,7 +306,7 @@ const ChatPage: React.FC = () => {
           <button
             onClick={handleRemoveStudent}
             disabled={processingAction}
-            className="px-3 sm:px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 disabled:opacity-50 flex items-center min-h-[40px] text-sm whitespace-nowrap"
+            className="px-3 sm:px-4 py-2 bg-red-400 dark:bg-red-500 text-white rounded-lg hover:bg-red-500 dark:hover:bg-red-600 disabled:opacity-50 flex items-center min-h-[40px] text-sm whitespace-nowrap"
           >
             {processingAction ? (
               <svg className="animate-spin h-4 w-4 sm:mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -321,7 +321,7 @@ const ChatPage: React.FC = () => {
           <button
             onClick={handleAddStudent}
             disabled={processingAction}
-            className="px-3 sm:px-4 py-2 bg-emerald-400 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-50 flex items-center min-h-[40px] text-sm whitespace-nowrap"
+            className="px-3 sm:px-4 py-2 bg-emerald-400 dark:bg-emerald-500 text-white rounded-lg hover:bg-emerald-500 dark:hover:bg-emerald-600 disabled:opacity-50 flex items-center min-h-[40px] text-sm whitespace-nowrap"
           >
             {processingAction ? (
               <svg className="animate-spin h-4 w-4 sm:mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -582,26 +582,26 @@ const ChatPage: React.FC = () => {
   return (
     <>
       <div 
-        className={`flex flex-col bg-white overflow-hidden ${
+        className={`flex flex-col bg-white dark:bg-gray-800 overflow-hidden ${
           isMobile 
             ? '' 
-            : 'my-4 mx-4 rounded-xl shadow-sm border border-gray-200 max-w-5xl mx-auto'
+            : 'my-4 mx-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 max-w-5xl mx-auto'
         }`}
         style={chatStyle}
       >
-        <div className="border-b border-gray-200 bg-white px-3 sm:px-4 py-3 flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 sm:px-4 py-3 flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <NavLink
               to="/chats"
-              className="flex items-center justify-center text-[#3D5B82] hover:text-[#96C3D6] min-w-[40px] min-h-[40px] rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+              className="flex items-center justify-center text-[#3D5B82] dark:text-[#96C3D6] hover:text-[#96C3D6] dark:hover:text-white min-w-[40px] min-h-[40px] rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
               aria-label="Назад к чатам"
             >
               <ArrowLeft className="w-5 h-5" />
             </NavLink>
             <div className="relative min-w-0">
-              <h2 className="text-base sm:text-lg font-semibold truncate">{interlocutorName}</h2>
+              <h2 className="text-base sm:text-lg font-semibold truncate text-gray-900 dark:text-white">{interlocutorName}</h2>
               {isTyping && (
-                <p className="text-xs sm:text-sm text-gray-500 animate-pulse truncate">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 animate-pulse truncate">
                   печатает...
                 </p>
               )}
@@ -611,7 +611,7 @@ const ChatPage: React.FC = () => {
             {myRole !== Role.ADMIN && !isInterlocutorAdmin && (
               <button
                 onClick={() => setIsCalendarModalVisible(true)}
-                className="px-3 sm:px-4 py-2 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black rounded-lg transition-colors flex items-center min-h-[40px] text-sm whitespace-nowrap"
+                className="px-3 sm:px-4 py-2 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black dark:text-white rounded-lg transition-colors flex items-center min-h-[40px] text-sm whitespace-nowrap"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -630,12 +630,12 @@ const ChatPage: React.FC = () => {
             onContextMenu={(e) => e.preventDefault()}
           >
             {isLoadingMore && (
-              <div className="text-center text-gray-400 py-2">
+              <div className="text-center text-gray-400 dark:text-gray-500 py-2">
                 <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#3D5B82] mx-auto"></div>
               </div>
             )}
             {messages.length === 0 && !isLoadingMore && (
-              <div className="text-center text-gray-400 py-8 px-4">
+              <div className="text-center text-gray-400 dark:text-gray-500 py-8 px-4">
                 <p className="text-base">Начните общение</p>
                 <p className="text-sm mt-1">Отправьте первое сообщение</p>
               </div>
@@ -658,14 +658,14 @@ const ChatPage: React.FC = () => {
                 <React.Fragment key={messageKey}>
                   {dateSeparator && (
                     <div className="flex justify-center my-3">
-                      <span className="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                      <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-1 rounded-full">
                         {lastDateSeparator}
                       </span>
                     </div>
                   )}
                   <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-1`}>
                     {isEditing ? (
-                      <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm w-full max-w-sm">
+                      <div className="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm w-full max-w-sm">
                         <input
                           type="text"
                           value={editText}
@@ -674,13 +674,13 @@ const ChatPage: React.FC = () => {
                             if (e.key === 'Enter') handleSaveEdit();
                             if (e.key === 'Escape') handleCancelEdit();
                           }}
-                          className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6] mb-2 min-h-[44px] select-text"
+                          className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6] mb-2 min-h-[44px] select-text bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           autoFocus
                         />
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={handleCancelEdit}
-                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[40px]"
+                            className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[40px] text-gray-700 dark:text-gray-200"
                           >
                             Отмена
                           </button>
@@ -698,7 +698,7 @@ const ChatPage: React.FC = () => {
                           className={`group relative px-4 py-2.5 rounded-2xl ${
                             isOwn
                               ? 'bg-[#3D5B82] text-white rounded-br-md'
-                              : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md'
                           } ${isMenuOpen ? 'scale-95 opacity-90' : ''} transition-all`}
                           onDoubleClick={() => {
                             if (isOwn && !message.deleted && messageKey) {
@@ -723,14 +723,14 @@ const ChatPage: React.FC = () => {
                           ) : (
                             <p className="break-words text-[15px]" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{message.message}</p>
                           )}
-                          <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end text-blue-100' : 'justify-start text-gray-400'}`}>
+                          <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end text-blue-100' : 'justify-start text-gray-400 dark:text-gray-500'}`}>
                             <span className="text-xs whitespace-nowrap">{formatMessageDate(message.date)}</span>
                             {message.edited && <span className="text-xs opacity-70">изменено</span>}
                           </div>
                           {!message.deleted && messageKey && isMenuOpen && (
                             <div
                               ref={messageMenuRef}
-                              className="absolute -top-2 left-0 bg-white border border-gray-200 rounded-full px-1 py-0.5 shadow-lg -translate-y-1/2 -translate-x-1/3 flex items-center z-50"
+                              className="absolute -top-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full px-1 py-0.5 shadow-lg -translate-y-1/2 -translate-x-1/3 flex items-center z-50"
                               onClick={(e) => e.stopPropagation()}
                               onTouchStart={(e) => e.stopPropagation()}
                             >
@@ -739,7 +739,7 @@ const ChatPage: React.FC = () => {
                                   e.stopPropagation();
                                   handleCopyMessage(message.message);
                                 }}
-                                className="p-2 text-gray-500 hover:text-[#3D5B82] transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#3D5B82] dark:hover:text-[#96C3D6] transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                                 title="Копировать"
                                 aria-label="Копировать"
                               >
@@ -752,7 +752,7 @@ const ChatPage: React.FC = () => {
                                       e.stopPropagation();
                                       handleEditMessage(messageKey, message.message);
                                     }}
-                                    className="p-2 text-gray-500 hover:text-[#3D5B82] transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#3D5B82] dark:hover:text-[#96C3D6] transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                                     title="Редактировать"
                                     aria-label="Редактировать"
                                   >
@@ -763,7 +763,7 @@ const ChatPage: React.FC = () => {
                                       e.stopPropagation();
                                       handleDeleteMessage(messageKey);
                                     }}
-                                    className="p-2 text-gray-500 hover:text-red-500 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                                     title="Удалить"
                                     aria-label="Удалить"
                                   >
@@ -784,7 +784,7 @@ const ChatPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-200 bg-white px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2 flex-shrink-0 safe-area-bottom">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2 flex-shrink-0 safe-area-bottom">
           <div className="relative flex-1 max-w-full">
             <input
               type="text"
@@ -796,13 +796,13 @@ const ChatPage: React.FC = () => {
               }}
               onFocus={handleInputFocus}
               onKeyDown={handleKeyPress}
-              className="w-full py-3 pl-4 pr-14 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-gray-50 min-h-[48px] text-base select-text"
+              className="w-full py-3 pl-4 pr-14 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-gray-50 dark:bg-gray-700 min-h-[48px] text-base select-text text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
               autoComplete="off"
             />
             <button
               onClick={handleSendMessage}
               disabled={!newMessage.trim()}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#96C3D6] text-black rounded-lg hover:bg-[#3D5B82] hover:text-white disabled:opacity-40 disabled:hover:bg-[#96C3D6] disabled:hover:text-black transition-colors flex items-center justify-center active:scale-95"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#96C3D6] text-black dark:text-white rounded-lg hover:bg-[#3D5B82] hover:text-white disabled:opacity-40 disabled:hover:bg-[#96C3D6] disabled:hover:text-black dark:disabled:hover:text-white transition-colors flex items-center justify-center active:scale-95"
               aria-label="Отправить сообщение"
             >
               <Send className="w-5 h-5" />
@@ -813,14 +813,14 @@ const ChatPage: React.FC = () => {
 
       {isCalendarModalVisible && (
         <div className="fixed inset-0 bg-black/50 flex items-stretch md:items-center justify-center z-50 p-0 md:p-8">
-          <div className="w-full md:max-w-6xl h-full md:h-auto md:max-h-[90vh] bg-white md:rounded-xl shadow-2xl flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b bg-gray-50 flex-shrink-0 safe-area-top">
-              <h2 className="text-base sm:text-xl font-bold text-gray-800 truncate pr-2">
+          <div className="w-full md:max-w-6xl h-full md:h-auto md:max-h-[90vh] bg-white dark:bg-gray-800 md:rounded-xl shadow-2xl flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex-shrink-0 safe-area-top">
+              <h2 className="text-base sm:text-xl font-bold text-gray-800 dark:text-white truncate pr-2">
                 Календарь · {interlocutorName}
               </h2>
               <button
                 onClick={() => setIsCalendarModalVisible(false)}
-                className="text-gray-500 hover:text-gray-700 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-200 transition-colors"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 aria-label="Закрыть"
               >
                 <X className="w-6 h-6" />

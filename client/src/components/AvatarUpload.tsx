@@ -92,7 +92,7 @@ const AvatarUpload: FC<AvatarUploadProps> = ({ currentAvatar, username, onAvatar
         <div className="relative group">
             <div
                 onClick={handleClick}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden cursor-pointer shadow-lg transition-all hover:shadow-xl flex-shrink-0"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden cursor-pointer shadow-lg dark:shadow-gray-900/50 transition-all hover:shadow-xl flex-shrink-0"
             >
                 {previewUrl ? (
                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -125,7 +125,7 @@ const AvatarUpload: FC<AvatarUploadProps> = ({ currentAvatar, username, onAvatar
                         e.stopPropagation();
                         handleRemoveAvatar();
                     }}
-                    className="absolute -top-1 -right-1 w-6 h-6 min-w-0 min-h-0 bg-red-100 hover:bg-red-200 text-red-700 rounded-full flex items-center justify-center shadow transition-colors opacity-0 group-hover:opacity-100"
+                    className="absolute -top-1 -right-1 w-6 h-6 min-w-0 min-h-0 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 rounded-full flex items-center justify-center shadow transition-colors opacity-0 group-hover:opacity-100"
                     aria-label="Удалить аватар"
                 >
                     <X className="w-2.5 h-2.5" />

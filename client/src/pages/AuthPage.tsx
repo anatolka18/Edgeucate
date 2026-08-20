@@ -121,19 +121,19 @@ const AuthPage: FC = () => {
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-100 font-montserrat p-4">
+        <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 font-montserrat p-4">
             {isBlockedModalOpen && (
                 <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                        <h2 className="text-xl font-bold mb-4 text-red-600">Аккаунт заблокирован</h2>
-                        <p className="mb-4">Ваш аккаунт был заблокирован администратором.</p>
-                        <p className="mb-4 font-semibold">Причина:</p>
-                        <div className="bg-gray-100 p-3 rounded mb-4">
-                            <p className="text-gray-800 break-words">{blockReason}</p>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+                        <h2 className="text-xl font-bold mb-4 text-red-600 dark:text-red-400">Аккаунт заблокирован</h2>
+                        <p className="mb-4 text-gray-700 dark:text-gray-300">Ваш аккаунт был заблокирован администратором.</p>
+                        <p className="mb-4 font-semibold text-gray-700 dark:text-gray-300">Причина:</p>
+                        <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded mb-4">
+                            <p className="text-gray-800 dark:text-gray-200 break-words">{blockReason}</p>
                         </div>
                         <button
                             onClick={() => setIsBlockedModalOpen(false)}
-                            className="w-full sm:w-auto px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-500 hover:text-white"
+                            className="w-full sm:w-auto px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-500 hover:text-white transition-colors"
                         >
                             Понятно
                         </button>
@@ -143,24 +143,24 @@ const AuthPage: FC = () => {
 
             {showForgotPassword && (
                 <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                        <h2 className="text-xl font-bold mb-4">Восстановление пароля</h2>
-                        <p className="text-sm text-gray-600 mb-4">Введите email, на который отправить ссылку для сброса пароля.</p>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+                        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Восстановление пароля</h2>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Введите email, на который отправить ссылку для сброса пароля.</p>
                         <div className="relative mb-4">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                             <input
                                 type="email"
                                 placeholder="Email"
                                 value={resetEmail}
                                 onChange={(e) => setResetEmail(e.target.value)}
-                                className="w-full pl-10 p-3 border border-gray-300 rounded"
+                                className="w-full pl-10 p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                                 autoComplete="email"
                             />
                         </div>
                         <div className="flex flex-col sm:flex-row justify-end gap-2">
                             <button
                                 onClick={() => setShowForgotPassword(false)}
-                                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+                                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-colors"
                             >
                                 Отмена
                             </button>
@@ -176,12 +176,12 @@ const AuthPage: FC = () => {
                 </div>
             )}
 
-            <div className="bg-gray-200 p-6 rounded-lg shadow-lg w-full max-w-[400px] mx-4">
+            <div className="bg-gray-200 dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-[400px] mx-4">
                 <div className="flex justify-center mb-4">
                     <img src={Logo} alt="Logo" className="h-12" />
                 </div>
 
-                <h2 className="text-center text-xl font-semibold mb-6">{isLogin ? 'Вход' : 'Регистрация'}</h2>
+                <h2 className="text-center text-xl font-semibold mb-6 text-gray-900 dark:text-white">{isLogin ? 'Вход' : 'Регистрация'}</h2>
 
                 <form onSubmit={isLogin ? loginHandler : registrationHandler}>
                     {!isLogin && (
@@ -190,40 +190,40 @@ const AuthPage: FC = () => {
                             placeholder="Ваше имя"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full mb-3 p-3 border border-gray-300 rounded"
+                            className="w-full mb-3 p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                             autoComplete="username"
                             required
                         />
                     )}
 
                     <div className="relative mb-3">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                         <input
                             type="email"
                             placeholder="Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className={`w-full pl-10 pr-3 p-3 border rounded ${email && !validateEmail(email) ? 'border-red-400' : 'border-gray-300'}`}
+                            className={`w-full pl-10 pr-3 p-3 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${email && !validateEmail(email) ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                             autoComplete="email"
                             required
                         />
                     </div>
 
                     <div className="relative mb-3">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                         <input
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Пароль"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full pl-10 pr-12 p-3 border border-gray-300 rounded"
+                            className="w-full pl-10 pr-12 p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                             autoComplete="current-password"
                             required
                             minLength={8}
                         />
                         <button
                             type="button"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2"
                             onClick={() => setShowPassword(!showPassword)}
                             aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
                         >
@@ -235,19 +235,19 @@ const AuthPage: FC = () => {
                         <>
                             <PasswordStrength password={password} />
                             <div className="relative mb-3 mt-3">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                                 <input
                                     type={showPasswordTwo ? 'text' : 'password'}
                                     placeholder="Подтвердите пароль"
                                     value={passwordTwo}
                                     onChange={(e) => setPasswordTwo(e.target.value)}
-                                    className={`w-full pl-10 pr-12 p-3 border rounded ${passwordTwo && password !== passwordTwo ? 'border-red-400' : 'border-gray-300'}`}
+                                    className={`w-full pl-10 pr-12 p-3 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${passwordTwo && password !== passwordTwo ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                                     required
                                     minLength={8}
                                 />
                                 <button
                                     type="button"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2"
                                     onClick={() => setShowPasswordTwo(!showPasswordTwo)}
                                     aria-label={showPasswordTwo ? 'Скрыть пароль' : 'Показать пароль'}
                                 >
@@ -259,15 +259,15 @@ const AuthPage: FC = () => {
 
                     {!isLogin && (
                         <div className="mb-4">
-                            <p className="text-sm text-gray-600 mb-2 font-medium">Кто вы?</p>
-                            <div className="flex rounded-lg overflow-hidden border-2 border-gray-300">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Кто вы?</p>
+                            <div className="flex rounded-lg overflow-hidden border-2 border-gray-300 dark:border-gray-600">
                                 <button
                                     type="button"
                                     onClick={() => setRole('Student')}
                                     className={`flex-1 py-3 px-4 text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 min-h-[48px] ${
                                         role === 'Student'
                                             ? 'bg-[#3D5B82] text-white shadow-inner'
-                                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
                                     }`}
                                 >
                                     <GraduationCap className="w-4 h-4" />
@@ -276,10 +276,10 @@ const AuthPage: FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setRole('Teacher')}
-                                    className={`flex-1 py-3 px-4 text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 min-h-[48px] border-l-2 border-gray-300 ${
+                                    className={`flex-1 py-3 px-4 text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 min-h-[48px] border-l-2 border-gray-300 dark:border-gray-600 ${
                                         role === 'Teacher'
                                             ? 'bg-[#3D5B82] text-white shadow-inner'
-                                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
                                     }`}
                                 >
                                     <BookOpen className="w-4 h-4" />
@@ -299,7 +299,7 @@ const AuthPage: FC = () => {
 
                 <button
                     onClick={() => setIsLogin(!isLogin)}
-                    className="mt-4 w-full py-2 text-blue-500 hover:underline"
+                    className="mt-4 w-full py-2 text-blue-500 dark:text-blue-400 hover:underline"
                 >
                     {isLogin ? 'Создать аккаунт' : 'Уже есть аккаунт? Войти'}
                 </button>
@@ -307,7 +307,7 @@ const AuthPage: FC = () => {
                 {isLogin && (
                     <button
                         onClick={() => setShowForgotPassword(true)}
-                        className="mt-2 w-full py-2 text-sm text-gray-500 hover:text-[#3D5B82] hover:underline transition"
+                        className="mt-2 w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#3D5B82] dark:hover:text-[#96C3D6] hover:underline transition"
                     >
                         Забыли пароль?
                     </button>

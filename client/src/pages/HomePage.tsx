@@ -117,31 +117,22 @@ const HomePage: FC = () => {
   const allSubjects = subjectCategories.flatMap((c) => c.subjects).slice(0, 20);
 
   return (
-    <div className="bg-white overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 overflow-hidden">
       <section className="relative min-h-[100dvh] flex items-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#3D5B82] via-[#4A6FA5] to-[#5B7DB8]">
           <div className="absolute inset-0 opacity-30">
             <motion.div
-              animate={{
-                scale: [1, 1.2, 1],
-                rotate: [0, 90, 0],
-              }}
+              animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               className="absolute top-0 left-1/4 w-96 h-96 bg-[#F16E4B]/30 rounded-full blur-3xl"
             />
             <motion.div
-              animate={{
-                scale: [1.2, 1, 1.2],
-                rotate: [0, -90, 0],
-              }}
+              animate={{ scale: [1.2, 1, 1.2], rotate: [0, -90, 0] }}
               transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
               className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#96C3D6]/30 rounded-full blur-3xl"
             />
             <motion.div
-              animate={{
-                x: [0, 100, 0],
-                y: [0, -50, 0],
-              }}
+              animate={{ x: [0, 100, 0], y: [0, -50, 0] }}
               transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
               className="absolute top-1/3 right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl"
             />
@@ -256,27 +247,27 @@ const HomePage: FC = () => {
                 <motion.div
                   animate={{ y: [0, -15, 0] }}
                   transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute top-10 right-0 bg-white rounded-3xl shadow-2xl p-6 w-80"
+                  className="absolute top-10 right-0 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 w-80"
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-[#3D5B82] to-[#5B7DB8] rounded-2xl flex items-center justify-center text-white font-bold">
                       МК
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900">Мария Козлова</p>
+                      <p className="font-bold text-gray-900 dark:text-white">Мария Козлова</p>
                       <div className="flex items-center gap-1">
                         <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
-                        <span className="text-xs text-gray-600">4.9 · Математика</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">4.9 · Математика</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2 mb-4">
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">ЕГЭ</span>
-                    <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">ОГЭ</span>
-                    <span className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">5-11 класс</span>
+                    <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">ЕГЭ</span>
+                    <span className="px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full">ОГЭ</span>
+                    <span className="px-3 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">5-11 класс</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-gray-900">1800 ₽<span className="text-sm text-gray-500">/час</span></span>
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">1800 ₽<span className="text-sm text-gray-500 dark:text-gray-400">/час</span></span>
                     <button className="px-4 py-2 bg-[#3D5B82] text-white text-sm rounded-xl font-medium">
                       Записаться
                     </button>
@@ -286,18 +277,18 @@ const HomePage: FC = () => {
                 <motion.div
                   animate={{ y: [0, 15, 0] }}
                   transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                  className="absolute bottom-20 left-0 bg-white rounded-2xl shadow-2xl p-5 w-64"
+                  className="absolute bottom-20 left-0 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-5 w-64"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
+                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Средний прогресс</p>
-                      <p className="text-lg font-bold text-gray-900">+32 балла</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Средний прогресс</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">+32 балла</p>
                     </div>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: "78%" }}
@@ -325,13 +316,13 @@ const HomePage: FC = () => {
                 <motion.div
                   animate={{ y: [0, 10, 0] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-                  className="absolute bottom-0 right-10 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3"
+                  className="absolute bottom-0 right-10 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex items-center gap-3"
                 >
                   <div className="flex -space-x-2">
                     {["АП", "ДИ", "ЕС"].map((avatar, i) => (
                       <div
                         key={i}
-                        className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] border-2 border-white flex items-center justify-center text-white text-xs font-bold"
+                        className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3D5B82] to-[#96C3D6] border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold"
                       >
                         {avatar}
                       </div>
@@ -343,7 +334,7 @@ const HomePage: FC = () => {
                         <Star key={i} className="w-3 h-3 text-yellow-500 fill-current" />
                       ))}
                     </div>
-                    <p className="text-xs text-gray-600 mt-0.5">1200+ отзывов</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">1200+ отзывов</p>
                   </div>
                 </motion.div>
               </div>
@@ -369,9 +360,9 @@ const HomePage: FC = () => {
         </motion.div>
       </section>
 
-      <section className="py-8 bg-gray-50 border-y border-gray-100">
+      <section className="py-8 bg-gray-50 dark:bg-gray-800 border-y border-gray-100 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 text-gray-400">
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 text-gray-400 dark:text-gray-500">
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5" />
               <span className="text-sm font-medium">Верифицированные преподаватели</span>
@@ -388,15 +379,15 @@ const HomePage: FC = () => {
         </div>
       </section>
 
-      <section className="py-12 bg-white overflow-hidden">
+      <section className="py-12 bg-white dark:bg-gray-900 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-          <p className="text-center text-sm font-semibold text-gray-500 uppercase tracking-wider">
+          <p className="text-center text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             Более 50 предметов
           </p>
         </div>
         <div className="relative">
-          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent z-10" />
-          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent z-10" />
+          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white dark:from-gray-900 to-transparent z-10" />
+          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white dark:from-gray-900 to-transparent z-10" />
           <motion.div
             animate={{ x: ["0%", "-50%"] }}
             transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
@@ -405,7 +396,7 @@ const HomePage: FC = () => {
             {[...allSubjects, ...allSubjects].map((subject, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-full text-sm font-medium text-gray-700 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
               >
                 <BookOpen className="w-4 h-4 text-[#3D5B82]" />
                 {subject}
@@ -415,7 +406,7 @@ const HomePage: FC = () => {
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-gradient-to-br from-gray-50 to-white">
+      <section className="py-16 md:py-24 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -423,10 +414,10 @@ const HomePage: FC = () => {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <span className="inline-block px-4 py-1.5 bg-[#3D5B82]/10 text-[#3D5B82] text-sm font-semibold rounded-full mb-4">
+            <span className="inline-block px-4 py-1.5 bg-[#3D5B82]/10 text-[#3D5B82] dark:text-[#96C3D6] text-sm font-semibold rounded-full mb-4">
               Нам доверяют
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Цифры говорят сами за себя
             </h2>
           </motion.div>
@@ -445,24 +436,24 @@ const HomePage: FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="relative bg-white rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-sm hover:shadow-xl transition-all border border-gray-100 group overflow-hidden"
+                className="relative bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-sm hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 group overflow-hidden"
               >
                 <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br ${stat.color} opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity`} />
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-4 shadow-lg`}>
                   <stat.icon className="w-6 h-6 text-white" />
                 </div>
-                <div className="text-3xl md:text-5xl font-bold text-gray-900 mb-2">
+                <div className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">
                   {stat.value}
-                  <span className="text-[#3D5B82]">{stat.suffix}</span>
+                  <span className="text-[#3D5B82] dark:text-[#96C3D6]">{stat.suffix}</span>
                 </div>
-                <p className="text-sm md:text-base text-gray-600 font-medium">{stat.label}</p>
+                <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 font-medium">{stat.label}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-16 md:py-24 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -473,10 +464,10 @@ const HomePage: FC = () => {
             <span className="inline-block px-4 py-1.5 bg-[#F16E4B]/10 text-[#F16E4B] text-sm font-semibold rounded-full mb-4">
               Возможности
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Всё для комфортного обучения
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-lg">
               Одна платформа заменяет десятки сервисов
             </p>
           </motion.div>
@@ -521,11 +512,11 @@ const HomePage: FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="md:col-span-2 relative bg-gradient-to-br from-orange-50 to-orange-100 rounded-3xl p-6 overflow-hidden group min-h-[180px]"
+              className="md:col-span-2 relative bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-3xl p-6 overflow-hidden group min-h-[180px]"
             >
               <Calendar className="w-8 h-8 text-[#F16E4B] mb-3" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Умный календарь</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2">Умный календарь</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                 Планируйте занятия без конфликтов и накладок
               </p>
             </motion.div>
@@ -535,11 +526,11 @@ const HomePage: FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="md:col-span-2 relative bg-gradient-to-br from-purple-50 to-purple-100 rounded-3xl p-6 overflow-hidden group min-h-[180px]"
+              className="md:col-span-2 relative bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-3xl p-6 overflow-hidden group min-h-[180px]"
             >
-              <MessageCircle className="w-8 h-8 text-purple-600 mb-3" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Мгновенные сообщения</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
+              <MessageCircle className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-3" />
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2">Мгновенные сообщения</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                 Редактирование, удаление и индикатор печати
               </p>
             </motion.div>
@@ -549,20 +540,20 @@ const HomePage: FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="md:col-span-3 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-3xl p-6 md:p-8 overflow-hidden min-h-[180px]"
+              className="md:col-span-3 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-3xl p-6 md:p-8 overflow-hidden min-h-[180px]"
             >
               <div className="flex items-center gap-2 mb-4">
                 <Star className="w-6 h-6 text-yellow-500 fill-current" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-900">Реальные отзывы</h3>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Реальные отзывы</h3>
               </div>
-              <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base leading-relaxed">
                 Только ученики, которые действительно занимались с преподавателем, могут оставить отзыв
               </p>
               <div className="flex items-center gap-1 mt-4">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Star key={i} className="w-5 h-5 text-yellow-500 fill-current" />
                 ))}
-                <span className="ml-2 text-sm font-semibold text-gray-900">4.9 из 5</span>
+                <span className="ml-2 text-sm font-semibold text-gray-900 dark:text-white">4.9 из 5</span>
               </div>
             </motion.div>
 
@@ -571,24 +562,24 @@ const HomePage: FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="md:col-span-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-6 md:p-8 overflow-hidden min-h-[180px]"
+              className="md:col-span-3 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-3xl p-6 md:p-8 overflow-hidden min-h-[180px]"
             >
-              <Shield className="w-6 h-6 text-green-600 mb-4" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Безопасность данных</h3>
-              <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+              <Shield className="w-6 h-6 text-green-600 dark:text-green-400 mb-4" />
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2">Безопасность данных</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base leading-relaxed">
                 Шифрование, защита от атак и модерация всех преподавателей. Ваши данные под надёжной защитой.
               </p>
               <div className="flex gap-2 mt-4 flex-wrap">
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">HTTPS</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">CSRF</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">JWT</span>
+                <span className="px-3 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs rounded-full font-medium">HTTPS</span>
+                <span className="px-3 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs rounded-full font-medium">CSRF</span>
+                <span className="px-3 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs rounded-full font-medium">JWT</span>
               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-gray-50">
+      <section className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -596,10 +587,10 @@ const HomePage: FC = () => {
             viewport={{ once: true }}
             className="text-center mb-12 md:mb-16"
           >
-            <span className="inline-block px-4 py-1.5 bg-[#3D5B82]/10 text-[#3D5B82] text-sm font-semibold rounded-full mb-4">
+            <span className="inline-block px-4 py-1.5 bg-[#3D5B82]/10 text-[#3D5B82] dark:text-[#96C3D6] text-sm font-semibold rounded-full mb-4">
               Как это работает
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Три шага к результату
             </h2>
           </motion.div>
@@ -636,23 +627,23 @@ const HomePage: FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.2 }}
-                className="relative bg-white rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all border border-gray-100 group"
+                className="relative bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 group"
               >
                 <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform relative z-10`}>
                   <item.icon className="w-10 h-10 text-white" />
                 </div>
-                <div className="absolute top-6 right-6 text-5xl font-bold text-gray-100 group-hover:text-gray-200 transition-colors">
+                <div className="absolute top-6 right-6 text-5xl font-bold text-gray-100 dark:text-gray-800 group-hover:text-gray-200 dark:group-hover:text-gray-700 transition-colors">
                   {item.step}
                 </div>
-                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-3">{item.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{item.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-16 md:py-24 bg-white dark:bg-gray-900">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -660,10 +651,10 @@ const HomePage: FC = () => {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <span className="inline-block px-4 py-1.5 bg-yellow-100 text-yellow-700 text-sm font-semibold rounded-full mb-4">
+            <span className="inline-block px-4 py-1.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-sm font-semibold rounded-full mb-4">
               Отзывы
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Что говорят наши пользователи
             </h2>
           </motion.div>
@@ -676,10 +667,10 @@ const HomePage: FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.5 }}
-                className="bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100"
+                className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 dark:border-gray-700"
               >
-                <Quote className="w-12 h-12 text-[#3D5B82]/20 mb-6" />
-                <p className="text-xl md:text-2xl text-gray-800 leading-relaxed mb-8 font-medium">
+                <Quote className="w-12 h-12 text-[#3D5B82]/20 dark:text-[#96C3D6]/20 mb-6" />
+                <p className="text-xl md:text-2xl text-gray-800 dark:text-gray-200 leading-relaxed mb-8 font-medium">
                   "{testimonials[currentTestimonial].text}"
                 </p>
                 <div className="flex items-center gap-4">
@@ -687,8 +678,8 @@ const HomePage: FC = () => {
                     {testimonials[currentTestimonial].avatar}
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900">{testimonials[currentTestimonial].name}</p>
-                    <p className="text-sm text-gray-500">{testimonials[currentTestimonial].role}</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{testimonials[currentTestimonial].name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{testimonials[currentTestimonial].role}</p>
                   </div>
                   <div className="ml-auto flex gap-1">
                     {Array.from({ length: testimonials[currentTestimonial].rating }).map((_, i) => (
@@ -704,7 +695,7 @@ const HomePage: FC = () => {
                 onClick={() =>
                   setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)
                 }
-                className="w-11 h-11 rounded-full bg-white border border-gray-200 hover:border-[#3D5B82] hover:text-[#3D5B82] flex items-center justify-center transition-colors min-h-[44px] min-w-[44px]"
+                className="w-11 h-11 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#3D5B82] dark:hover:border-[#96C3D6] hover:text-[#3D5B82] dark:hover:text-[#96C3D6] flex items-center justify-center transition-colors min-h-[44px] min-w-[44px]"
                 aria-label="Предыдущий отзыв"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -715,7 +706,7 @@ const HomePage: FC = () => {
                     key={i}
                     onClick={() => setCurrentTestimonial(i)}
                     className={`h-2 rounded-full transition-all ${
-                      i === currentTestimonial ? "w-8 bg-[#3D5B82]" : "w-2 bg-gray-300"
+                      i === currentTestimonial ? "w-8 bg-[#3D5B82] dark:bg-[#96C3D6]" : "w-2 bg-gray-300 dark:bg-gray-600"
                     }`}
                     aria-label={`Отзыв ${i + 1}`}
                   />
@@ -723,7 +714,7 @@ const HomePage: FC = () => {
               </div>
               <button
                 onClick={() => setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)}
-                className="w-11 h-11 rounded-full bg-white border border-gray-200 hover:border-[#3D5B82] hover:text-[#3D5B82] flex items-center justify-center transition-colors min-h-[44px] min-w-[44px]"
+                className="w-11 h-11 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#3D5B82] dark:hover:border-[#96C3D6] hover:text-[#3D5B82] dark:hover:text-[#96C3D6] flex items-center justify-center transition-colors min-h-[44px] min-w-[44px]"
                 aria-label="Следующий отзыв"
               >
                 <ChevronRight className="w-5 h-5" />

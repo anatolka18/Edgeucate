@@ -1,9 +1,10 @@
-import { FC, useState, useEffect } from "react";
+﻿import { FC, useState, useEffect } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import FullLogo from "../assets/FullLogo.png";
 import { useAuth } from "../hooks/useAuth";
 import { useMyProfile } from "../hooks/useMyProfile";
 import { Role } from "../types/user";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   Search,
   User,
@@ -54,17 +55,24 @@ const Header: FC = () => {
     `flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 min-h-[44px] ${
       isActive
         ? "bg-[#3D5B82] text-white"
-        : "text-gray-700 hover:bg-gray-100"
+        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
     }`;
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top">
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 safe-area-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-3 min-w-[44px] min-h-[44px]">
-            <img src={FullLogo} alt="Edgeucate" className="h-10" />
+        <div className="flex items-center justify-between h-16 gap-2">
+          <Link 
+            to="/" 
+            className="flex items-center gap-3 min-w-[44px] min-h-[44px] flex-shrink-0"
+          >
+            <img 
+              src={FullLogo} 
+              alt="Edgeucate" 
+              className="h-8 sm:h-10 w-auto flex-shrink-0" 
+            />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-2">
@@ -114,7 +122,9 @@ const Header: FC = () => {
             )}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ThemeToggle />
+
             {isAuth ? (
               <NavLink to="/myprofile" className={navLinkClass}>
                 <User className="w-4 h-4" />
@@ -129,14 +139,14 @@ const Header: FC = () => {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
               aria-label={mobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
               aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-gray-700" />
+                <X className="w-6 h-6 text-gray-700 dark:text-gray-200" />
               ) : (
-                <Menu className="w-6 h-6 text-gray-700" />
+                <Menu className="w-6 h-6 text-gray-700 dark:text-gray-200" />
               )}
             </button>
           </div>
@@ -150,7 +160,7 @@ const Header: FC = () => {
             onClick={closeMobileMenu}
             aria-hidden="true"
           />
-          <nav className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 py-3 px-4 space-y-1 z-50 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
+          <nav className="lg:hidden absolute top-16 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-3 px-4 space-y-1 z-50 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
             <NavLink to="/" className={navLinkClass} end onClick={closeMobileMenu}>
               <BookOpen className="w-5 h-5" />
               <span>Главная</span>

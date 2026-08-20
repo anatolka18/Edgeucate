@@ -44,10 +44,10 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
-        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg max-w-md w-full mx-4 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Недействительная ссылка</h2>
-          <p className="text-gray-600">Токен отсутствует. Запросите сброс пароля заново.</p>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-lg shadow-lg max-w-md w-full mx-4 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Недействительная ссылка</h2>
+          <p className="text-gray-600 dark:text-gray-400">Токен отсутствует. Запросите сброс пароля заново.</p>
           <button
             onClick={() => navigate('/auth')}
             className="mt-4 w-full sm:w-auto px-6 py-3 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2D4B6E] transition-colors font-medium"
@@ -60,25 +60,25 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-[400px] mx-4">
-        <h2 className="text-2xl font-bold text-center mb-6">Сброс пароля</h2>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-[400px] mx-4">
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">Сброс пароля</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Новый пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-12 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#3D5B82]"
+                className="w-full pl-10 pr-12 p-3 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-[#3D5B82] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 required
                 minLength={8}
               />
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
               >
@@ -88,19 +88,19 @@ export default function ResetPasswordPage() {
             <PasswordStrength password={password} />
           </div>
           <div className="relative mb-4">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
             <input
               type={showConfirmPassword ? 'text' : 'password'}
               placeholder="Подтвердите пароль"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full pl-10 pr-12 p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#3D5B82] ${confirmPassword && password !== confirmPassword ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full pl-10 pr-12 p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#3D5B82] bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${confirmPassword && password !== confirmPassword ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
               required
               minLength={8}
             />
             <button
               type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               aria-label={showConfirmPassword ? 'Скрыть пароль' : 'Показать пароль'}
             >

@@ -149,31 +149,31 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       {!readOnly && teacherEmail && (
         <button
           onClick={() => setShowCreateModal(true)}
-          className="mb-4 px-4 py-3 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black rounded-lg transition-colors font-medium min-h-[44px] w-full sm:w-auto flex items-center justify-center gap-2"
+          className="mb-4 px-4 py-3 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black dark:text-white rounded-lg transition-colors font-medium min-h-[44px] w-full sm:w-auto flex items-center justify-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Добавить событие
         </button>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <button
             onClick={handlePrevMonth}
-            className="p-2 rounded-lg hover:bg-gray-200 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center text-gray-700 dark:text-gray-200"
             aria-label="Предыдущий месяц"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
 
           <div className="flex flex-col items-center gap-1">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 capitalize">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white capitalize">
               {currentDate.format('MMMM YYYY')}
             </h3>
             <div className="flex items-center gap-1">
               <button
                 onClick={handleToday}
-                className="text-xs text-[#3D5B82] hover:underline px-2 py-0.5 font-medium"
+                className="text-xs text-[#3D5B82] dark:text-[#96C3D6] hover:underline px-2 py-0.5 font-medium"
               >
                 Сегодня
               </button>
@@ -182,7 +182,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 className={`text-xs px-2 py-0.5 rounded-md font-medium transition-colors flex items-center gap-1 ${
                   showMonthEvents
                     ? 'bg-[#3D5B82] text-white'
-                    : 'text-[#3D5B82] hover:bg-[#3D5B82]/10'
+                    : 'text-[#3D5B82] dark:text-[#96C3D6] hover:bg-[#3D5B82]/10 dark:hover:bg-[#96C3D6]/10'
                 }`}
               >
                 <CalendarDays className="w-3 h-3" />
@@ -193,25 +193,25 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
           <button
             onClick={handleNextMonth}
-            className="p-2 rounded-lg hover:bg-gray-200 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center text-gray-700 dark:text-gray-200"
             aria-label="Следующий месяц"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+        <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           {weekDays.map((day) => (
             <div
               key={day}
-              className="py-2 text-center text-xs sm:text-sm font-semibold text-gray-600 uppercase"
+              className="py-2 text-center text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase"
             >
               {day}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 bg-white">
+        <div className="grid grid-cols-7 bg-white dark:bg-gray-800">
           {days.map((day, index) => {
             const isCurrentMonth = day.month() === currentDate.month();
             const isToday = day.isSame(moment(), 'day');
@@ -223,17 +223,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 key={index}
                 onClick={() => handleDayClick(day)}
                 className={`
-                  relative min-h-[60px] sm:min-h-[80px] p-1 sm:p-2 border-r border-b border-gray-100
-                  transition-colors hover:bg-gray-50 active:bg-gray-100
-                  ${!isCurrentMonth ? 'bg-gray-50/50' : 'bg-white'}
-                  ${isSelected ? 'ring-2 ring-[#3D5B82] ring-inset bg-blue-50/50' : ''}
+                  relative min-h-[60px] sm:min-h-[80px] p-1 sm:p-2 border-r border-b border-gray-100 dark:border-gray-700
+                  transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600
+                  ${!isCurrentMonth ? 'bg-gray-50/50 dark:bg-gray-900/50' : 'bg-white dark:bg-gray-800'}
+                  ${isSelected ? 'ring-2 ring-[#3D5B82] dark:ring-[#96C3D6] ring-inset bg-blue-50/50 dark:bg-blue-900/20' : ''}
                 `}
                 aria-label={`День ${day.format('D MMMM YYYY')}`}
               >
                 <div className={`
                   text-xs sm:text-sm font-medium
-                  ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
-                  ${isToday ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#3D5B82] text-white flex items-center justify-center mx-auto' : ''}
+                  ${!isCurrentMonth ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'}
+                  ${isToday ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#3D5B82] dark:bg-[#96C3D6] text-white dark:text-gray-900 flex items-center justify-center mx-auto' : ''}
                 `}>
                   {day.date()}
                 </div>
@@ -245,12 +245,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       return (
                         <div
                           key={i}
-                          className={`w-1.5 h-1.5 rounded-full ${isMyEvent ? 'bg-[#3D5B82]' : 'bg-[#96C3D6]'}`}
+                          className={`w-1.5 h-1.5 rounded-full ${isMyEvent ? 'bg-[#3D5B82] dark:bg-[#96C3D6]' : 'bg-[#96C3D6] dark:bg-[#96C3D6]/60'}`}
                         />
                       );
                     })}
                     {dayEvents.length > 3 && (
-                      <span className="text-[9px] text-gray-500 font-semibold">+{dayEvents.length - 3}</span>
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400 font-semibold">+{dayEvents.length - 3}</span>
                     )}
                   </div>
                 )}
@@ -262,7 +262,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {selectedDate && selectedDayEvents.length > 0 && (
         <div className="mt-4">
-          <h4 className="text-sm font-semibold text-gray-700 px-1 mb-2">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 px-1 mb-2">
             События на {moment(selectedDate).format('D MMMM YYYY')}:
           </h4>
           <div className="space-y-2">
@@ -273,12 +273,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   setSelectedEvent(event);
                   setShowEventModal(true);
                 }}
-                className="w-full text-left bg-gradient-to-r from-[#3D5B82]/10 to-[#96C3D6]/10 hover:from-[#3D5B82]/20 hover:to-[#96C3D6]/20 border border-[#3D5B82]/20 rounded-lg p-3 transition-colors min-h-[48px]"
+                className="w-full text-left bg-gradient-to-r from-[#3D5B82]/10 to-[#96C3D6]/10 dark:from-[#3D5B82]/20 dark:to-[#96C3D6]/20 hover:from-[#3D5B82]/20 hover:to-[#96C3D6]/20 dark:hover:from-[#3D5B82]/30 dark:hover:to-[#96C3D6]/30 border border-[#3D5B82]/20 dark:border-[#96C3D6]/30 rounded-lg p-3 transition-colors min-h-[48px]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{event.title}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-600 flex-wrap">
+                    <p className="font-semibold text-gray-900 dark:text-white truncate">{event.title}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {event.time}
@@ -295,7 +295,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       )}
                     </div>
                   </div>
-                  <ChevronRightIcon className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
+                  <ChevronRightIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1" />
                 </div>
               </button>
             ))}
@@ -305,7 +305,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {showMonthEvents && (
         <div className="mt-4">
-          <h4 className="text-sm font-semibold text-gray-700 px-1 mb-2 flex items-center gap-2">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 px-1 mb-2 flex items-center gap-2">
             <CalendarDays className="w-4 h-4" />
             Все события за {currentDate.format('MMMM YYYY')} ({monthEvents.length})
           </h4>
@@ -318,12 +318,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     setSelectedEvent(event);
                     setShowEventModal(true);
                   }}
-                  className="w-full text-left bg-gradient-to-r from-[#3D5B82]/10 to-[#96C3D6]/10 hover:from-[#3D5B82]/20 hover:to-[#96C3D6]/20 border border-[#3D5B82]/20 rounded-lg p-3 transition-colors min-h-[48px]"
+                  className="w-full text-left bg-gradient-to-r from-[#3D5B82]/10 to-[#96C3D6]/10 dark:from-[#3D5B82]/20 dark:to-[#96C3D6]/20 hover:from-[#3D5B82]/20 hover:to-[#96C3D6]/20 dark:hover:from-[#3D5B82]/30 dark:hover:to-[#96C3D6]/30 border border-[#3D5B82]/20 dark:border-[#96C3D6]/30 rounded-lg p-3 transition-colors min-h-[48px]"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{event.title}</p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-600 flex-wrap">
+                      <p className="font-semibold text-gray-900 dark:text-white truncate">{event.title}</p>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {moment(event.date).format('D MMM')} · {event.time}
@@ -340,15 +340,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         )}
                       </div>
                     </div>
-                    <ChevronRightIcon className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
+                    <ChevronRightIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1" />
                   </div>
                 </button>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-              <CalendarDays className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500 text-sm">Событий в этом месяце нет</p>
+            <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+              <CalendarDays className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Событий в этом месяце нет</p>
             </div>
           )}
         </div>
@@ -356,32 +356,32 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto safe-area-top safe-area-bottom">
-            <h3 className="text-lg font-bold mb-4">Новое событие</h3>
+          <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-xl shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto safe-area-top safe-area-bottom">
+            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Новое событие</h3>
             <div className="space-y-3">
               <input
                 type="text"
                 placeholder="Название"
-                className="w-full p-3 border border-gray-300 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                 value={newEvent.title}
                 onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
               />
               <input
                 type="date"
-                className="w-full p-3 border border-gray-300 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 value={newEvent.date}
                 onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
               />
               <input
                 type="time"
-                className="w-full p-3 border border-gray-300 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 value={newEvent.time}
                 onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
               />
               <input
                 type="number"
                 placeholder="Стоимость"
-                className="w-full p-3 border border-gray-300 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                 value={newEvent.cost}
                 onChange={(e) => setNewEvent({ ...newEvent, cost: Number(e.target.value) })}
               />
@@ -390,14 +390,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   <input
                     type="email"
                     placeholder="Email ученика"
-                    className="w-full p-3 border border-gray-300 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     value={newEvent.student_email}
                     onChange={(e) => setNewEvent({ ...newEvent, student_email: e.target.value })}
                   />
                   <input
                     type="text"
                     placeholder="Имя ученика"
-                    className="w-full p-3 border border-gray-300 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6]"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     value={newEvent.student_username}
                     onChange={(e) => setNewEvent({ ...newEvent, student_username: e.target.value })}
                   />
@@ -407,13 +407,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 min-h-[44px] font-medium"
+                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 min-h-[44px] font-medium text-gray-700 dark:text-gray-200"
               >
                 Отмена
               </button>
               <button
                 onClick={handleCreateEvent}
-                className="px-4 py-3 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black rounded-lg min-h-[44px] font-medium transition-colors"
+                className="px-4 py-3 bg-[#96C3D6] hover:bg-[#3D5B82] hover:text-white text-black dark:text-white rounded-lg min-h-[44px] font-medium transition-colors"
               >
                 Создать
               </button>
@@ -424,27 +424,27 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {showEventModal && selectedEvent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg w-full max-w-md mx-4 safe-area-top safe-area-bottom">
-            <h3 className="text-lg font-bold mb-4 break-words">{selectedEvent.title}</h3>
+          <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-xl shadow-lg w-full max-w-md mx-4 safe-area-top safe-area-bottom">
+            <h3 className="text-lg font-bold mb-4 break-words text-gray-900 dark:text-white">{selectedEvent.title}</h3>
             <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-3 text-gray-700">
-                <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="break-words">Преподаватель: <b>{selectedEvent.teacher_username}</b></span>
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                <User className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                <span className="break-words">Преподаватель: <b className="text-gray-900 dark:text-white">{selectedEvent.teacher_username}</b></span>
               </div>
-              <div className="flex items-center gap-3 text-gray-700">
-                <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="break-words">Ученик: <b>{selectedEvent.student_username}</b></span>
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                <User className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                <span className="break-words">Ученик: <b className="text-gray-900 dark:text-white">{selectedEvent.student_username}</b></span>
               </div>
-              <div className="flex items-center gap-3 text-gray-700">
-                <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 <span>
                   {moment(selectedEvent.date).format('D MMMM YYYY')} в {selectedEvent.time}
                 </span>
               </div>
               {selectedEvent.cost > 0 && (
-                <div className="flex items-center gap-3 text-gray-700">
-                  <DollarSign className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span>Стоимость: <b>{selectedEvent.cost} ₽</b></span>
+                <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                  <DollarSign className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                  <span>Стоимость: <b className="text-gray-900 dark:text-white">{selectedEvent.cost} ₽</b></span>
                 </div>
               )}
             </div>
@@ -452,7 +452,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               {(selectedEvent.teacher_email === myProfile?.email || selectedEvent.student_email === myProfile?.email) && (
                 <button
                   onClick={handleDeleteEvent}
-                  className="flex-1 py-3 px-4 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-xl transition-colors min-h-[48px] flex items-center justify-center gap-2"
+                  className="flex-1 py-3 px-4 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 font-medium rounded-xl transition-colors min-h-[48px] flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Удалить

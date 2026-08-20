@@ -126,13 +126,13 @@ const ChatListPage: React.FC = () => {
     }, [MySocket.socket, myEmail]);
 
     return (
-        <div className="p-4 md:p-8">
-            <h1 className="text-xl sm:text-2xl font-semibold text-center mb-6">Ваши чаты</h1>
+        <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+            <h1 className="text-xl sm:text-2xl font-semibold text-center mb-6 text-gray-900 dark:text-white">Ваши чаты</h1>
             {chats.length === 0 ? (
                 <div className="text-center py-8 px-4">
-                    <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-base sm:text-lg">Нет доступных чатов</p>
-                    <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
+                    <MessageCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg">Нет доступных чатов</p>
+                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-2 max-w-md mx-auto">
                         Напишите преподавателю через страницу объявления, чтобы начать общение
                     </p>
                 </div>
@@ -150,7 +150,7 @@ const ChatListPage: React.FC = () => {
                             >
                                 <NavLink
                                     to={`/chat/${chat.interlocutor}`}
-                                    className="flex items-center border border-gray-200 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md active:shadow-sm active:scale-[0.99] transition-all bg-white min-h-[72px] sm:min-h-[80px]"
+                                    className="flex items-center border border-gray-200 dark:border-gray-700 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md active:shadow-sm active:scale-[0.99] transition-all bg-white dark:bg-gray-800 min-h-[72px] sm:min-h-[80px]"
                                 >
                                     <div className="relative mr-3 sm:mr-4 flex-shrink-0">
                                         {avatarUrl ? (
@@ -167,7 +167,7 @@ const ChatListPage: React.FC = () => {
                                             </div>
                                         )}
                                         <span
-                                            className={`absolute bottom-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-white ${
+                                            className={`absolute bottom-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-white dark:border-gray-800 ${
                                                 chat.online ? "bg-green-500" : "bg-gray-400"
                                             }`}
                                         />
@@ -175,9 +175,9 @@ const ChatListPage: React.FC = () => {
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                                            <h3 className="text-base sm:text-lg font-bold truncate">{chat.username}</h3>
+                                            <h3 className="text-base sm:text-lg font-bold truncate text-gray-900 dark:text-white">{chat.username}</h3>
                                             {chat.lastMessage?.date && (
-                                                <span className="text-xs text-gray-400 flex-shrink-0">
+                                                <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
                                                     {new Date(chat.lastMessage.date).toLocaleTimeString("ru-RU", {
                                                         hour: "2-digit",
                                                         minute: "2-digit",
@@ -186,11 +186,11 @@ const ChatListPage: React.FC = () => {
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <p className="text-sm text-gray-500 truncate flex-1">
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate flex-1">
                                                 {chat.lastMessage?.message || "Сообщений пока нет"}
                                             </p>
                                             {chat.unreadCount != null && chat.unreadCount > 0 && (
-                                                <div className="bg-[#96C3D6] text-black text-xs font-semibold min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <div className="bg-[#96C3D6] text-black dark:text-white text-xs font-semibold min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center flex-shrink-0">
                                                     {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
                                                 </div>
                                             )}
