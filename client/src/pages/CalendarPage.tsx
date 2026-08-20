@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { instance } from '../api/axios.api';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { ICalendarEvent, Role } from '../types/user';
 import { useMyProfile } from '../hooks/useMyProfile';
 import CalendarView from '../components/CalendarView';

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+﻿import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLoaderData, useParams, NavLink } from "react-router-dom";
 import { instance } from "../api/axios.api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { ICalendarEvent, IMessage, Role } from "../types/user";
 import { MySocket } from "../store/auth-state";
 import { useMyProfile } from "../hooks/useMyProfile";

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import moment from 'moment';
 import { ICalendarEvent } from '../types/user';
 import { instance } from '../api/axios.api';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { ChevronLeft, ChevronRight, Plus, Trash2, Clock, User, DollarSign, CalendarDays, ChevronRight as ChevronRightIcon } from 'lucide-react';
 

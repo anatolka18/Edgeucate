@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { instance } from "../api/axios.api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { IResponseUser } from "../types/user";
 import { MessageCircle, Shield, ShieldOff } from "lucide-react";
 

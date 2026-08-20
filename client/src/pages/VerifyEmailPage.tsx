@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { instance } from '../api/axios.api';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();

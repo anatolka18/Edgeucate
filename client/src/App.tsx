@@ -1,11 +1,10 @@
-import { RouterProvider } from "react-router-dom"
+﻿import { RouterProvider } from "react-router-dom"
 import { router } from "./router/router"
 import { useAppDispatch } from "./store/hooks"
 import { AuthService } from "./services/auth.service"
 import { login, logout } from "./store/user/userSlice"
 import { useEffect, useState } from "react"
-import { ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { Toaster } from 'sonner'
 import { io } from "socket.io-client"
 import { setAccessToken, setAuthReady, MySocket } from "./store/auth-state"
 
@@ -20,6 +19,23 @@ export function ensureSocket(token: string) {
 function App() {
   const dispatch = useAppDispatch()
   const [isLoading, setIsLoading] = useState(true)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setTheme(isDark ? 'dark' : 'light');
+    });
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class'] 
+    });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -71,7 +87,7 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3D5B82]"></div>
       </div>
     )
@@ -80,7 +96,28 @@ function App() {
   return (
     <>
       <RouterProvider router={router} />
-      <ToastContainer position='bottom-left' autoClose={2000} />
+      <Toaster 
+        position="bottom-left" 
+        theme={theme}
+        richColors 
+        closeButton 
+        duration={2000}
+        toastOptions={{
+          style: {
+            borderRadius: '4px',
+            fontFamily: 'Montserrat, sans-serif',
+            fontSize: '13px',
+            padding: '10px 14px',
+            minWidth: '0',
+            minHeight: '0',
+            width: 'auto',
+            textAlign: 'right',
+          },
+          classNames: {
+            closeButton: 'min-w-0 min-h-0 w-5 h-5',
+          },
+        }}
+      />
     </>
   )
 }

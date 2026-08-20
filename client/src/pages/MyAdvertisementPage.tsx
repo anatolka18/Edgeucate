@@ -1,8 +1,8 @@
-import { FC, useState } from 'react';
+﻿import { FC, useState } from 'react';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { instance } from '../api/axios.api';
 import { IAdvertisement } from '../types/advertisement';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useLoaderData } from 'react-router-dom';
 import { allSubjects } from '../config/subjects';
 import { authReadyPromise, accessToken } from '../store/auth-state';

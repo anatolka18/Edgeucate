@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { NavLink, useLoaderData } from "react-router-dom";
 import { IAdvertisement } from "../types/advertisement";
 import { instance } from "../api/axios.api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 import { subjectCategories, isCategory } from "../config/subjects";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";

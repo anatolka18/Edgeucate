@@ -1,7 +1,7 @@
-import axios from "axios";
+﻿import axios from "axios";
 import { accessToken } from "../store/auth-state";
 import { AuthService } from "../services/auth.service";
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 export const apiUrl = import.meta.env.VITE_API_URL || "";
 

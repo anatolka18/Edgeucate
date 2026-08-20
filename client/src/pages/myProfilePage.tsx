@@ -1,7 +1,7 @@
-import { FC, useState } from 'react';
+﻿import { FC, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../store/hooks';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { MySocket, setAccessToken } from "../store/auth-state";
 import { AuthService } from '../services/auth.service';
 import { logout } from '../store/user/userSlice';

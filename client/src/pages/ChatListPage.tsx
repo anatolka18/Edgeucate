@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { NavLink, useLoaderData } from "react-router-dom";
 import { instance } from "../api/axios.api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { IChat, IMessage } from "../types/user";
 import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";

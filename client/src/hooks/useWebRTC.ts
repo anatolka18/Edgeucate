@@ -1,7 +1,7 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+﻿import { useEffect, useRef, useCallback, useState } from 'react';
 import { MySocket } from '../store/auth-state';
 import { ACTIONS } from './actions';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { instance } from '../api/axios.api';
 import useStateWithCallback from './useStateWithCallback';
 

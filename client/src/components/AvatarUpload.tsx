@@ -1,6 +1,6 @@
-import { FC, useRef, useState } from 'react';
+﻿import { FC, useRef, useState } from 'react';
 import { Upload, X, Loader2 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { instance } from '../api/axios.api';
 
 interface AvatarUploadProps {

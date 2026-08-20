@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useEffect } from "react";
+﻿import React, { useState, useCallback, useEffect } from "react";
 import { useLoaderData, useNavigate, useParams, NavLink } from "react-router-dom";
 import { instance } from "../api/axios.api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { IAdvertisement } from "../types/advertisement";
 import { IFeedback } from "../types/user";
 import { useMyProfile } from "../hooks/useMyProfile";

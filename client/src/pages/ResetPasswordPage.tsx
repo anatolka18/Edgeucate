@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { instance } from '../api/axios.api';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import PasswordStrength from '../components/PasswordStrength';
 

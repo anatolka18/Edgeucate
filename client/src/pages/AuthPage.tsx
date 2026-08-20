@@ -1,6 +1,6 @@
-import { FC, useState, useEffect } from 'react'
+﻿import { FC, useState, useEffect } from 'react'
 import { AuthService } from '../services/auth.service'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { useAppDispatch } from '../store/hooks'
 import { login } from '../store/user/userSlice'
 import { useNavigate } from 'react-router-dom';

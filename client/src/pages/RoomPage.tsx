@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import useWebRTC, { LOCAL_VIDEO } from '../hooks/useWebRTC';
 import { MySocket } from '../store/auth-state';
 import { ACTIONS } from '../hooks/actions';
