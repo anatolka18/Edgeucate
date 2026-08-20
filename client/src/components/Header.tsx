@@ -41,13 +41,15 @@ const Header: FC = () => {
   }, []);
 
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    if (!mobileMenuOpen) return;
+
+    const handleScroll = () => {
+      setMobileMenuOpen(false);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      document.body.style.overflow = '';
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [mobileMenuOpen]);
 
@@ -156,11 +158,11 @@ const Header: FC = () => {
       {mobileMenuOpen && (
         <>
           <div
-            className="lg:hidden fixed inset-0 top-16 bg-black/30 z-40"
+            className="lg:hidden fixed inset-0 bg-black/30 z-40"
             onClick={closeMobileMenu}
             aria-hidden="true"
           />
-          <nav className="lg:hidden absolute top-16 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-3 px-4 space-y-1 z-50 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
+          <nav className="lg:hidden fixed top-16 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-3 px-4 space-y-1 z-50 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
             <NavLink to="/" className={navLinkClass} end onClick={closeMobileMenu}>
               <BookOpen className="w-5 h-5" />
               <span>Главная</span>
