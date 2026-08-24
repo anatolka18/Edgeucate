@@ -1,0 +1,74 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/edgeucate-(loki|promtail|prometheus|grafana)-dev'
+        action: drop
+
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/edgeucate-(server|redis|client|minio|bullboard)-dev'
+        action: keep
+      
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+    
+    pipeline_stages:
+      - docker: {}
+      
+      - match:
+          selector: '{container="edgeucate-server-dev"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  message: message
+                  path: path
+                  status: status
+            - labels:
+                level:
+      
+      - match:
+          selector: '{container="edgeucate-server-dev", level=""}'
+          stages:
+            - regex:
+                expression: '(?P<nest_level>ERROR|WARN|LOG|DEBUG|VERBOSE)'
+            - template:
+                source: level
+                template: '{{ if eq .nest_level "LOG" }}info{{ else if eq .nest_level "VERBOSE" }}info{{ else }}{{ .nest_level | lower }}{{ end }}'
+            - labels:
+                level:
+      
+      - match:
+          selector: '{level=""}'
+          stages:
+            - template:
+                source: level
+                template: 'info'
+            - labels:
+                level:
+      
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - labels:
+          container:
+          service:
+      - output:
+          source: log

@@ -4,7 +4,7 @@ import { IAdvertisement } from "../types/advertisement";
 import { instance } from "../api/axios.api";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
-import { subjectCategories, isCategory } from "../config/subjects";
+import { subjectCategories, isCategory } from '../config/subjects';
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const advertisementLoader = async () => {

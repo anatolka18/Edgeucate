@@ -138,6 +138,49 @@ services:
     networks:
       - backend
 
+  loki:
+    image: grafana/loki:latest
+    container_name: edgeucate-loki-dev
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-dev.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    logging: *default-logging
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: edgeucate-promtail-dev
+    restart: unless-stopped
+    volumes:
+      - ./promtail/promtail-dev.yaml:/etc/promtail/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yaml
+    logging: *default-logging
+    networks:
+      - backend
+    depends_on:
+      - loki
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          memory: 64M
+
   grafana:
     image: grafana/grafana:latest
     container_name: edgeucate-grafana-dev
@@ -154,6 +197,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
+      - loki
     logging: *default-logging
     networks:
       - backend
@@ -163,6 +207,7 @@ volumes:
   minio_dev_data:
   prometheus_data:
   grafana_data:
+  loki_data:
 
 networks:
   frontend:
