@@ -40,6 +40,34 @@ scrape_configs:
       - docker: {}
       
       - match:
+          selector: '{container="edgeucate-client-prod"}'
+          stages:
+            - drop:
+                expression: '.*open\(\) ".*/favicon\.ico" failed.*'
+            - drop:
+                expression: '.*open\(\) ".*/[a-zA-Z0-9_-]+\.(js|css|map|png|jpg|jpeg|svg|gif|ico|txt|woff2?|ttf|eot|html)" failed.*'
+            - drop:
+                expression: '.*open\(\) ".*/(assets|static|Public)/.*" failed.*'
+            
+            - regex:
+                expression: '.*\[(?P<nginx_level>emerg|alert|crit|error|warn|notice|info|debug)\].*'
+            - template:
+                source: level
+                template: '{{ if or (eq .nginx_level "error") (eq .nginx_level "crit") (eq .nginx_level "alert") (eq .nginx_level "emerg") }}error{{ else if eq .nginx_level "warn" }}warn{{ else }}info{{ end }}'
+            - labels:
+                level:
+      
+      - match:
+          selector: '{container="edgeucate-server-prod"}'
+          stages:
+            - drop:
+                expression: '.*"message":"Cannot (GET|POST) /api/(\.env|graphql|gql|wp-admin|wp-login|\.git|env|\.well-known|php|\.php)"'
+            - drop:
+                expression: '.*"message":"Refresh token not found"'
+            - drop:
+                expression: '.*"status":401.*"message":"Unauthorized"'
+
+      - match:
           selector: '{container="edgeucate-server-prod"}'
           stages:
             - json:
@@ -64,14 +92,10 @@ scrape_configs:
                 level:
       
       - match:
-          selector: '{container!="edgeucate-server-prod"}'
+          selector: '{container=~"edgeucate-(redis|minio|coturn|mongo-backup)-prod"}'
           stages:
-            - logfmt:
-                mapping:
-                  level:
-                  msg:
-            - labels:
-                level:
+            - drop:
+                expression: '.*'
       
       - match:
           selector: '{level=""}'
