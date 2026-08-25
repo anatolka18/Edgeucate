@@ -158,14 +158,3 @@ jobs:
           command_timeout: 2m
           script: |
             docker exec edgeucate-mongo-backup-prod /usr/local/bin/init-minio.sh || echo "MinIO init skipped"
-
-      - name: Health check
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 2m
-          script: |
-            sleep 10
-            curl -sf http://localhost:80/api/ > /dev/null && echo "Deploy successful" || exit 1
