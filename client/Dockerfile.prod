@@ -8,10 +8,17 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.30-alpine-slim
+FROM nginx:1.30-alpine-slim AS base
 
-RUN apk update && apk upgrade --no-cache
+RUN cp /etc/nginx/nginx.conf /tmp/nginx.conf.docker-original
 
+RUN apk update && apk upgrade --no-cache \
+    && rm -rf /var/cache/apk/*
+
+RUN cp /tmp/nginx.conf.docker-original /etc/nginx/nginx.conf \
+    && rm /tmp/nginx.conf.docker-original
+
+FROM base
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
