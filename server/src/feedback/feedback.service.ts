@@ -5,6 +5,8 @@ import { User, Feedback } from '../user/schemas/user.schema';
 import { Advertisement } from '../advertisement/schemas/advertisement.schema';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { PrometheusService } from '../prometheus/prometheus.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class FeedbackService {
@@ -16,6 +18,7 @@ export class FeedbackService {
     @InjectConnection()
     private connection: mongoose.Connection,
     private prometheusService: PrometheusService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async createFeedback(createFeedbackDto: CreateFeedbackDto): Promise<Feedback> {
@@ -85,6 +88,18 @@ export class FeedbackService {
       await session.commitTransaction();
 
       this.prometheusService.incrementReviewSubmitted(stars.toString());
+
+      await this.notificationsService.create({
+        userEmail: teacherEmail,
+        type: NotificationType.NEW_REVIEW,
+        title: 'Новый отзыв',
+        message: `Студент оставил отзыв: "${title || advertisement.title}"`,
+        data: {
+          advertisementId,
+          studentEmail,
+          studentUsername: student.username,
+        },
+      });
 
       return newFeedback;
     } catch (error) {

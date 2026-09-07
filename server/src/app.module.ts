@@ -18,6 +18,7 @@ import { TurnModule } from './turn/turn.module';
 import { StorageModule } from './storage/storage.module';
 import { PrometheusModule } from './prometheus/prometheus.module';
 import { HttpMetricsInterceptor } from './common/interceptors/http-metrics.interceptor';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { HttpMetricsInterceptor } from './common/interceptors/http-metrics.inter
     TurnModule,
     StorageModule,
     PrometheusModule,
+    NotificationsModule,
   ],
   controllers: [AppController, ClientErrorsController],
   providers: [
