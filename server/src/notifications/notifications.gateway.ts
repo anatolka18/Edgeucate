@@ -13,13 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { NotificationsService } from './notifications.service';
 import { NotificationType } from './schemas/notification.schema';
 
-@WebSocketGateway({
-  namespace: 'notifications',
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    credentials: true,
-  },
-})
+@WebSocketGateway({ namespace: 'notifications' })
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -37,6 +31,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       const token = client.handshake.auth.token;
 
       if (!token) {
+        this.logger.warn('[CONNECT] No token, disconnecting');
         client.disconnect();
         return;
       }
@@ -47,6 +42,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       });
 
       if (!payload.email) {
+        this.logger.warn('[CONNECT] No email in payload, disconnecting');
         client.disconnect();
         return;
       }
@@ -62,10 +58,13 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       const unreadCount = await this.notificationsService.getUnreadCount(userEmail);
       client.emit('unread_count', { count: unreadCount });
 
-      this.logger.debug(`User connected: ${userEmail} (${client.id})`);
+      const recentNotifications = await this.notificationsService.getRecent(userEmail, 5);
+      client.emit('notifications_list', recentNotifications);
+
+      this.logger.log(`[CONNECT] User ${userEmail} connected, socketId: ${client.id}, unread: ${unreadCount}, recent: ${recentNotifications.length}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`Connection rejected: ${errorMessage}`);
+      this.logger.warn(`[CONNECT] Rejected: ${errorMessage}`);
       client.disconnect();
     }
   }
@@ -78,7 +77,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       if (this.userSockets.get(userEmail).size === 0) {
         this.userSockets.delete(userEmail);
       }
-      this.logger.debug(`User disconnected: ${userEmail} (${client.id})`);
+      this.logger.log(`[DISCONNECT] ${userEmail} (${client.id})`);
     }
   }
 
@@ -90,13 +89,15 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     const userEmail = (client as any).userEmail;
 
     if (!userEmail) {
-      return { error: 'Unauthorized' };
+      this.logger.warn(`[GET_NOTIFICATIONS] no userEmail, dropping`);
+      return;
     }
 
     const limit = data?.limit || 10;
     const notifications = await this.notificationsService.getRecent(userEmail, limit);
 
-    return { notifications };
+    this.logger.debug(`[GET_NOTIFICATIONS] found ${notifications.length} for ${userEmail}`);
+    client.emit('notifications_list', notifications);
   }
 
   @SubscribeMessage('mark_read')
@@ -105,31 +106,23 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     @MessageBody() data: { notificationId: string },
   ) {
     const userEmail = (client as any).userEmail;
-
-    if (!userEmail) {
-      return { error: 'Unauthorized' };
-    }
+    if (!userEmail) return;
 
     await this.notificationsService.markAsRead(data.notificationId, userEmail);
 
     const unreadCount = await this.notificationsService.getUnreadCount(userEmail);
-    client.emit('unread_count', { count: unreadCount });
-
-    return { success: true };
+    this.emitToAllUserSockets(userEmail, 'unread_count', { count: unreadCount });
+    client.emit('marked_read');
   }
 
   @SubscribeMessage('mark_all_read')
   async handleMarkAllRead(@ConnectedSocket() client: Socket) {
     const userEmail = (client as any).userEmail;
-
-    if (!userEmail) {
-      return { error: 'Unauthorized' };
-    }
+    if (!userEmail) return;
 
     await this.notificationsService.markAllAsRead(userEmail);
-    client.emit('unread_count', { count: 0 });
-
-    return { success: true };
+    this.emitToAllUserSockets(userEmail, 'unread_count', { count: 0 });
+    client.emit('marked_all_read');
   }
 
   async sendToUser(userEmail: string, notification: {
@@ -149,29 +142,31 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     }
 
     const unreadCount = await this.notificationsService.getUnreadCount(userEmail);
-
-    for (const socketId of userSocketIds) {
-      this.server.to(socketId).emit('unread_count', { count: unreadCount });
-    }
+    this.emitToAllUserSockets(userEmail, 'unread_count', { count: unreadCount });
   }
-    async broadcastToAll(notification: {
+
+  async broadcastToAll(notification: {
     type: NotificationType;
     title: string;
     message: string;
     data?: Record<string, any>;
   }) {
-    const payload = { ...notification, _id: 'broadcast', createdAt: new Date() };
+    const payload = { ...notification, createdAt: new Date().toISOString() };
     this.server.emit('new_notification', payload);
 
     const activeEmails = Array.from(this.userSockets.keys());
     for (const email of activeEmails) {
-      const userSocketIds = this.userSockets.get(email);
-      if (userSocketIds && userSocketIds.size > 0) {
-        const unreadCount = await this.notificationsService.getUnreadCount(email);
-        for (const socketId of userSocketIds) {
-          this.server.to(socketId).emit('unread_count', { count: unreadCount });
-        }
-      }
+      const unreadCount = await this.notificationsService.getUnreadCount(email);
+      this.emitToAllUserSockets(email, 'unread_count', { count: unreadCount });
+    }
+  }
+
+  private emitToAllUserSockets(userEmail: string, event: string, data: any) {
+    const userSocketIds = this.userSockets.get(userEmail);
+    if (!userSocketIds || userSocketIds.size === 0) return;
+
+    for (const socketId of userSocketIds) {
+      this.server.to(socketId).emit(event, data);
     }
   }
 }

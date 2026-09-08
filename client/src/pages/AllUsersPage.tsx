@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { instance } from "../api/axios.api";
 import { toast } from "sonner";
 import { IResponseUser } from "../types/user";
-import { MessageCircle, Shield, ShieldOff } from "lucide-react";
+import { MessageCircle, Shield, ShieldOff, Megaphone } from "lucide-react";
 
 const AllUsersPage: React.FC = () => {
   const [users, setUsers] = useState<IResponseUser[]>([]);
@@ -11,6 +11,12 @@ const AllUsersPage: React.FC = () => {
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<IResponseUser | null>(null);
   const [blockReason, setBlockReason] = useState("");
+  
+  const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
+  const [broadcastTitle, setBroadcastTitle] = useState("");
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  
   const navigate = useNavigate();
 
   const fetchUsers = async () => {
@@ -60,6 +66,30 @@ const AllUsersPage: React.FC = () => {
     navigate(`/chat/${recipient}`);
   };
 
+  const handleBroadcast = async () => {
+    if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
+      toast.error("Заполните заголовок и сообщение");
+      return;
+    }
+
+    try {
+      setIsSending(true);
+      const { data } = await instance.post('/notifications/broadcast', {
+        title: broadcastTitle.trim(),
+        message: broadcastMessage.trim(),
+      });
+      toast.success(`Уведомление отправлено ${data.recipientsCount} пользователям`);
+      setBroadcastModalOpen(false);
+      setBroadcastTitle("");
+      setBroadcastMessage("");
+    } catch (error: any) {
+      const message = error?.response?.data?.message || "Не удалось отправить уведомление";
+      toast.error(message);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -75,7 +105,16 @@ const AllUsersPage: React.FC = () => {
   return (
     <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-xl sm:text-2xl font-bold mb-6 text-gray-900 dark:text-white">Список пользователей</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Список пользователей</h1>
+          <button
+            onClick={() => setBroadcastModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2d4565] transition-colors min-h-[44px] font-medium"
+          >
+            <Megaphone className="w-5 h-5" />
+            Отправить уведомление всем
+          </button>
+        </div>
         
         {blockModalOpen && selectedUser && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -111,6 +150,85 @@ const AllUsersPage: React.FC = () => {
                   className="px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 min-h-[44px] font-medium transition-colors"
                 >
                   Заблокировать
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {broadcastModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 sm:p-6 w-full max-w-lg mx-4 safe-area-top safe-area-bottom">
+              <div className="flex items-center gap-2 mb-4">
+                <Megaphone className="w-6 h-6 text-[#3D5B82] dark:text-[#96C3D6]" />
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Массовая рассылка</h2>
+              </div>
+              <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                Уведомление будет отправлено всем {users.length} активным пользователям. Офлайн-пользователи увидят его при следующем входе.
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Заголовок <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={broadcastTitle}
+                  onChange={(e) => setBroadcastTitle(e.target.value)}
+                  maxLength={200}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#96C3D6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                  placeholder="Важное обновление"
+                />
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">
+                  {broadcastTitle.length}/200
+                </div>
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Сообщение <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  maxLength={1000}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg min-h-[120px] focus:outline-none focus:ring-2 focus:ring-[#96C3D6] resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                  placeholder="Текст уведомления..."
+                  rows={4}
+                />
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">
+                  {broadcastMessage.length}/1000
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setBroadcastModalOpen(false);
+                    setBroadcastTitle("");
+                    setBroadcastMessage("");
+                  }}
+                  disabled={isSending}
+                  className="px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 min-h-[44px] font-medium transition-colors disabled:opacity-50"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={handleBroadcast}
+                  disabled={isSending || !broadcastTitle.trim() || !broadcastMessage.trim()}
+                  className="px-4 py-3 bg-[#3D5B82] text-white rounded-lg hover:bg-[#2d4565] min-h-[44px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Отправка...
+                    </>
+                  ) : (
+                    <>
+                      <Megaphone className="w-4 h-4" />
+                      Отправить всем
+                    </>
+                  )}
                 </button>
               </div>
             </div>

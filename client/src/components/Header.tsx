@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useMyProfile } from "../hooks/useMyProfile";
 import { Role } from "../types/user";
 import { ThemeToggle } from "./ThemeToggle";
+import NotificationBell from "./NotificationBell";
 import {
   Search,
   User,
@@ -66,14 +67,14 @@ const Header: FC = () => {
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 safe-area-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-2">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center gap-3 min-w-[44px] min-h-[44px] flex-shrink-0"
           >
-            <img 
-              src={FullLogo} 
-              alt="Edgeucate" 
-              className="h-8 sm:h-10 w-auto flex-shrink-0" 
+            <img
+              src={FullLogo}
+              alt="Edgeucate"
+              className="h-8 sm:h-10 w-auto flex-shrink-0"
             />
           </Link>
 
@@ -126,6 +127,8 @@ const Header: FC = () => {
 
           <div className="flex items-center gap-2 flex-shrink-0">
             <ThemeToggle />
+
+            {isAuth && <NotificationBell />}
 
             {isAuth ? (
               <NavLink to="/myprofile" className={navLinkClass}>

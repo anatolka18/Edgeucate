@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { Toaster } from 'sonner'
 import { io } from "socket.io-client"
 import { setAccessToken, setAuthReady, MySocket } from "./store/auth-state"
+import { notificationsWebSocket } from "./services/notificationsWebSocket"
 
 export function ensureSocket(token: string) {
   if (!MySocket.socket || !MySocket.socket.connected) {
@@ -14,6 +15,8 @@ export function ensureSocket(token: string) {
       auth: { token },
     })
   }
+
+  notificationsWebSocket.connect(token);
 }
 
 function App() {
