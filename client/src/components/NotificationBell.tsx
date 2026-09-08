@@ -6,6 +6,7 @@ import {
   Megaphone,
   MessageCircle,
   Inbox,
+  X,
 } from "lucide-react";
 import { notificationsWebSocket, Notification } from "../services/notificationsWebSocket";
 
@@ -121,52 +122,66 @@ const NotificationBell: FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[60] overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Уведомления</h3>
-          </div>
-
+        <>
           <div
-            className="max-h-[400px] overflow-y-auto"
-            style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
-            }}
-          >
-            {isLoading && notifications.length === 0 ? (
-              <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-                Загрузка...
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="py-12 flex flex-col items-center gap-2 text-gray-500 dark:text-gray-400">
-                <Inbox className="w-8 h-8" />
-                <span>Нет уведомлений</span>
-              </div>
-            ) : (
-              notifications.map(notification => (
-                <div
-                  key={notification._id || notification.createdAt}
-                  className="w-full text-left px-4 py-3 flex gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-100 dark:border-gray-700/50 last:border-b-0"
-                >
-                  <div className="flex-shrink-0 mt-0.5">
-                    {getIcon(notification.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {notification.title}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-2">
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      {formatTime(notification.createdAt)}
-                    </p>
-                  </div>
+            className="sm:hidden fixed inset-0 bg-black/30 z-40"
+            aria-hidden="true"
+          />
+
+          <div className="fixed sm:absolute top-16 sm:top-auto left-0 right-0 sm:left-auto sm:right-0 sm:mt-2 sm:w-96 bg-white dark:bg-gray-800 shadow-xl border-b sm:border border-gray-200 dark:border-gray-700 rounded-none sm:rounded-xl z-50 sm:z-[60] overflow-hidden safe-area-bottom sm:pb-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Уведомления</h3>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="sm:hidden p-2 -mr-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                aria-label="Закрыть уведомления"
+              >
+                <X className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+              </button>
+            </div>
+
+            <div
+              className="overflow-y-auto max-h-[calc(100vh-11rem)] sm:max-h-[400px]"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
+              }}
+            >
+              {isLoading && notifications.length === 0 ? (
+                <div className="py-12 text-center text-gray-500 dark:text-gray-400">
+                  Загрузка...
                 </div>
-              ))
-            )}
+              ) : notifications.length === 0 ? (
+                <div className="py-12 flex flex-col items-center gap-2 text-gray-500 dark:text-gray-400">
+                  <Inbox className="w-8 h-8" />
+                  <span>Нет уведомлений</span>
+                </div>
+              ) : (
+                notifications.map(notification => (
+                  <div
+                    key={notification._id || notification.createdAt}
+                    className="w-full text-left px-4 py-3 flex gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-100 dark:border-gray-700/50 last:border-b-0"
+                  >
+                    <div className="flex-shrink-0 mt-0.5">
+                      {getIcon(notification.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white break-words">
+                        {notification.title}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-3 sm:line-clamp-2 break-words">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        {formatTime(notification.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
