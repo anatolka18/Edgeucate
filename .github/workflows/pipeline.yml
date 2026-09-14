@@ -7,87 +7,113 @@ on:
     branches: [dev]
   workflow_dispatch:
 
+env:
+  REGISTRY: ghcr.io
+
 jobs:
-  build-and-scan:
-    name: CI - Build and Scan
+  build:
+    name: Build ${{ matrix.service }}
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: server
+            context: ./server
+            dockerfile: ./server/Dockerfile.prod
+          - service: client
+            context: ./client
+            dockerfile: ./client/Dockerfile.prod
+          - service: mongo-backup
+            context: ./backup
+            dockerfile: ./backup/Dockerfile
+      fail-fast: false
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Install SOPS
+      - name: Set lower case repo name
+        run: echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  scan:
+    name: Scan ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        service: [server, client]
+      fail-fast: false
+    
+    steps:
+      - name: Set lower case repo
+        run: echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Scan ${{ matrix.service }}
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/${{ matrix.service }}:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: scan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install SOPS and age
         run: |
           curl -LO https://github.com/getsops/sops/releases/download/v3.13.2/sops-v3.13.2.linux.amd64
           sudo mv sops-v3.13.2.linux.amd64 /usr/local/bin/sops
           sudo chmod +x /usr/local/bin/sops
-          sops --version
-
-      - name: Install age
-        run: |
           AGE_VERSION="1.2.1"
           curl -L "https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz" -o /tmp/age.tar.gz
           tar -xzf /tmp/age.tar.gz -C /tmp
           sudo mv /tmp/age/age /usr/local/bin/
           sudo mv /tmp/age/age-keygen /usr/local/bin/
           sudo chmod +x /usr/local/bin/age /usr/local/bin/age-keygen
-          age --version
 
-      - name: Decrypt secrets
+      - name: Decrypt secrets in job memory
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
           sops --decrypt --input-type dotenv --output-type dotenv .env.prod.enc > .env.prod
-          echo "Secrets decrypted successfully"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build server image
-        run: docker compose -f docker-compose.prod.yml build server
-
-      - name: Build client image
-        run: docker compose -f docker-compose.prod.yml build client
-
-      - name: Scan server image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'edgeucate-server:latest'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-
-      - name: Scan client image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'edgeucate-client:latest'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-
-      - name: Upload decrypted env
-        uses: actions/upload-artifact@v4
-        with:
-          name: prod-secrets
-          path: .env.prod
-          retention-days: 1
-          include-hidden-files: true
-
-  deploy:
-    name: CD - Deploy to VPS
-    runs-on: ubuntu-latest
-    needs: build-and-scan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download decrypted env
-        uses: actions/download-artifact@v4
-        with:
-          name: prod-secrets
 
       - name: Copy secrets to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -96,65 +122,36 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: ".env.prod"
-          target: "/tmp/"
+          target: "/home/deploy/"
 
-      - name: Deploy secrets
+      - name: Execute Deployment Commands on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 2m
+          command_timeout: 15m
           script: |
+            set -e
+            
             sudo mkdir -p /opt/edgeucate-secrets
-            sudo mv /tmp/.env.prod /opt/edgeucate-secrets/.env.prod
+            sudo mv /home/deploy/.env.prod /opt/edgeucate-secrets/.env.prod
             sudo chown deploy:deploy /opt/edgeucate-secrets/.env.prod
             sudo chmod 600 /opt/edgeucate-secrets/.env.prod
-            echo "Secrets deployed"
-
-      - name: Pull latest code
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 5m
-          script: |
+            
             cd ~/Edgeucate
             git fetch origin dev
             git reset --hard origin/dev
             echo "Code updated: $(git rev-parse --short HEAD)"
-
-      - name: Build images on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 30m
-          script: |
-            cd ~/Edgeucate
-            docker compose -f docker-compose.prod.yml --env-file /opt/edgeucate-secrets/.env.prod build --parallel
-
-      - name: Start services
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 10m
-          script: |
-            cd ~/Edgeucate
+            
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            docker compose -f docker-compose.prod.yml --env-file /opt/edgeucate-secrets/.env.prod pull
             docker compose -f docker-compose.prod.yml --env-file /opt/edgeucate-secrets/.env.prod up -d
+            
             sleep 20
             docker compose -f docker-compose.prod.yml --env-file /opt/edgeucate-secrets/.env.prod ps
-
-      - name: Init MinIO buckets
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 2m
-          script: |
+            
             docker exec edgeucate-mongo-backup-prod /usr/local/bin/init-minio.sh || echo "MinIO init skipped"
+            
+            docker logout ghcr.io

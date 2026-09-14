@@ -1,4 +1,5 @@
 ARG NODE_VERSION=24.18.0
+
 FROM node:${NODE_VERSION}-alpine AS builder
 WORKDIR /app
 
@@ -8,7 +9,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.30-alpine-slim AS base
+FROM nginx:1.30-alpine-slim
 
 RUN cp /etc/nginx/nginx.conf /tmp/nginx.conf.docker-original
 
@@ -18,9 +19,20 @@ RUN apk update && apk upgrade --no-cache \
 RUN cp /tmp/nginx.conf.docker-original /etc/nginx/nginx.conf \
     && rm /tmp/nginx.conf.docker-original
 
-FROM base
+RUN apk add --no-cache libcap \
+    && setcap 'cap_net_bind_service=+ep' /usr/sbin/nginx
+
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+RUN chown -R nginx:nginx /var/cache/nginx \
+    && chown -R nginx:nginx /var/log/nginx \
+    && chown -R nginx:nginx /etc/nginx/conf.d \
+    && touch /var/run/nginx.pid \
+    && chown -R nginx:nginx /var/run/nginx.pid
+
+EXPOSE 8080 8443
+
+USER nginx
+
 CMD ["nginx", "-g", "daemon off;"]

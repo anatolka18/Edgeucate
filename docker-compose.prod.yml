@@ -24,10 +24,7 @@ services:
       start_period: 10s
 
   server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile.prod
-    image: edgeucate-server:${VERSION:-latest}
+    image: ghcr.io/anatolka18/edgeucate/server:latest
     container_name: edgeucate-server-prod
     restart: unless-stopped
     env_file:
@@ -60,10 +57,7 @@ services:
       - "com.edgeucate.service=backend"
 
   client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile.prod
-    image: edgeucate-client:${VERSION:-latest}
+    image: ghcr.io/anatolka18/edgeucate/client:latest
     container_name: edgeucate-client-prod
     restart: unless-stopped
     ports:
@@ -202,12 +196,13 @@ services:
     image: grafana/promtail:latest
     container_name: edgeucate-promtail-prod
     restart: unless-stopped
-    privileged: true
     volumes:
       - ./promtail/promtail-prod.yaml:/etc/promtail/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro  
     command: -config.file=/etc/promtail/config.yaml
+    user: "0:0" 
     logging: *default-logging
     networks:
       - backend
@@ -271,10 +266,7 @@ services:
       - "com.edgeucate.service=monitoring"
 
   mongo-backup:
-    build:
-      context: ./backup
-      dockerfile: Dockerfile
-    image: edgeucate-mongo-backup:${VERSION:-latest}
+    image: ghcr.io/anatolka18/edgeucate/mongo-backup:latest
     container_name: edgeucate-mongo-backup-prod
     restart: unless-stopped
     depends_on:
