@@ -61,8 +61,8 @@ services:
     container_name: edgeucate-client-prod
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:8080"
+      - "443:8443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/certbot:/var/www/certbot:ro
@@ -115,7 +115,7 @@ services:
       - "com.edgeucate.service=coturn"
 
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: edgeucate-minio-prod
     restart: unless-stopped
     environment:
