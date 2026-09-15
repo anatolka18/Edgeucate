@@ -7,9 +7,30 @@ import { useAuth } from "../hooks/useAuth";
 import { subjectCategories, isCategory } from '../config/subjects';
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
-export const advertisementLoader = async () => {
-  const { data } = await instance.get<{ data: IAdvertisement[]; total: number; page: number; totalPages: number }>(`/advertisement?page=1&limit=100`);
-  return data.data;
+let advertisementsPromise: Promise<IAdvertisement[]> | null = null;
+let cachedAt = 0;
+const LOADER_CACHE_TTL = 60_000;
+
+export const advertisementLoader = (): Promise<IAdvertisement[]> => {
+  const now = Date.now();
+
+  if (advertisementsPromise && now - cachedAt < LOADER_CACHE_TTL) {
+    return advertisementsPromise;
+  }
+
+  cachedAt = now;
+  advertisementsPromise = instance
+    .get<{ data: IAdvertisement[]; total: number; page: number; totalPages: number }>(
+      `/advertisement?page=1&limit=100`
+    )
+    .then((response) => response.data.data)
+    .catch((error) => {
+      advertisementsPromise = null;
+      cachedAt = 0;
+      throw error;
+    });
+
+  return advertisementsPromise;
 };
 
 const getAvatarUrl = (avatar?: string): string | null => {

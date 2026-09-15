@@ -19,6 +19,7 @@ import { StorageModule } from './storage/storage.module';
 import { PrometheusModule } from './prometheus/prometheus.module';
 import { HttpMetricsInterceptor } from './common/interceptors/http-metrics.interceptor';
 import { NotificationsModule } from './notifications/notifications.module';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     StorageModule,
     PrometheusModule,
     NotificationsModule,
+    CacheModule,
   ],
   controllers: [AppController, ClientErrorsController],
   providers: [

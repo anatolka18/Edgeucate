@@ -20,6 +20,10 @@ export class Advertisement {
 
 export const AdvertisementSchema = SchemaFactory.createForClass(Advertisement);
 
+AdvertisementSchema.index({ advertisementId: 1 }, { unique: true });
+AdvertisementSchema.index({ email: 1 });
+AdvertisementSchema.index({ subject: 1 });
+
 AdvertisementSchema.set('toJSON', {
   virtuals: true,
   versionKey: false,

@@ -6,6 +6,9 @@ import { CreateAdvertisementDto } from './dto/createAdvertisement.dto';
 import { User } from '../user/schemas/user.schema';
 import { UpdateAdvertisementDto } from './dto/updateAdvertisement.dto';
 import { PrometheusService } from '../prometheus/prometheus.service';
+import { CacheService } from '../cache/cache.service';
+
+const CACHE_TTL_SECONDS = 60;
 
 @Injectable()
 export class AdvertisementService {
@@ -15,6 +18,7 @@ export class AdvertisementService {
     @InjectModel(User.name)
     private userModel: mongoose.Model<User>,
     private prometheusService: PrometheusService,
+    private cacheService: CacheService,
   ) { }
 
   private async enrichWithAvatar(ads: any[]): Promise<any[]> {
@@ -42,6 +46,10 @@ export class AdvertisementService {
     });
   }
 
+  private async invalidateCache(): Promise<void> {
+    await this.cacheService.invalidatePrefix('ads:');
+  }
+
   async findMyAdvertisements(email: string): Promise<any[]> {
     if (!email || email.trim() === '') {
       throw new BadRequestException('Email не может быть пустым');
@@ -51,23 +59,36 @@ export class AdvertisementService {
   }
 
   async findAll(page = 1, limit = 20): Promise<{ data: any[]; total: number; page: number; totalPages: number }> {
+    const cacheKey = `ads:list:${page}:${limit}`;
+
+    const cached = await this.cacheService.get<{ data: any[]; total: number; page: number; totalPages: number }>(cacheKey);
+    if (cached) return cached;
+    
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.advertisementModel.find().skip(skip).limit(limit).lean().exec(),
+      this.advertisementModel.find().sort({ date: -1 }).skip(skip).limit(limit).lean().exec(),
       this.advertisementModel.countDocuments(),
     ]);
 
     const serialized = await this.enrichWithAvatar(data);
 
-    return {
+    const result = {
       data: serialized,
       total,
       page,
       totalPages: Math.ceil(total / limit),
     };
+
+    await this.cacheService.set(cacheKey, result, CACHE_TTL_SECONDS);
+    return result;
   }
 
   async search(query: string, subject: string): Promise<any[]> {
+    const cacheKey = `ads:search:${encodeURIComponent(query)}|${encodeURIComponent(subject)}`;
+
+    const cached = await this.cacheService.get<any[]>(cacheKey);
+    if (cached) return cached;
+
     const filter: any = {};
 
     if (query) {
@@ -84,8 +105,11 @@ export class AdvertisementService {
       this.prometheusService.incrementSearchQuery(subject);
     }
 
-    const ads = await this.advertisementModel.find(filter).lean().exec();
-    return this.enrichWithAvatar(ads);
+    const ads = await this.advertisementModel.find(filter).limit(200).lean().exec();
+    const result = await this.enrichWithAvatar(ads);
+
+    await this.cacheService.set(cacheKey, result, CACHE_TTL_SECONDS);
+    return result;
   }
 
   async createAdvertisement(createAdvertisementDto: CreateAdvertisementDto): Promise<any> {
@@ -125,6 +149,7 @@ export class AdvertisementService {
     });
 
     this.prometheusService.incrementAdvertisementCreated(createAdvertisementDto.subject.trim());
+    await this.invalidateCache();
 
     const enriched = await this.enrichWithAvatar([created.toObject()]);
     return enriched[0];
@@ -171,6 +196,8 @@ export class AdvertisementService {
       { new: true }
     );
 
+    await this.invalidateCache();
+
     const enriched = await this.enrichWithAvatar([updated.toObject()]);
     return enriched[0];
   }
@@ -179,6 +206,7 @@ export class AdvertisementService {
     if (!advertisementId?.trim()) throw new BadRequestException('ID объявления не может быть пустым');
     const advertisement = await this.advertisementModel.findOne({ advertisementId });
     if (!advertisement) throw new NotFoundException('Объявление не найдено');
+    await this.invalidateCache();
     return this.advertisementModel.findOneAndDelete({ advertisementId });
   }
 
@@ -187,6 +215,7 @@ export class AdvertisementService {
     if (!mongoose.isValidObjectId(id)) throw new BadRequestException('Некорректный формат ID');
     const advertisement = await this.advertisementModel.findById(id);
     if (!advertisement) throw new NotFoundException('Объявление не найдено');
+    await this.invalidateCache();
     return this.advertisementModel.findByIdAndDelete(id);
   }
 }
