@@ -10,6 +10,7 @@ import { accessToken } from '../store/auth-state';
 import { instance } from '../api/axios.api';
 import { Eye, EyeOff, Mail, Lock, GraduationCap, BookOpen } from 'lucide-react';
 import PasswordStrength from '../components/PasswordStrength';
+import ConsentCheckbox from '../components/ConsentCheckbox';
 
 const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -27,6 +28,8 @@ const AuthPage: FC = () => {
     const [resetLoading, setResetLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordTwo, setShowPasswordTwo] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [agreedToForgot, setAgreedToForgot] = useState(false);
 
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
@@ -81,6 +84,10 @@ const AuthPage: FC = () => {
             toast.error("Пароли не совпадают!");
             return;
         }
+        if (!agreedToTerms) {
+            toast.error('Необходимо согласие на обработку персональных данных');
+            return;
+        }
 
         try {
             const dataRegist = await AuthService.registration({ username, password, email, role })
@@ -92,6 +99,7 @@ const AuthPage: FC = () => {
                 setPassword('');
                 setPasswordTwo('');
                 setUsername('');
+                setAgreedToTerms(false);
             }
         } catch (err: any) {
             toast.error(err.response?.data?.message || err.message || 'Ошибка при регистрации');
@@ -107,12 +115,17 @@ const AuthPage: FC = () => {
             toast.error('Введите корректный email');
             return;
         }
+        if (!agreedToForgot) {
+            toast.error('Необходимо согласие на обработку персональных данных');
+            return;
+        }
         setResetLoading(true);
         try {
             await instance.post('/auth/forgot-password', { email: resetEmail });
             toast.success('Если аккаунт существует, письмо отправлено');
             setShowForgotPassword(false);
             setResetEmail('');
+            setAgreedToForgot(false);
         } catch {
             toast.error('Ошибка при отправке письма');
         } finally {
@@ -157,6 +170,12 @@ const AuthPage: FC = () => {
                                 autoComplete="email"
                             />
                         </div>
+                        <ConsentCheckbox
+                            id="consent-forgot"
+                            compact
+                            checked={agreedToForgot}
+                            onChange={setAgreedToForgot}
+                        />
                         <div className="flex flex-col sm:flex-row justify-end gap-2">
                             <button
                                 onClick={() => setShowForgotPassword(false)}
@@ -166,8 +185,8 @@ const AuthPage: FC = () => {
                             </button>
                             <button
                                 onClick={handleForgotPassword}
-                                disabled={resetLoading}
-                                className="px-4 py-2 bg-[#3D5B82] text-white rounded hover:bg-[#273b56] transition disabled:opacity-50"
+                                disabled={resetLoading || !agreedToForgot}
+                                className="px-4 py-2 bg-[#3D5B82] text-white rounded hover:bg-[#273b56] transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {resetLoading ? 'Отправка...' : 'Отправить'}
                             </button>
@@ -289,9 +308,17 @@ const AuthPage: FC = () => {
                         </div>
                     )}
 
+                    {!isLogin && (
+                        <ConsentCheckbox
+                            checked={agreedToTerms}
+                            onChange={setAgreedToTerms}
+                        />
+                    )}
+
                     <button
                         type="submit"
-                        className="w-full bg-[#3D5B82] text-white py-3 rounded hover:bg-[#273b56] transition font-medium"
+                        disabled={!isLogin && !agreedToTerms}
+                        className="w-full bg-[#3D5B82] text-white py-3 rounded hover:bg-[#273b56] transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLogin ? 'Войти' : 'Зарегистрироваться'}
                     </button>

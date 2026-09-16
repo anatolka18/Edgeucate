@@ -9,6 +9,8 @@ import { advertisementLoader } from "../pages/SearchPage";
 import { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
 import { advertisementDetailLoader } from "../pages/AdvertisementPage";
 import { chatLoader } from "../pages/ChatPage";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+import Terms from "../pages/Terms";
 export { advertisementLoader } from "../pages/SearchPage";
 export { myAdvertisementLoader } from "../pages/MyAdvertisementPage";
 export { advertisementDetailLoader } from "../pages/AdvertisementPage";
@@ -56,6 +58,14 @@ export const router = createBrowserRouter([
       {
         path: 'myprofile',
         element: <ProtectedRoute><Lazy><MyProfilePage /></Lazy></ProtectedRoute>,
+      },
+      { 
+        path: "/privacy",
+        element: <PrivacyPolicy /> 
+      },
+      { 
+        path: "/terms", 
+        element: <Terms /> 
       },
       {
         path: 'search',

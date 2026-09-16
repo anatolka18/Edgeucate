@@ -78,8 +78,25 @@ const Footer: FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8 text-center">
-          <p className="text-gray-400 dark:text-gray-500 text-sm">
+        <div className="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+          {/* Юридические ссылки (152-ФЗ compliance) */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-4">
+            <Link
+              to="/privacy"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-[#3D5B82] dark:hover:text-[#7FA3CC] transition-colors min-h-[44px] flex items-center"
+            >
+              Политика конфиденциальности
+            </Link>
+            <span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
+            <Link
+              to="/terms"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-[#3D5B82] dark:hover:text-[#7FA3CC] transition-colors min-h-[44px] flex items-center"
+            >
+              Пользовательское соглашение
+            </Link>
+          </div>
+
+          <p className="text-gray-400 dark:text-gray-500 text-sm text-center">
             © {new Date().getFullYear()} Edgeucate. Все права защищены.
           </p>
         </div>

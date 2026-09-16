@@ -2,6 +2,7 @@ import { FC } from "react";
 import { Outlet, ScrollRestoration } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import CookieConsent from "../components/CookieConsent";
 
 const Layout: FC = () => {
   return (
@@ -11,6 +12,7 @@ const Layout: FC = () => {
         <Outlet />
       </main>
       <Footer />
+      <CookieConsent />
       <ScrollRestoration />
     </div>
   );

@@ -19,6 +19,18 @@ export function ensureSocket(token: string) {
   notificationsWebSocket.connect(token);
 }
 
+const PUBLIC_ROUTES = [
+  '/auth',
+  '/verify-email',
+  '/reset-password',
+  '/privacy',
+  '/terms',
+];
+
+function isPublicRoute(path: string): boolean {
+  return PUBLIC_ROUTES.some(route => path === route || path.startsWith(route + '/'));
+}
+
 function App() {
   const dispatch = useAppDispatch()
   const [isLoading, setIsLoading] = useState(true)
@@ -43,7 +55,7 @@ function App() {
   useEffect(() => {
     const path = window.location.pathname;
 
-    if (path === '/auth' || path.startsWith('/verify-email') || path.startsWith('/reset-password')) {
+    if (isPublicRoute(path)) {
       setAuthReady(true);
       setIsLoading(false);
       return;
@@ -53,7 +65,6 @@ function App() {
       try {
         await fetch('/api/csrf-token', { credentials: 'include' });
       } catch {
-        // ignore
       }
     };
 
