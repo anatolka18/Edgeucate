@@ -22,6 +22,14 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    labels:
+      - "com.edgeucate.service=cache"
 
   server:
     image: ghcr.io/anatolka18/edgeucate/server:latest
@@ -50,9 +58,9 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 512M
+          memory: 1G
         reservations:
-          memory: 256M
+          memory: 512M
     labels:
       - "com.edgeucate.service=backend"
 
@@ -138,9 +146,9 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 192M
     labels:
       - "com.edgeucate.service=storage"
     logging: *default-logging
@@ -186,9 +194,9 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 1G
+          memory: 1536M
         reservations:
-          memory: 512M
+          memory: 768M
     labels:
       - "com.edgeucate.service=monitoring"
 
@@ -200,9 +208,9 @@ services:
       - ./promtail/promtail-prod.yaml:/etc/promtail/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/log:/var/log:ro  
+      - /var/log:/var/log:ro
     command: -config.file=/etc/promtail/config.yaml
-    user: "0:0" 
+    user: "0:0"
     logging: *default-logging
     networks:
       - backend
@@ -259,9 +267,9 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 512M
+          memory: 768M
         reservations:
-          memory: 256M
+          memory: 384M
     labels:
       - "com.edgeucate.service=monitoring"
 
