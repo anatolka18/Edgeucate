@@ -133,11 +133,31 @@ jobs:
             sudo mv /tmp/.env.prod /opt/edgeucate-secrets/.env.prod
             sudo chown deploy:deploy /opt/edgeucate-secrets/.env.prod
             sudo chmod 600 /opt/edgeucate-secrets/.env.prod
+            echo "Secrets deployed to /opt/edgeucate-secrets/.env.prod"
             
             cd ~/Edgeucate
             git fetch origin dev
             git reset --hard origin/dev
             echo "Code updated: $(git rev-parse --short HEAD)"
+            
+            echo ""
+            echo "=== Pre-deploy cleanup ==="
+            echo "Before cleanup:"
+            df -h / | tail -1
+            
+            echo "Pruning build cache..."
+            docker builder prune -a -f || true
+            
+            echo "Pruning images older than 7 days..."
+            docker image prune -a -f --filter "until=168h" || true
+            
+            echo "Pruning orphan volumes..."
+            docker volume prune -f || true
+            
+            echo "After cleanup:"
+            df -h / | tail -1
+            echo "=== Cleanup complete ==="
+            echo ""
             
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
