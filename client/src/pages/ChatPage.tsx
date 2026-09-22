@@ -581,6 +581,43 @@ const ChatPage: React.FC = () => {
 
   return (
     <>
+      <style>{`
+        .chat-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .chat-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .chat-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.3);
+          border-radius: 4px;
+          transition: background-color 0.2s ease;
+        }
+        
+        .chat-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.5);
+        }
+        
+        .dark .chat-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(107, 114, 128, 0.4);
+        }
+        
+        .dark .chat-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(107, 114, 128, 0.6);
+        }
+        
+        .chat-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+        }
+        
+        .dark .chat-scrollbar {
+          scrollbar-color: rgba(107, 114, 128, 0.4) transparent;
+        }
+      `}</style>
+      
       <div 
         className={`flex flex-col bg-white dark:bg-gray-800 overflow-hidden ${
           isMobile 
@@ -626,7 +663,7 @@ const ChatPage: React.FC = () => {
         <div className="flex-1 min-h-0 overflow-hidden">
           <div
             ref={chatContainerRef}
-            className="h-full overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 space-y-1 select-none"
+            className="chat-scrollbar h-full overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 space-y-1 select-none"
             onContextMenu={(e) => e.preventDefault()}
           >
             {isLoadingMore && (
