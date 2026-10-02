@@ -123,7 +123,7 @@ services:
       - "com.edgeucate.service=coturn"
 
   minio:
-    image: quay.io/minio/minio:latest
+    image: pgsty/silo:latest
     container_name: edgeucate-minio-prod
     restart: unless-stopped
     environment:
