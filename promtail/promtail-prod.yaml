@@ -23,11 +23,11 @@ scrape_configs:
       - source_labels: ['__meta_docker_container_name']
         regex: '/edgeucate-(loki|promtail|prometheus|grafana)-prod'
         action: drop
-      
+
       - source_labels: ['__meta_docker_container_name']
         regex: '/edgeucate-(server|redis|client|minio|coturn|mongo-backup)-prod'
         action: keep
-      
+
       - source_labels: ['__meta_docker_container_name']
         regex: '/(.*)'
         target_label: 'container'
@@ -35,10 +35,10 @@ scrape_configs:
         target_label: 'service'
       - source_labels: ['__meta_docker_container_label_com_edgeucate_service']
         target_label: 'app_tier'
-    
+
     pipeline_stages:
       - docker: {}
-      
+
       - match:
           selector: '{container="edgeucate-client-prod"}'
           stages:
@@ -48,7 +48,7 @@ scrape_configs:
                 expression: '.*open\(\) ".*/[a-zA-Z0-9_-]+\.(js|css|map|png|jpg|jpeg|svg|gif|ico|txt|woff2?|ttf|eot|html)" failed.*'
             - drop:
                 expression: '.*open\(\) ".*/(assets|static|Public)/.*" failed.*'
-            
+
             - regex:
                 expression: '.*\[(?P<nginx_level>emerg|alert|crit|error|warn|notice|info|debug)\].*'
             - template:
@@ -56,7 +56,7 @@ scrape_configs:
                 template: '{{ if or (eq .nginx_level "error") (eq .nginx_level "crit") (eq .nginx_level "alert") (eq .nginx_level "emerg") }}error{{ else if eq .nginx_level "warn" }}warn{{ else }}info{{ end }}'
             - labels:
                 level:
-      
+
       - match:
           selector: '{container="edgeucate-server-prod"}'
           stages:
@@ -79,7 +79,7 @@ scrape_configs:
                   context: context
             - labels:
                 level:
-      
+
       - match:
           selector: '{container="edgeucate-server-prod", level=""}'
           stages:
@@ -90,13 +90,13 @@ scrape_configs:
                 template: '{{ if eq .nest_level "LOG" }}info{{ else if eq .nest_level "VERBOSE" }}info{{ else }}{{ .nest_level | lower }}{{ end }}'
             - labels:
                 level:
-      
+
       - match:
           selector: '{container=~"edgeucate-(redis|minio|coturn|mongo-backup)-prod"}'
           stages:
             - drop:
                 expression: '.*'
-      
+
       - match:
           selector: '{level=""}'
           stages:
@@ -105,15 +105,37 @@ scrape_configs:
                 template: 'info'
             - labels:
                 level:
-      
+
       - timestamp:
           source: time
           format: RFC3339Nano
-      
+
       - labels:
           container:
           service:
           app_tier:
-      
+
       - output:
           source: log
+
+  - job_name: trivy-monitor
+    static_configs:
+      - targets: [localhost]
+        labels:
+          service: trivy-monitor
+          __path__: /var/log/trivy-monitor/trivy-report.log
+    pipeline_stages:
+      - logfmt:
+          mapping:
+            image:
+            severity:
+            id:
+            pkg:
+            installed:
+            fixed:
+            title:
+      - labels:
+          image:
+          severity:
+          id:
+          pkg:

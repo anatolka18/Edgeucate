@@ -4,7 +4,7 @@
   "tags": ["security", "trivy"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "refresh": "1h",
   "time": {"from": "now-7d", "to": "now"},
   "panels": [
@@ -57,6 +57,29 @@
       "targets": [{"refId": "A", "expr": "sum by (image) (trivy_vulnerabilities{severity=~\"critical|high\"})", "legendFormat": "{{image}}"}],
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
       "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "By image and severity (current)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+      "targets": [{"refId": "A", "expr": "trivy_vulnerabilities > 0", "instant": true, "format": "table"}],
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Time": true, "instance": true, "job": true, "__name__": true}, "renameByName": {"Value": "count", "image": "image", "severity": "severity"}}},
+        {"id": "sortBy", "options": {"desc": true, "fields": ["count"]}}
+      ],
+      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}}, "filterable": true}, "overrides": []},
+      "options": {"showHeader": true}
+    },
+    {
+      "id": 7,
+      "type": "logs",
+      "title": "Trivy findings (critical/high)",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+      "targets": [{"refId": "A", "expr": "{service=\"trivy-monitor\", severity=~\"critical|high\"}"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true, "dedupStrategy": "none"}
     }
   ]
 }
