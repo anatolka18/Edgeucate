@@ -16,3 +16,12 @@ scrape_configs:
         labels:
           service: 'edgeucate-backend'
           environment: 'production'
+
+  - job_name: 'trivy-monitor'
+    honor_labels: true
+    scrape_interval: 60s
+    static_configs:
+      - targets: ['pushgateway:9091']
+        labels:
+          service: 'pushgateway'
+          environment: 'production'

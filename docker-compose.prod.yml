@@ -179,6 +179,25 @@ services:
     labels:
       - "com.edgeucate.service=monitoring"
 
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: edgeucate-pushgateway-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9091:9091"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          memory: 64M
+    labels:
+      - "com.edgeucate.service=monitoring"
+    logging: *default-logging
+
   loki:
     image: grafana/loki:latest
     container_name: edgeucate-loki-prod
