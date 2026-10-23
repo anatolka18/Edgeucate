@@ -1,6 +1,8 @@
 FROM mongo:8.0
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+ARG CACHE_BUST=1
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
     curl cron ca-certificates file util-linux nodejs npm \
     && rm -rf /var/lib/apt/lists/*
 
