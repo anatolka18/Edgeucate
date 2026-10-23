@@ -1,0 +1,12 @@
+vulnerabilities:
+  # Go stdlib CVEs in mongodump/mongorestore binaries (tools 100.19.1 built with go1.26.8).
+  # Fixed upstream but MongoDB Inc. has not rebuilt tools yet. Acceptable risk:
+  # these are CLI clients using MongoDB wire protocol, not HTTP/TLS servers.
+  - id: CVE-2026-78669
+    statement: "mongodump does not accept incoming HTTP/2 connections; DoS vector not applicable"
+  - id: CVE-2026-78667
+    statement: "mongodump does not accept incoming HTTP connections; DoS vector not applicable"
+  - id: CVE-2026-97031
+    statement: "mongodump is not a TLS server; DoS vector not applicable"
+  - id: CVE-2026-111943
+    statement: "mongodump connects to Atlas via TLS wire protocol; MITM requires breaking TLS, out of scope"

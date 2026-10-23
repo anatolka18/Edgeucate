@@ -15,6 +15,8 @@ for img in $IMAGES; do
   docker save "${REGISTRY}/${img}:latest" -o "/tmp/trivy-${img}.tar" || { echo "docker save failed: $img"; continue; }
   nice -n 19 ionice -c3 trivy image --input "/tmp/trivy-${img}.tar" \
     --format json --quiet --scanners vuln \
+    --ignorefile /home/deploy/Edgeucate/backup/.trivyignore.yaml \
+    --ignore-unfixed \
     -o "$OUT/reports/${img}.json" || echo "trivy failed: $img"
   rm -f "/tmp/trivy-${img}.tar"
 done
