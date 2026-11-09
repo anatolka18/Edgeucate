@@ -10,3 +10,5 @@ vulnerabilities:
     statement: "mongodump is not a TLS server; DoS vector not applicable"
   - id: CVE-2026-111943
     statement: "mongodump connects to Atlas via TLS wire protocol; MITM requires breaking TLS, out of scope"
+  - id: CVE-2026-78661
+    statement: "mongodump does not parse HTML input; golang.org/x/net/html is an unused transitive dependency in mongo-tools 100.20.0. DoS vector not applicable. Waiting for MongoDB tools rebuild with x/net 0.62.0."
