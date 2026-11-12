@@ -46,7 +46,7 @@
     "ioredis": "^5.11.1",
     "isomorphic-dompurify": "^4.6.0",
     "mongodb": "^7.5.0",
-    "mongoose": "^9.8.1",
+    "mongoose": "^9.11.4",
     "multer": "^2.3.0",
     "nodemailer": "^10.0.6",
     "passport": "^0.7.0",
