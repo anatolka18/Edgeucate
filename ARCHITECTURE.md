@@ -348,7 +348,7 @@ class node_compose,node_cicd,node_promtail,node_monitoring,node_grafana toneIndi
 
 | Слой | Технологии |
 |------|-----------|
-| Frontend | React 18, TypeScript, Redux Toolkit, React Router, Tailwind CSS, Socket.IO-client |
+| Frontend | React 19, TypeScript, Redux Toolkit, React Router, Tailwind CSS, Socket.IO-client |
 | Backend | NestJS, TypeScript, Mongoose, BullMQ, Socket.IO, WebRTC |
 | Базы данных | MongoDB Atlas, Redis |
 | Хранилище | MinIO (S3-совместимый) |
