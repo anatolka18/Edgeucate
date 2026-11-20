@@ -29,6 +29,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Аккаунт заблокирован');
     }
 
+    if (!user.isVerified) {
+      throw new UnauthorizedException('Подтвердите email, чтобы получить доступ');
+    }
+
     return user;
   }
 }
